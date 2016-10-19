@@ -1,7 +1,7 @@
 
 /***************************************************************************
  * libmseed.h:
- * 
+ *
  * Interface declarations for the Mini-SEED library (libmseed).
  *
  * This library is free software; you can redistribute it and/or modify
@@ -85,7 +85,7 @@ extern "C" {
 
 /* Macro to test for sane year and day values, used primarily to
  * determine if byte order swapping is needed.
- * 
+ *
  * Year : between 1900 and 2100
  * Day  : between 1 and 366
  *
@@ -97,7 +97,7 @@ extern "C" {
 /* Macro to test memory for a SEED data record signature by checking
  * SEED data record header values at known byte offsets to determine
  * if the memory contains a valid record.
- * 
+ *
  * Offset = Value
  * [0-5]  = Digits, spaces or NULL, SEED sequence number
  *     6  = Data record quality indicator
@@ -125,7 +125,7 @@ extern "C" {
 /* Macro to test memory for a blank/noise SEED data record signature
  * by checking for a valid SEED sequence number and padding characters
  * to determine if the memory contains a valid blank/noise record.
- * 
+ *
  * Offset = Value
  * [0-5]  = Digits or NULL, SEED sequence number
  * [6-47] = Space character (ASCII 32), remainder of fixed header
@@ -282,7 +282,7 @@ struct blkt_320_s
   char      rolloff[12];
   char      noise_type[8];
 } LMP_PACKED;
-  
+
 /* Blockette 390, Generic Calibration (without header) */
 struct blkt_390_s
 {
@@ -382,16 +382,16 @@ typedef struct StreamState_s
 StreamState;
 
 typedef struct MSRecord_s {
-  char           *record;            /* Mini-SEED record */
+  char          * record;            /* Mini-SEED record */
   int32_t         reclen;            /* Length of Mini-SEED record in bytes */
-  
+
   /* Pointers to SEED data record structures */
   struct fsdh_s      *fsdh;          /* Fixed Section of Data Header */
   BlktLink           *blkts;         /* Root of blockette chain */
   struct blkt_100_s  *Blkt100;       /* Blockette 100, if present */
   struct blkt_1000_s *Blkt1000;      /* Blockette 1000, if present */
   struct blkt_1001_s *Blkt1001;      /* Blockette 1001, if present */
-  
+
   /* Common header fields in accessible form */
   int32_t         sequence_number;   /* SEED record sequence number */
   char            network[11];       /* Network designation, NULL terminated */
@@ -404,12 +404,12 @@ typedef struct MSRecord_s {
   int64_t         samplecnt;         /* Number of samples in record */
   int8_t          encoding;          /* Data encoding format */
   int8_t          byteorder;         /* Original/Final byte order of record */
-  
+
   /* Data sample fields */
   void           *datasamples;       /* Data samples, 'numsamples' of type 'sampletype'*/
   int64_t         numsamples;        /* Number of data samples in datasamples */
   char            sampletype;        /* Sample type code: a, i, f, d */
-  
+
   /* Stream oriented state information */
   StreamState    *ststate;           /* Stream processing state information */
 }
@@ -421,7 +421,7 @@ typedef struct MSTrace_s {
   char            station[11];       /* Station designation, NULL terminated */
   char            location[11];      /* Location designation, NULL terminated */
   char            channel[11];       /* Channel designation, NULL terminated */
-  char            dataquality;       /* Data quality indicator */ 
+  char            dataquality;       /* Data quality indicator */
   char            type;              /* MSTrace type code */
   hptime_t        starttime;         /* Time of first sample */
   hptime_t        endtime;           /* Time of last sample */
@@ -622,14 +622,17 @@ typedef struct MSFileParam_s
   int   recordcount;
 } MSFileParam;
 
-extern int      ms_readmsr (MSRecord **ppmsr,
-                            const char *msfile,
+// typedef int8_t flag;
+// ------------------------------------------------------------------------ //
+extern int      ms_readmsr (MSRecord ** ppmsr,
+                            char const * msfile,
                             int reclen,
                             off_t * fpos,
                             int * last,
                             flag skipnotdata,
                             flag dataflag,
                             flag verbose);
+// ------------------------------------------------------------------------ //
 
 extern int      ms_readmsr_r (MSFileParam **ppmsfp, MSRecord **ppmsr, const char *msfile, int reclen,
 			      off_t *fpos, int *last, flag skipnotdata, flag dataflag, flag verbose);

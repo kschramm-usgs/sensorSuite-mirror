@@ -26,7 +26,7 @@ static flag tracegap   = 0;
 static int printraw    = 0;
 static int printdata   = 1;
 static int reclen      = -1;
-static char const * inputfile = "TST5_00_BH0.512.seed";
+static char const * inputfile = "../test/TST5_00_BH0.512.seed";
 
 static double timetol     = -1.0; /* Time tolerance for continuous traces */
 static double sampratetol = -1.0; /* Sample rate tolerance for continuous traces */
