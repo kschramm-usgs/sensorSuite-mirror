@@ -27,7 +27,7 @@ include_directories(inc)
 add_library(${PROJECT_NAME} ${libmseed_SRCS})
 
 # test
-add_executable(parse_one_file test/parse_one_file.c)
+add_executable(parse_one_file cpp_test/parse_one_file.cpp)
 add_dependencies(parse_one_file ${PROJECT_NAME})
 target_link_libraries(parse_one_file ${PROJECT_NAME})
 
