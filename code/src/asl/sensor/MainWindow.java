@@ -1,15 +1,20 @@
 package asl.sensor;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 
 
 public class MainWindow extends JPanel implements ActionListener {
   
   private JButton loadButton1, loadButton2, loadButton3;
+  private JButton saveButton;
+  private JTextArea filenameBox1, filenameBox2, filenameBox3;
   private JFileChooser fc;
   private JTextArea statusBox;
   private JTabbedPane tabbedPane = new JTabbedPane();
@@ -22,42 +27,87 @@ public class MainWindow extends JPanel implements ActionListener {
     statusBox.setMargin( new Insets(5,5,5,5) );
     statusBox.setEditable(false);
     JScrollPane statusScrollPane = new JScrollPane(statusBox);
+    statusScrollPane.setBorder( new EmptyBorder(5,5,5,5) );
+
+    
+    statusBox.setText("Status Box that will eventually hold time-series plots");
+    
+
     
     fc = new JFileChooser();
-    
-    loadButton1 = new JButton("Open file 1");
-    loadButton1.addActionListener(this);
-    
-    loadButton2 = new JButton("Open file 2");
-    loadButton2.addActionListener(this);
-    
-    loadButton3 = new JButton("Open file 3");
-    loadButton3.addActionListener(this);
-    
+       
     // each pane will correspond to a plot which gets a test from
     // a test factory; this will return the test corresponding to the plot type
     // which is determined based on an enum of tests
     
     tabbedPane = new JTabbedPane();
-    tabbedPane.addTab("Status Pane", statusScrollPane);
     
     for( Experiment exp : Experiment.values() ){
-      JTextArea ta = new JTextArea(5,10);
-      ta.setMargin( new Insets(5,5,5,5) );
-      ta.setEditable(false);
-      tabbedPane.addTab(exp.getName(),ta);
-      ta.append("GUI WIP FOR " + exp.getName());
+      JPanel tab = new JPanel();
+      
+      tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
+      JTextArea txa = new JTextArea(10,50);
+      txa.setMargin( new Insets(5,5,5,5) );
+      txa.setEditable(false);
+      tab.add(txa);
+      
+      JButton save = new JButton("Save Plot");
+      save.addActionListener(this);
+      tab.add(save);
+      
+      tabbedPane.addTab( exp.getName(), tab );
+      txa.append( "GUI PLOT AREA WIP FOR " + exp.getName() );
     }
     
-    JPanel buttonPanel = new JPanel();
-    buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS) );
-    buttonPanel.add(loadButton1);
-    buttonPanel.add(loadButton2);
-    buttonPanel.add(loadButton3);
+    tabbedPane.setBorder( new EmptyBorder(5,0,0,0) );
     
-    //add(statusScrollPane);
-    add(tabbedPane);
+    JPanel buttonPanel = new JPanel();
+    buttonPanel.setPreferredSize(new Dimension(200,0));
+    buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS) );
+    
+    loadButton1 = new JButton("Open file 1");
+    loadButton1.addActionListener(this);
+    filenameBox1 = new JTextArea(1,10);
+    
+    initFile(loadButton1, filenameBox1, buttonPanel);
+    
+    loadButton2 = new JButton("Open file 2");
+    loadButton2.addActionListener(this);
+    filenameBox2 = new JTextArea(1,10);
+    
+    initFile(loadButton2, filenameBox2, buttonPanel);
+    
+    loadButton3 = new JButton("Open file 3");
+    loadButton3.addActionListener(this);
+    filenameBox3 = new JTextArea(1,10);
+    
+    initFile(loadButton3, filenameBox3, buttonPanel);
+
+    buttonPanel.setBorder( new EmptyBorder(5,5,5,5) );
+    
+    //holds everything except the side panel used for file IO stuff
+    JPanel temp = new JPanel();
+    temp.setLayout( new BoxLayout(temp, BoxLayout.Y_AXIS) );
+    temp.add(tabbedPane);
+    // temp.add(save);
+    temp.add(statusScrollPane);
+    temp.setBorder( new EmptyBorder(5,5,5,5) );
+
+    add(temp);
     add(buttonPanel, BorderLayout.EAST);
+
+  }
+  
+  private static void initFile(JButton button, JTextArea text, JPanel panel){
+    JScrollPane filenameScroll;
+    
+    text.setEditable(false);
+    text.setMargin( new Insets(5,5,5,5) );
+    text.setText("NO FILE LOADED");
+    filenameScroll = new JScrollPane(text);
+
+    panel.add(button);
+    panel.add(filenameScroll);
   }
   
   public static void main(String[] args) {
@@ -75,7 +125,7 @@ public class MainWindow extends JPanel implements ActionListener {
   
 
   private static void createAndShowGUI() {
-    JFrame frame = new JFrame("File load");
+    JFrame frame = new JFrame("Sensor Tests");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     
     frame.add( new MainWindow() );
@@ -93,21 +143,21 @@ public class MainWindow extends JPanel implements ActionListener {
       int returnVal = fc.showOpenDialog(loadButton1);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
          File file = fc.getSelectedFile();
-         statusBox.append("f1: " + file.getName() + "\n");
+         filenameBox1.setText(file.getName());
       }
     } else if ( e.getSource() == loadButton2 ) {
       // originally used "MainWindow.this" as parameter
       int returnVal = fc.showOpenDialog(MainWindow.this);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
          File file = fc.getSelectedFile();
-         statusBox.append("f2: " + file.getName() + "\n");
+         filenameBox2.setText(file.getName());
       }
     } else if ( e.getSource() == loadButton3 ) {
       // originally used "MainWindow.this" as parameter
       int returnVal = fc.showOpenDialog(loadButton3);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
          File file = fc.getSelectedFile();
-         statusBox.append("f3: " + file.getName() + "\n");
+         filenameBox3.setText(file.getName());
       }
     }
   }
