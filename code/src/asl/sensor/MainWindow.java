@@ -39,20 +39,15 @@ public class MainWindow extends JPanel implements ActionListener {
     // which is determined based on an enum of tests
     
     tabbedPane = new JTabbedPane();
-    tabbedPane.addTab("Orthogonality", statusScrollPane);
+    tabbedPane.addTab("Status Pane", statusScrollPane);
     
-    
-    JTextArea panel2 = new JTextArea(10,50);
-    panel2.setEditable(false);
-    panel2.append("WIP GUI Relative Gain");
-    //JComponent panel2 = makeTextPanel("WIP GUI Relative Gain");
-    
-    JTextArea panel3 = new JTextArea(10,50);
-    panel3.setEditable(false);
-    panel3.append("WIP GUI Self-Noise");
-    
-    tabbedPane.addTab("Relative gain", panel2);
-    tabbedPane.addTab("Self-noise", panel3);
+    for( Experiment exp : Experiment.values() ){
+      JTextArea ta = new JTextArea(5,10);
+      ta.setMargin( new Insets(5,5,5,5) );
+      ta.setEditable(false);
+      tabbedPane.addTab(exp.getName(),ta);
+      ta.append("GUI WIP FOR " + exp.getName());
+    }
     
     JPanel buttonPanel = new JPanel();
     buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS) );
