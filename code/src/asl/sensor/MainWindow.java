@@ -1,8 +1,6 @@
 package asl.sensor;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -12,8 +10,11 @@ import javax.swing.border.EmptyBorder;
 
 public class MainWindow extends JPanel implements ActionListener {
   
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 2866426897343097822L;
   private JButton loadButton1, loadButton2, loadButton3;
-  private JButton saveButton;
   private JTextArea filenameBox1, filenameBox2, filenameBox3;
   private JFileChooser fc;
   private JTextArea statusBox;
@@ -43,20 +44,9 @@ public class MainWindow extends JPanel implements ActionListener {
     tabbedPane = new JTabbedPane();
     
     for( Experiment exp : Experiment.values() ){
-      JPanel tab = new JPanel();
-      
+      JPanel tab = new ExperimentPanel(exp);
       tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
-      JTextArea txa = new JTextArea(10,50);
-      txa.setMargin( new Insets(5,5,5,5) );
-      txa.setEditable(false);
-      tab.add(txa);
-      
-      JButton save = new JButton("Save Plot");
-      save.addActionListener(this);
-      tab.add(save);
-      
       tabbedPane.addTab( exp.getName(), tab );
-      txa.append( "GUI PLOT AREA WIP FOR " + exp.getName() );
     }
     
     tabbedPane.setBorder( new EmptyBorder(5,0,0,0) );
