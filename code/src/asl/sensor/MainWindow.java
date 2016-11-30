@@ -5,14 +5,14 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.SwingUtilities;
-import javax.swing.filechooser.*;
 
 
 public class MainWindow extends JPanel implements ActionListener {
-
+  
   private JButton loadButton1, loadButton2, loadButton3;
   private JFileChooser fc;
   private JTextArea statusBox;
+  private JTabbedPane tabbedPane = new JTabbedPane();
   
   public MainWindow() {
     
@@ -22,7 +22,6 @@ public class MainWindow extends JPanel implements ActionListener {
     statusBox.setMargin( new Insets(5,5,5,5) );
     statusBox.setEditable(false);
     JScrollPane statusScrollPane = new JScrollPane(statusBox);
-    
     
     fc = new JFileChooser();
     
@@ -34,7 +33,26 @@ public class MainWindow extends JPanel implements ActionListener {
     
     loadButton3 = new JButton("Open file 3");
     loadButton3.addActionListener(this);
-    // TODO: define additional panels for improving layout structure
+    
+    // each pane will correspond to a plot which gets a test from
+    // a test factory; this will return the test corresponding to the plot type
+    // which is determined based on an enum of tests
+    
+    tabbedPane = new JTabbedPane();
+    tabbedPane.addTab("Orthogonality", statusScrollPane);
+    
+    
+    JTextArea panel2 = new JTextArea(10,50);
+    panel2.setEditable(false);
+    panel2.append("WIP GUI Relative Gain");
+    //JComponent panel2 = makeTextPanel("WIP GUI Relative Gain");
+    
+    JTextArea panel3 = new JTextArea(10,50);
+    panel3.setEditable(false);
+    panel3.append("WIP GUI Self-Noise");
+    
+    tabbedPane.addTab("Relative gain", panel2);
+    tabbedPane.addTab("Self-noise", panel3);
     
     JPanel buttonPanel = new JPanel();
     buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS) );
@@ -42,7 +60,8 @@ public class MainWindow extends JPanel implements ActionListener {
     buttonPanel.add(loadButton2);
     buttonPanel.add(loadButton3);
     
-    add(statusScrollPane);
+    //add(statusScrollPane);
+    add(tabbedPane);
     add(buttonPanel, BorderLayout.EAST);
   }
   
@@ -97,5 +116,6 @@ public class MainWindow extends JPanel implements ActionListener {
       }
     }
   }
+  
 
 }
