@@ -35,7 +35,7 @@ public class MainWindow extends JPanel implements ActionListener {
     
     tabbedPane = new JTabbedPane();
     
-    for( Experiment exp : Experiment.values() ){
+    for( ExperimentEnum exp : ExperimentEnum.values() ){
       JPanel tab = new ExperimentPanel(exp);
       tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
       tabbedPane.addTab( exp.getName(), tab );

@@ -3,13 +3,18 @@ package asl.sensor;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JPanel;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
+import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.data.general.SeriesException;
 import org.jfree.data.time.Second;
@@ -24,19 +29,23 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   private JButton save;
   private JFreeChart chart; // replace with plot object
   
+  private JFileChooser fc; // save image when image save button clicked
+  
   private TimeSeriesCollection datasets;
   
-  private Experiment exp_; // used to define experiment of each plot object
-    // TODO: replace with an experiment plotter once available
+  private ExperimentEnum expType; 
+          // used to define experiment of each plot object
   
-  public ExperimentPanel(Experiment exp){
+  private Experiment expResult;
+  
+  public ExperimentPanel(ExperimentEnum exp){
     
-    exp_ = exp;
+    expType = exp;
     
     createDataset();
     
     chart = ChartFactory.createTimeSeriesChart(
-        exp_.getName(),
+        expType.getName(),
         "Time (sec)",
         "Value",
         datasets,
@@ -56,6 +65,8 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     this.add(save);
     save.setAlignmentX(Component.CENTER_ALIGNMENT);
     
+    fc = new JFileChooser();
+    
   }
   
   private void createDataset(){
@@ -70,7 +81,6 @@ public class ExperimentPanel extends JPanel implements ActionListener {
             value = value + Math.random( ) - 0.5;                 
             series.add( step, new Double(value) );                 
             step = ( Second ) step.next( );
-            System.out.println("flow test, " + value + " " + step);
          } catch ( SeriesException e ) {
             System.err.println("Error adding to series");
          }
@@ -83,8 +93,24 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   public void actionPerformed(ActionEvent e) {
     // TODO Auto-generated method stub
     if( e.getSource() == save ) {
-      // TODO: save plot to file
-      // txa.append("\nClicked the save button.");
+      String ext = ".png";
+      fc.addChoosableFileFilter(
+          new FileNameExtensionFilter("PNG image (.png)",ext) );
+      fc.setFileFilter(fc.getChoosableFileFilters()[1]);
+      int returnVal = fc.showSaveDialog(save);
+      if (returnVal == JFileChooser.APPROVE_OPTION) {
+        File selFile = fc.getSelectedFile();
+        if( !selFile.getName().endsWith( ext.toLowerCase() ) ) {
+          selFile = new File( selFile.toString() + ext);
+        }
+        try {
+          ChartUtilities.saveChartAsPNG(selFile,chart,640,480);
+        } catch (IOException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+      }
+      return;
     }
     
   }
