@@ -41,6 +41,8 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   public ExperimentPanel(ExperimentEnum exp){
     
     expType = exp;
+    // TODO: reset with actual input data
+    expResult = ExperimentFactory.createExperiment(exp, null);
     
     createDataset();
     
