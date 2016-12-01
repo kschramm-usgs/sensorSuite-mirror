@@ -14,26 +14,18 @@ public class MainWindow extends JPanel implements ActionListener {
    * 
    */
   private static final long serialVersionUID = 2866426897343097822L;
-  private JButton loadButton1, loadButton2, loadButton3;
-  private JTextArea filenameBox1, filenameBox2, filenameBox3;
-  private JFileChooser fc;
-  private JTextArea statusBox;
-  private JTabbedPane tabbedPane = new JTabbedPane();
+  private JButton[] fileButtons     = new JButton[DataPanel.FILE_COUNT];
+  private JLabel[] filenameBoxes = new JLabel[DataPanel.FILE_COUNT];
+  
+  private JFileChooser fc; // loads in files based on parameter
+  private DataPanel dataBox;
+  private JTabbedPane tabbedPane; // holds set of experiment panels
   
   public MainWindow() {
     
     super( new BorderLayout() );
     
-    statusBox = new JTextArea(10,50);
-    statusBox.setMargin( new Insets(5,5,5,5) );
-    statusBox.setEditable(false);
-    JScrollPane statusScrollPane = new JScrollPane(statusBox);
-    statusScrollPane.setBorder( new EmptyBorder(5,5,5,5) );
-
-    
-    statusBox.setText("Status Box that will eventually hold time-series plots");
-    
-
+    dataBox = new DataPanel();
     
     fc = new JFileChooser();
        
@@ -52,26 +44,16 @@ public class MainWindow extends JPanel implements ActionListener {
     tabbedPane.setBorder( new EmptyBorder(5,0,0,0) );
     
     JPanel buttonPanel = new JPanel();
-    buttonPanel.setPreferredSize(new Dimension(200,0));
+    buttonPanel.setPreferredSize(new Dimension(100,0));
     buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS) );
     
-    loadButton1 = new JButton("Open file 1");
-    loadButton1.addActionListener(this);
-    filenameBox1 = new JTextArea(1,10);
-    
-    initFile(loadButton1, filenameBox1, buttonPanel);
-    
-    loadButton2 = new JButton("Open file 2");
-    loadButton2.addActionListener(this);
-    filenameBox2 = new JTextArea(1,10);
-    
-    initFile(loadButton2, filenameBox2, buttonPanel);
-    
-    loadButton3 = new JButton("Open file 3");
-    loadButton3.addActionListener(this);
-    filenameBox3 = new JTextArea(1,10);
-    
-    initFile(loadButton3, filenameBox3, buttonPanel);
+    for (int i = 0; i < fileButtons.length; i++){
+      fileButtons[i] = new JButton("Load File " + i);
+      fileButtons[i].addActionListener(this);
+      filenameBoxes[i] = new JLabel();
+      
+      initFile(fileButtons[i], filenameBoxes[i], buttonPanel);
+    }
 
     buttonPanel.setBorder( new EmptyBorder(5,5,5,5) );
     
@@ -80,24 +62,25 @@ public class MainWindow extends JPanel implements ActionListener {
     temp.setLayout( new BoxLayout(temp, BoxLayout.Y_AXIS) );
     temp.add(tabbedPane);
     // temp.add(save);
-    temp.add(statusScrollPane);
+    temp.add(dataBox);
     temp.setBorder( new EmptyBorder(5,5,5,5) );
 
-    add(temp);
-    add(buttonPanel, BorderLayout.EAST);
+    JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+    splitPane.setLeftComponent(temp);
+    splitPane.setRightComponent(buttonPanel);
+    splitPane.setResizeWeight(1.0);
+    this.add(splitPane);
 
   }
   
-  private static void initFile(JButton button, JTextArea text, JPanel panel){
-    JScrollPane filenameScroll;
+  private static void initFile(JButton button, JLabel text, JPanel panel){
+    button.setAlignmentX(SwingConstants.CENTER);
     
-    text.setEditable(false);
-    text.setMargin( new Insets(5,5,5,5) );
     text.setText("NO FILE LOADED");
-    filenameScroll = new JScrollPane(text);
+    text.setAlignmentX(SwingConstants.CENTER);
 
     panel.add(button);
-    panel.add(filenameScroll);
+    panel.add(text);
   }
   
   public static void main(String[] args) {
@@ -106,7 +89,7 @@ public class MainWindow extends JPanel implements ActionListener {
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {
         //Turn off metal's use of bold fonts
-        UIManager.put("swing.boldMetal", Boolean.FALSE); 
+        // UIManager.put("swing.boldMetal", Boolean.FALSE); 
         createAndShowGUI();
       }
     });
@@ -128,26 +111,16 @@ public class MainWindow extends JPanel implements ActionListener {
   public void actionPerformed(ActionEvent e) {
     // TODO: add more checks here as we add components
     
-    if ( e.getSource() == loadButton1 ) {
-      // originally used "MainWindow.this" as parameter
-      int returnVal = fc.showOpenDialog(loadButton1);
-      if (returnVal == JFileChooser.APPROVE_OPTION) {
-         File file = fc.getSelectedFile();
-         filenameBox1.setText(file.getName());
-      }
-    } else if ( e.getSource() == loadButton2 ) {
-      // originally used "MainWindow.this" as parameter
-      int returnVal = fc.showOpenDialog(MainWindow.this);
-      if (returnVal == JFileChooser.APPROVE_OPTION) {
-         File file = fc.getSelectedFile();
-         filenameBox2.setText(file.getName());
-      }
-    } else if ( e.getSource() == loadButton3 ) {
-      // originally used "MainWindow.this" as parameter
-      int returnVal = fc.showOpenDialog(loadButton3);
-      if (returnVal == JFileChooser.APPROVE_OPTION) {
-         File file = fc.getSelectedFile();
-         filenameBox3.setText(file.getName());
+    for(int i = 0; i < fileButtons.length; ++i) {
+      JButton button = fileButtons[i];
+      if ( e.getSource() == button ) {
+        int returnVal = fc.showOpenDialog(button);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+          File file = fc.getSelectedFile();
+          filenameBoxes[i].setText(file.getName());
+          dataBox.setData(i,true);
+        }
+        return;
       }
     }
   }

@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.awt.Component;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -7,7 +8,9 @@ import java.awt.event.ActionListener;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 
 public class ExperimentPanel extends JPanel implements ActionListener {
  
@@ -17,6 +20,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   JButton save;
   JTextArea txa; // replace with plot object
   private Experiment exp_; // used to define experiment of each plot object
+    // TODO: replace with an experiment plotter once available
   
   public ExperimentPanel(Experiment exp){
     
@@ -26,14 +30,18 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
     save = new JButton("Save Plot");
     save.addActionListener(this);
-    
-    txa = new JTextArea(10,50);
+
+    txa = new JTextArea(20,50);
     txa.setMargin( new Insets(5,5,5,5) );
     txa.setEditable(false);
     txa.setText("GUI PLOT AREA WIP "+exp.getName());
     
-    this.add(txa);
+    // just to make testing easier
+    JScrollPane textScroll = new JScrollPane(txa);
+    
+    this.add(textScroll);
     this.add(save);
+    save.setAlignmentX(Component.CENTER_ALIGNMENT);
     
   }
 
