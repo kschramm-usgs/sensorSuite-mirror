@@ -10,6 +10,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
+import org.jfree.data.time.TimeSeries;
+import org.jfree.data.time.TimeSeriesCollection;
+
 public class DataPanel extends JPanel {
 
   /**
@@ -19,8 +22,10 @@ public class DataPanel extends JPanel {
 
   final static int FILE_COUNT = 3;
   
-  private boolean[] dataSeries = new boolean[FILE_COUNT];
-              // TODO: replace with array of actual data
+  TimeSeries[] timeSeriesArray = new TimeSeries[FILE_COUNT];
+  
+  boolean[] dataSeries = new boolean[FILE_COUNT];
+
   private JTextArea[] plotters = new JTextArea[FILE_COUNT]; 
               // replace with plotters for data
   
@@ -51,8 +56,14 @@ public class DataPanel extends JPanel {
     plotters[idx].append("File "+idx+" has been set!\n");
   }
   
-  public boolean getData(int idx) { // TODO: change return type to data format
-    return dataSeries[idx];
+  public TimeSeriesCollection getData() { // TODO: change return type to data format
+    TimeSeriesCollection tsc = new TimeSeriesCollection();
+    
+    for(TimeSeries timeSeries : timeSeriesArray) {
+      tsc.addSeries(timeSeries);
+    }
+    
+    return tsc;
   }
   
   

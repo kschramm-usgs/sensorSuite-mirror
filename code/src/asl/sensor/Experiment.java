@@ -1,22 +1,29 @@
 package asl.sensor;
 
+import org.jfree.data.time.TimeSeriesCollection;
+
 public abstract class Experiment {
 
   // defines template pattern for each type of test, given by backend
   // each test returns new (set of) timeseries data from the input data
   
-  // TODO: throw exception if timeSeriesData not same size as FILE_COUNT?
+  // TODO: throw exception if dataIn not same size as FILE_COUNT?
   
-  protected double[][] timeSeriesData;
+  protected TimeSeriesCollection timeSeriesData;
   
-  public Experiment(double[][] dataIn) {
+  public Experiment(TimeSeriesCollection dataIn) {
     timeSeriesData = backend(dataIn);
   }
   
-  public double[][] getData(){
+  public TimeSeriesCollection getData(){
     return timeSeriesData;
   }
   
-  abstract double[][] backend(double[][] dataIn);
+  public void setData(TimeSeriesCollection dataIn) {
+    timeSeriesData = backend(dataIn);
+  }
+  
+  // java don't allow no static methods 'round here
+  abstract TimeSeriesCollection backend(TimeSeriesCollection dataIn);
   
 }

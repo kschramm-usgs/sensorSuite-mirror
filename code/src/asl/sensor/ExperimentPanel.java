@@ -28,6 +28,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
 
   private JButton save;
   private JFreeChart chart; // replace with plot object
+  private ChartPanel chartPanel;
   
   private JFileChooser fc; // save image when image save button clicked
   
@@ -37,20 +38,21 @@ public class ExperimentPanel extends JPanel implements ActionListener {
           // used to define experiment of each plot object
   
   private Experiment expResult;
+          // used to get the actual data from loaded-in files
   
-  public ExperimentPanel(ExperimentEnum exp){
+  public ExperimentPanel(ExperimentEnum exp, TimeSeriesCollection tsc) {
     
     expType = exp;
     // TODO: reset with actual input data
-    expResult = ExperimentFactory.createExperiment(exp, null);
+    expResult = ExperimentFactory.createExperiment(exp, tsc);
     
     createDataset();
     
-    chart = ChartFactory.createTimeSeriesChart(
+    JFreeChart chart = ChartFactory.createTimeSeriesChart(
         expType.getName(),
         "Time (sec)",
         "Value",
-        datasets,
+        datasets, // TODO: replace with expResult.getData() once implemented
         true, // include legend
         false, 
         false);
@@ -60,10 +62,10 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     save = new JButton("Save Plot");
     save.addActionListener(this);
 
-    ChartPanel chartp = new ChartPanel(chart);
-    chartp.setMouseZoomable(false);
+    chartPanel = new ChartPanel(chart);
+    chartPanel.setMouseZoomable(false);
     
-    this.add(chartp);
+    this.add(chartPanel);
     this.add(save);
     save.setAlignmentX(Component.CENTER_ALIGNMENT);
     
@@ -71,7 +73,26 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
   }
   
-  private void createDataset(){
+  public void updateData(TimeSeriesCollection tsc) {
+    
+    expResult.setData(tsc);
+    
+    this.createDataset();
+    
+    chartPanel.setChart( ChartFactory.createTimeSeriesChart(
+        expType.getName(),
+        "Time (sec)",
+        "Value",
+        datasets, // TODO: replace with expResult.getData() once implemented
+        true, // include legend
+        false, 
+        false) );
+    
+    // setting the new chart is enough to update the plots
+  }
+  
+  // used to test creation and update of chart data
+  private void createDataset() {
     datasets = new TimeSeriesCollection();
     
     for(int i = 0; i < DataPanel.FILE_COUNT; ++i) {
@@ -114,7 +135,6 @@ public class ExperimentPanel extends JPanel implements ActionListener {
       }
       return;
     }
-    
   }
   
 }

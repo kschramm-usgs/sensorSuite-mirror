@@ -21,6 +21,15 @@ public class MainWindow extends JPanel implements ActionListener {
   private DataPanel dataBox;
   private JTabbedPane tabbedPane; // holds set of experiment panels
   
+  
+  private void resetTabPlots() {
+    for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
+      ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
+      ep.updateData(null); // TODO: replace with newly imported data
+      // Since ep just a pointer, the graph should update now
+    }
+  }
+  
   public MainWindow() {
     
     super( new BorderLayout() );
@@ -36,7 +45,7 @@ public class MainWindow extends JPanel implements ActionListener {
     tabbedPane = new JTabbedPane();
     
     for( ExperimentEnum exp : ExperimentEnum.values() ){
-      JPanel tab = new ExperimentPanel(exp);
+      JPanel tab = new ExperimentPanel(exp, null);
       tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
       tabbedPane.addTab( exp.getName(), tab );
     }
@@ -119,6 +128,8 @@ public class MainWindow extends JPanel implements ActionListener {
           File file = fc.getSelectedFile();
           filenameBoxes[i].setText(file.getName());
           dataBox.setData(i,true);
+          
+          this.resetTabPlots();
         }
         return;
       }

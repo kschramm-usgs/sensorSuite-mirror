@@ -1,13 +1,15 @@
 package asl.sensor;
 
+import org.jfree.data.time.TimeSeriesCollection;
+
 public class OrthogonalExperiment extends Experiment {
 
-  public OrthogonalExperiment(double[][] dataIn) {
+  public OrthogonalExperiment(TimeSeriesCollection dataIn) {
     super(dataIn);
   }
 
   @Override
-  double[][] backend(double[][] dataIn) {
+  TimeSeriesCollection backend(TimeSeriesCollection dataIn) {
     // TODO Auto-generated method stub
     return null;
   }
