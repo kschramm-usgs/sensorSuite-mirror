@@ -127,7 +127,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
           selFile = new File( selFile.toString() + ext);
         }
         try {
-          ChartUtilities.saveChartAsPNG(selFile,chart,640,480);
+          ChartUtilities.saveChartAsPNG(selFile,chart,1280,960);
         } catch (IOException e1) {
           // TODO Auto-generated catch block
           e1.printStackTrace();

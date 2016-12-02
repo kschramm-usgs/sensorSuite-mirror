@@ -127,7 +127,7 @@ public class MainWindow extends JPanel implements ActionListener {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
           filenameBoxes[i].setText(file.getName());
-          dataBox.setData(i,true);
+          dataBox.setData(i,file.getAbsolutePath());
           
           this.resetTabPlots();
         }
