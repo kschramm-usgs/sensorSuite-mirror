@@ -6,6 +6,8 @@ public class GainExperiment extends Experiment {
 
   public GainExperiment(TimeSeriesCollection dataIn) {
     super(dataIn);
+    xAxisTitle = "Gain X Axis (units)";
+    yAxisTitle = "Gain Y Axis (units)";
   }
 
   @Override

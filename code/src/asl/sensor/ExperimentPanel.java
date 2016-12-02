@@ -50,8 +50,8 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
     JFreeChart chart = ChartFactory.createTimeSeriesChart(
         expType.getName(),
-        "Time (sec)",
-        "Value",
+        expResult.getXTitle(),
+        expResult.getYTitle(),
         expResult.getData(),
         true, // include legend
         false, 

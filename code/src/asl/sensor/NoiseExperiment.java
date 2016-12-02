@@ -6,6 +6,8 @@ public class NoiseExperiment extends Experiment {
 
   public NoiseExperiment(TimeSeriesCollection dataIn) {
     super(dataIn);
+    xAxisTitle = "Period (s)";
+    yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
   }
 
   @Override

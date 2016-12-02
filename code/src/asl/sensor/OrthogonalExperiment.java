@@ -6,6 +6,8 @@ public class OrthogonalExperiment extends Experiment {
 
   public OrthogonalExperiment(TimeSeriesCollection dataIn) {
     super(dataIn);
+    xAxisTitle = "Ortho X Axis (units)";
+    yAxisTitle = "Ortho Y Axis (units)";
   }
 
   @Override

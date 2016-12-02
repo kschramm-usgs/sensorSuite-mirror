@@ -10,6 +10,7 @@ public abstract class Experiment {
   // TODO: throw exception if dataIn not same size as FILE_COUNT?
   
   protected TimeSeriesCollection timeSeriesData;
+  protected String xAxisTitle, yAxisTitle;
   
   public Experiment(TimeSeriesCollection dataIn) {
     timeSeriesData = backend(dataIn);
@@ -21,6 +22,14 @@ public abstract class Experiment {
   
   public void setData(TimeSeriesCollection dataIn) {
     timeSeriesData = backend(dataIn);
+  }
+  
+  public String getXTitle() {
+    return xAxisTitle;
+  }
+  
+  public String getYTitle() {
+    return yAxisTitle;
   }
   
   // java don't allow no static methods 'round here
