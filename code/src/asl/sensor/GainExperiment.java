@@ -11,7 +11,7 @@ public class GainExperiment extends Experiment {
   @Override
   TimeSeriesCollection backend(TimeSeriesCollection dataIn) {
     // TODO Auto-generated method stub
-    return null;
+    return dataIn;
   }
 
 }

@@ -15,7 +15,7 @@ import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.TimeSeries;
 import org.junit.Test;
 
-import asl.sensor.InputFileReader;
+import asl.sensor.TimeSeriesHelper;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
 import edu.iris.dmc.seedcodec.UnsupportedCompressionType;
@@ -101,10 +101,10 @@ public class InputFileReaderTest {
           
           // checking the correct values for the intervals
           
-          double multOf1Hz = rate/InputFileReader.ONE_HZ;
-          long inverse = InputFileReader.ONE_HZ_INTERVAL/(long)multOf1Hz;
+          double multOf1Hz = rate/TimeSeriesHelper.ONE_HZ;
+          long inverse = TimeSeriesHelper.ONE_HZ_INTERVAL/(long)multOf1Hz;
           
-          long interval = InputFileReader.ONE_HZ_INTERVAL*mult/fact;
+          long interval = TimeSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
           
           assertEquals( inverse, interval);
           // System.out.println(interval);
@@ -141,7 +141,7 @@ public class InputFileReaderTest {
 
             int fact = dr.getHeader().getSampleRateFactor();
             int mult = dr.getHeader().getSampleRateMultiplier();
-            long interval = InputFileReader.ONE_HZ_INTERVAL*mult/fact;
+            long interval = TimeSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
 
             long startMillisecd = dr.getHeader()
                 .getStartBtime()
@@ -172,7 +172,7 @@ public class InputFileReaderTest {
         
       }
       
-      TimeSeries testAgainst = InputFileReader.getTimeSeries(filename1);
+      TimeSeries testAgainst = TimeSeriesHelper.getTimeSeries(filename1);
       assertEquals( ts.getItemCount(), testAgainst.getItemCount() );
       
     } catch (FileNotFoundException e) {

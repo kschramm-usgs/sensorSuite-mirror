@@ -17,28 +17,43 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
-public class InputFileReader {
+public class TimeSeriesHelper {
+  
+  // TODO: 2 slow 4 me, need to fix that
 
-  public static final long ONE_HZ_INTERVAL = 1000000L;
-  public static final double ONE_HZ = 1.0;
+  public final static long ONE_HZ_INTERVAL = 1000000L;
+  public final static double ONE_HZ = 1.0;
   
-  // the seisfile library has a convenient DataRecord object type
-  // that can make it easy to get SEED file components like sample rate,
-  // station name, etc. and of course the sweet juicy data candy in the center
+  public final static int MAX_SIZE = 1000000;
+
+  public static TimeSeries reduce(TimeSeries ts) {
+    if( ts != null &&  ts.getItemCount() > TimeSeriesHelper.MAX_SIZE) {
+      int plot_size = ts.getItemCount()/2;
+      int factor = 2;
+      while (plot_size > TimeSeriesHelper.MAX_SIZE) {
+        plot_size /= 2;
+        factor *= 2;
+      }
+      
+      TimeSeries shorter = new TimeSeries(ts.getKey().toString());
+      
+      for (int i = 0; i < ts.getItemCount(); i+=factor ){
+        shorter.add( ts.getDataItem(i) );
+      }
+
+      return shorter;
+    } else {
+      return ts;
+    }
+    
+  }
   
-  // important notes:
-  
-  // basic structure can probably be taken from miniseedtofloatarray example
-  
-  // the time interval can be taken from sampleratefactor and sampleratemult.
-  // both of which are publicly accessible from a datarecord's getters
-  
-  // add the first sample to a timeseries object at the starting time long
-  // then the next sample's time is that plus the interval (1/sampleRate)
-  // TODO: see what sample rate factor and multiple actually are
-  // (want to avoid as many conversions to/from float due to noise)
   
   public static TimeSeries getTimeSeries(String filename) {
+    
+    // TODO: easiest way to speed this up would be to
+    // filter out points not within a range of interest BEFORE plotting, etc.
+    // Does any such method of extracting data exist?
     
     DataInputStream dis;
     TimeSeries ts = null;

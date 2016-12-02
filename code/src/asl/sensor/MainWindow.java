@@ -14,8 +14,8 @@ public class MainWindow extends JPanel implements ActionListener {
    * 
    */
   private static final long serialVersionUID = 2866426897343097822L;
-  private JButton[] fileButtons     = new JButton[DataPanel.FILE_COUNT];
-  private JLabel[] filenameBoxes = new JLabel[DataPanel.FILE_COUNT];
+  private JButton[] fileButtons     = new JButton[DataStore.FILE_COUNT];
+  private JLabel[] filenameBoxes = new JLabel[DataStore.FILE_COUNT];
   
   private JFileChooser fc; // loads in files based on parameter
   private DataPanel dataBox;
@@ -25,7 +25,7 @@ public class MainWindow extends JPanel implements ActionListener {
   private void resetTabPlots() {
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      ep.updateData(null); // TODO: replace with newly imported data
+      ep.updateData(dataBox.getData());
       // Since ep just a pointer, the graph should update now
     }
   }

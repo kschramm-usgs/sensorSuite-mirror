@@ -52,7 +52,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
         expType.getName(),
         "Time (sec)",
         "Value",
-        datasets, // TODO: replace with expResult.getData() once implemented
+        expResult.getData(),
         true, // include legend
         false, 
         false);
@@ -83,7 +83,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
         expType.getName(),
         "Time (sec)",
         "Value",
-        datasets, // TODO: replace with expResult.getData() once implemented
+        expResult.getData(),
         true, // include legend
         false, 
         false) );
@@ -95,7 +95,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   private void createDataset() {
     datasets = new TimeSeriesCollection();
     
-    for(int i = 0; i < DataPanel.FILE_COUNT; ++i) {
+    for(int i = 0; i < DataStore.FILE_COUNT; ++i) {
       Second step = new Second(0,0,0,1,1,2016);
       double value = 100.0;
       TimeSeries series = new TimeSeries("Dataset " + i);
