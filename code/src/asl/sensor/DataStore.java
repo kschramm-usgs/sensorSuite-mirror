@@ -22,7 +22,7 @@ public class DataStore {
     TimeSeries ts = TimeSeriesHelper.getTimeSeries(filepath);
     timeSeriesArray[idx] = ts;
     timeSeriesReduced[idx] = TimeSeriesHelper.reduce(ts);
-    return TimeSeriesHelper.reduce(ts);
+    return timeSeriesReduced[idx];
      
   }
   
@@ -38,6 +38,6 @@ public class DataStore {
   }
   
   public TimeSeries getSeries(int idx) {
-    return TimeSeriesHelper.reduce(timeSeriesArray[idx]);
+    return timeSeriesReduced[idx];
   }
 }
