@@ -7,6 +7,8 @@ import javax.swing.*;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
+import org.jfree.data.time.TimeSeriesCollection;
+
 
 public class MainWindow extends JPanel implements ActionListener {
   
@@ -23,10 +25,11 @@ public class MainWindow extends JPanel implements ActionListener {
   
   
   private void resetTabPlots() {
+    TimeSeriesCollection tsc = dataBox.getData();
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      ep.updateData(dataBox.getData());
-      // Since ep just a pointer, the graph should update now
+      ep.updateData(tsc);
+      // updating the chartpanel auto-updates display
     }
   }
   

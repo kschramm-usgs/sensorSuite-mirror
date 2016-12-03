@@ -16,9 +16,6 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
-import org.jfree.data.general.SeriesException;
-import org.jfree.data.time.Second;
-import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 
 public class ExperimentPanel extends JPanel implements ActionListener {
@@ -32,7 +29,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   
   private JFileChooser fc; // save image when image save button clicked
   
-  private TimeSeriesCollection datasets;
+//  private TimeSeriesCollection datasets;
   
   private ExperimentEnum expType; 
           // used to define experiment of each plot object
@@ -40,29 +37,31 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   private Experiment expResult;
           // used to get the actual data from loaded-in files
   
+  public static JFreeChart populateChart(ExperimentEnum expT, Experiment expR) {
+    JFreeChart chart = ChartFactory.createTimeSeriesChart(
+        expT.getName(),
+        expR.getXTitle(),
+        expR.getYTitle(),
+        expR.getData(),
+        true, // include legend
+        false, 
+        false);
+    
+    return chart;
+  }
+  
   public ExperimentPanel(ExperimentEnum exp, TimeSeriesCollection tsc) {
     
     expType = exp;
     // TODO: reset with actual input data
     expResult = ExperimentFactory.createExperiment(exp, tsc);
     
-    createDataset();
-    
-    JFreeChart chart = ChartFactory.createTimeSeriesChart(
-        expType.getName(),
-        expResult.getXTitle(),
-        expResult.getYTitle(),
-        expResult.getData(),
-        true, // include legend
-        false, 
-        false);
-    
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     
     save = new JButton("Save Plot");
     save.addActionListener(this);
 
-    chartPanel = new ChartPanel(chart);
+    chartPanel = new ChartPanel( populateChart(expType, expResult) );
     chartPanel.setMouseZoomable(false);
     
     this.add(chartPanel);
@@ -77,44 +76,15 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
     expResult.setData(tsc);
     
-    this.createDataset();
-    
-    chartPanel.setChart( ChartFactory.createTimeSeriesChart(
-        expType.getName(),
-        "Time (sec)",
-        "Value",
-        expResult.getData(),
-        true, // include legend
-        false, 
-        false) );
+    chartPanel.setChart( populateChart(expType, expResult) );
+    chartPanel.setMouseZoomable(false);
     
     // setting the new chart is enough to update the plots
-  }
-  
-  // used to test creation and update of chart data
-  private void createDataset() {
-    datasets = new TimeSeriesCollection();
-    
-    for(int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      Second step = new Second(0,0,0,1,1,2016);
-      double value = 100.0;
-      TimeSeries series = new TimeSeries("Dataset " + i);
-      for (int j = 0; j < 4000; ++j) {
-         try {
-            value = value + Math.random( ) - 0.5;                 
-            series.add( step, new Double(value) );                 
-            step = ( Second ) step.next( );
-         } catch ( SeriesException e ) {
-            System.err.println("Error adding to series");
-         }
-      }
-      datasets.addSeries(series);
-    }
   }
 
   @Override
   public void actionPerformed(ActionEvent e) {
-    // TODO Auto-generated method stub
+    
     if( e.getSource() == save ) {
       String ext = ".png";
       fc.addChoosableFileFilter(
@@ -133,7 +103,6 @@ public class ExperimentPanel extends JPanel implements ActionListener {
           e1.printStackTrace();
         }
       }
-      return;
     }
   }
   

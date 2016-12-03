@@ -42,6 +42,7 @@ public class DataPanel extends JPanel {
       Dimension dim = chartPanels[i].getPreferredSize();
       chartPanels[i].setPreferredSize(
           new Dimension( (int) dim.getWidth(), (int) dim.getHeight()/2));
+      chartPanels[i].setMouseZoomable(false);
       
       this.add(chartPanels[i]);
       
@@ -51,10 +52,8 @@ public class DataPanel extends JPanel {
   }
   
   public void setData(int idx, String filepath) { 
-    // TODO: work with a timeseries object instead of the boolean
-    // make sure that chart data is properly updated at that time
-    TimeSeries ts = ds.setData(idx, filepath);
     
+    TimeSeries ts = ds.setData(idx, filepath);
     
     JFreeChart chart = ChartFactory.createTimeSeriesChart(
         ts.getKey().toString(),
@@ -64,6 +63,7 @@ public class DataPanel extends JPanel {
         false, false, false);
     
     chartPanels[idx].setChart(chart);
+    chartPanels[idx].setMouseZoomable(false);
     
   }
   
