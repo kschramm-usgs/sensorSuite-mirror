@@ -12,17 +12,12 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
-import org.jfree.data.time.FixedMillisecond;
-import org.jfree.data.time.Millisecond;
-import org.jfree.data.time.RegularTimePeriod;
-import org.jfree.data.time.TimeSeries;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.Test;
 
-import asl.sensor.TimeSeriesHelper;
+import asl.sensor.DataSeriesHelper;
 import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
@@ -31,7 +26,7 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
-public class TimeSeriesHelperTest {
+public class XYSeriesHelperTest {
 
   public String station = "TST5";
   public String location = "00";
@@ -109,10 +104,10 @@ public class TimeSeriesHelperTest {
           
           // checking the correct values for the intervals
           
-          double multOf1Hz = rate/TimeSeriesHelper.ONE_HZ;
-          long inverse = TimeSeriesHelper.ONE_HZ_INTERVAL/(long)multOf1Hz;
+          double multOf1Hz = rate/DataSeriesHelper.ONE_HZ;
+          long inverse = DataSeriesHelper.ONE_HZ_INTERVAL/(long)multOf1Hz;
           
-          long interval = TimeSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
+          long interval = DataSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
           
           assertEquals( inverse, interval);
           // System.out.println(interval);
@@ -131,9 +126,9 @@ public class TimeSeriesHelperTest {
   }
   
   @Test
-  public void inputFileReaderCreatesTimeSeries() {
+  public void inputFileReaderCreatesXYSeries() {
     DataInput dis;
-    TimeSeries ts = new TimeSeries(fileID);
+    XYSeries ts = new XYSeries(fileID);
     try {
       dis = new DataInputStream( 
             new BufferedInputStream( 
@@ -149,7 +144,7 @@ public class TimeSeriesHelperTest {
             
             int fact = dr.getHeader().getSampleRateFactor();
             int mult = dr.getHeader().getSampleRateMultiplier();
-            long interval = TimeSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
+            long interval = DataSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
             
             long startMilli = dr.getHeader()
                                  .getStartBtime()
@@ -169,29 +164,25 @@ public class TimeSeriesHelperTest {
             switch (dataType) {
             case B1000Types.INTEGER:
               for (float dataPoint : decomp.getAsInt() ) {
-                RegularTimePeriod milli = new FixedMillisecond(activeTime);
-                ts.addOrUpdate(milli, dataPoint);
+                ts.addOrUpdate(activeTime, dataPoint);
                 activeTime += interval;
               }
               break;
             case B1000Types.FLOAT:
               for (float dataPoint : decomp.getAsFloat() ) {
-                RegularTimePeriod milli = new FixedMillisecond(activeTime);
-                ts.addOrUpdate(milli, dataPoint);
+                ts.addOrUpdate(activeTime, dataPoint);
                 activeTime += interval;
               }
               break;
             case B1000Types.SHORT:
               for (short dataPoint : decomp.getAsShort() ) {
-                RegularTimePeriod milli = new FixedMillisecond(activeTime);
-                ts.addOrUpdate(milli, dataPoint);
+                ts.addOrUpdate(activeTime, dataPoint);
                 activeTime += interval;
               }
               break;
-            default:
+            default: // assume default is double
               for (double dataPoint : decomp.getAsDouble() ) {
-                RegularTimePeriod milli = new FixedMillisecond(activeTime);
-                ts.addOrUpdate(milli, dataPoint);
+                ts.addOrUpdate(activeTime, dataPoint);
                 activeTime += interval;
               }
               break;
@@ -204,7 +195,7 @@ public class TimeSeriesHelperTest {
         }
       }
       
-      TimeSeries testAgainst = TimeSeriesHelper.getTimeSeries(filename1);
+      XYSeries testAgainst = DataSeriesHelper.getXYSeries(filename1);
       assertEquals( ts.getItemCount(), testAgainst.getItemCount() );
       
     } catch (FileNotFoundException e) {

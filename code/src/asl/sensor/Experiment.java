@@ -1,6 +1,6 @@
 package asl.sensor;
 
-import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public abstract class Experiment {
 
@@ -9,19 +9,19 @@ public abstract class Experiment {
   
   // TODO: throw exception if dataIn not same size as FILE_COUNT?
   
-  protected TimeSeriesCollection timeSeriesData;
+  protected XYSeriesCollection xySeriesData;
   protected String xAxisTitle, yAxisTitle;
   
-  public Experiment(TimeSeriesCollection dataIn) {
-    timeSeriesData = backend(dataIn);
+  public Experiment(XYSeriesCollection dataIn) {
+    xySeriesData = backend(dataIn);
   }
   
-  public TimeSeriesCollection getData(){
-    return timeSeriesData;
+  public XYSeriesCollection getData(){
+    return xySeriesData;
   }
   
-  public void setData(TimeSeriesCollection dataIn) {
-    timeSeriesData = backend(dataIn);
+  public void setData(XYSeriesCollection tsc) {
+    xySeriesData = backend(tsc);
   }
   
   public String getXTitle() {
@@ -33,6 +33,6 @@ public abstract class Experiment {
   }
   
   // java don't allow no static methods 'round here
-  abstract TimeSeriesCollection backend(TimeSeriesCollection dataIn);
+  abstract XYSeriesCollection backend(XYSeriesCollection tsc);
   
 }

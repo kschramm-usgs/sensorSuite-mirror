@@ -1,17 +1,17 @@
 package asl.sensor;
 
-import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public class OrthogonalExperiment extends Experiment {
 
-  public OrthogonalExperiment(TimeSeriesCollection dataIn) {
+  public OrthogonalExperiment(XYSeriesCollection dataIn) {
     super(dataIn);
     xAxisTitle = "Ortho X Axis (units)";
     yAxisTitle = "Ortho Y Axis (units)";
   }
 
   @Override
-  TimeSeriesCollection backend(TimeSeriesCollection dataIn) {
+  XYSeriesCollection backend(XYSeriesCollection dataIn) {
     // TODO Auto-generated method stub
     return dataIn;
   }

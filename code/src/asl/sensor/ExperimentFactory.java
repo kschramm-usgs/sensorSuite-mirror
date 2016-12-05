@@ -1,6 +1,6 @@
 package asl.sensor;
 
-import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public class ExperimentFactory {
   
@@ -8,7 +8,7 @@ public class ExperimentFactory {
 
   public static Experiment createExperiment(
       ExperimentEnum exp, 
-      TimeSeriesCollection data){
+      XYSeriesCollection data){
     switch(exp){
     case ORTHO:
       return new OrthogonalExperiment(data);

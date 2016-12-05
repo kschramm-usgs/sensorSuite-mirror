@@ -16,7 +16,9 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public class ExperimentPanel extends JPanel implements ActionListener {
  
@@ -38,11 +40,12 @@ public class ExperimentPanel extends JPanel implements ActionListener {
           // used to get the actual data from loaded-in files
   
   public static JFreeChart populateChart(ExperimentEnum expT, Experiment expR) {
-    JFreeChart chart = ChartFactory.createTimeSeriesChart(
+    JFreeChart chart = ChartFactory.createXYLineChart(
         expT.getName(),
         expR.getXTitle(),
         expR.getYTitle(),
         expR.getData(),
+        PlotOrientation.VERTICAL,
         true, // include legend
         false, 
         false);
@@ -50,7 +53,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     return chart;
   }
   
-  public ExperimentPanel(ExperimentEnum exp, TimeSeriesCollection tsc) {
+  public ExperimentPanel(ExperimentEnum exp, XYSeriesCollection tsc) {
     
     expType = exp;
     // TODO: reset with actual input data
@@ -72,7 +75,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
   }
   
-  public void updateData(TimeSeriesCollection tsc) {
+  public void updateData(XYSeriesCollection tsc) {
     
     expResult.setData(tsc);
     

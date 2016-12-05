@@ -6,9 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.jfree.data.time.FixedMillisecond;
-import org.jfree.data.time.RegularTimePeriod;
-import org.jfree.data.time.TimeSeries;
+import org.jfree.data.xy.XYSeries;
 
 import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
@@ -19,44 +17,19 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
-public class TimeSeriesHelper {
+public class DataSeriesHelper {
   
   // TODO: 2 slow 4 me, need to fix that
 
   public final static long ONE_HZ_INTERVAL = 1000000L;
   public final static double ONE_HZ = 1.0;
   
-  public final static int MAX_SIZE = 1000000;
-
-  public static TimeSeries reduce(TimeSeries ts) {
-    if( ts != null &&  ts.getItemCount() > TimeSeriesHelper.MAX_SIZE) {
-      int plot_size = ts.getItemCount()/2;
-      int factor = 2;
-      while (plot_size > TimeSeriesHelper.MAX_SIZE) {
-        plot_size /= 2;
-        factor *= 2;
-      }
-      
-      TimeSeries shorter = new TimeSeries(ts.getKey().toString());
-      
-      for (int i = 0; i < ts.getItemCount(); i+=factor ){
-        shorter.add( ts.getDataItem(i) );
-      }
-
-      return shorter;
-    } else {
-      return ts;
-    }
-    
-  }
-  
-  
-  public static TimeSeries getTimeSeries(String filename) {
+  public static XYSeries getXYSeries(String filename) {
     
     // TODO: what can we do to make this faster?
     
     DataInputStream dis;
-    TimeSeries ts = null;
+    XYSeries xys = null;
     
     try {
       dis = new DataInputStream(  new FileInputStream(filename) );
@@ -68,12 +41,12 @@ public class TimeSeriesHelper {
           if(sr instanceof DataRecord) {
             DataRecord dr = (DataRecord)sr;
             DataHeader dh = dr.getHeader();
-            if (ts == null){
+            if (xys == null){
               StringBuilder fileID = new StringBuilder();
               fileID.append(dh.getStationIdentifier() + "_");
               fileID.append(dh.getLocationIdentifier() + "_");
               fileID.append(dh.getChannelIdentifier());
-              ts = new TimeSeries(fileID.toString());
+              xys = new XYSeries(fileID.toString());
             }
             
             // TODO: do we need a check that file datarecords are all contiguous?
@@ -101,29 +74,25 @@ public class TimeSeriesHelper {
             switch (dataType) {
             case B1000Types.INTEGER:
               for (int dataPoint : decomp.getAsInt() ) {
-                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
-                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                xys.addOrUpdate(active, dataPoint);
                 active += interval;
               }
               break;
             case B1000Types.FLOAT:
               for (float dataPoint : decomp.getAsFloat() ) {
-                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
-                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                xys.addOrUpdate(active, dataPoint);
                 active += interval;
               }
               break;
             case B1000Types.SHORT:
               for (short dataPoint : decomp.getAsShort() ) {
-                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
-                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                xys.addOrUpdate(active, dataPoint);
                 active += interval;
               }
               break;
             default:
               for (double dataPoint : decomp.getAsDouble() ) {
-                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
-                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                xys.addOrUpdate(active, dataPoint);
                 active += interval;
               }
               break;
@@ -152,7 +121,7 @@ public class TimeSeriesHelper {
       e.printStackTrace();
     }
     
-    return ts;
+    return xys;
   }
   
 

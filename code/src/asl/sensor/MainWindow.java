@@ -1,13 +1,24 @@
 package asl.sensor;
 
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
-import org.jfree.data.time.TimeSeriesCollection;
+import org.jfree.data.xy.XYSeriesCollection;
 
 
 public class MainWindow extends JPanel implements ActionListener {
@@ -25,7 +36,7 @@ public class MainWindow extends JPanel implements ActionListener {
   
   
   private void resetTabPlots() {
-    TimeSeriesCollection tsc = dataBox.getData();
+    XYSeriesCollection tsc = dataBox.getData();
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
       ep.updateData(tsc);
@@ -126,12 +137,14 @@ public class MainWindow extends JPanel implements ActionListener {
     for(int i = 0; i < fileButtons.length; ++i) {
       JButton button = fileButtons[i];
       if ( e.getSource() == button ) {
+        
+        // TODO: try-catch on set data to prevent premature renaming
         int returnVal = fc.showOpenDialog(button);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
-          filenameBoxes[i].setText(file.getName());
+
           dataBox.setData(i,file.getAbsolutePath());
-          
+          filenameBoxes[i].setText(file.getName());
           this.resetTabPlots();
         }
         return;
