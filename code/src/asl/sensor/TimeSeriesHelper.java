@@ -10,7 +10,9 @@ import org.jfree.data.time.FixedMillisecond;
 import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.TimeSeries;
 
+import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
+import edu.iris.dmc.seedcodec.DecompressedData;
 import edu.iris.dmc.seedcodec.UnsupportedCompressionType;
 import edu.sc.seis.seisFile.mseed.DataHeader;
 import edu.sc.seis.seisFile.mseed.DataRecord;
@@ -51,9 +53,7 @@ public class TimeSeriesHelper {
   
   public static TimeSeries getTimeSeries(String filename) {
     
-    // TODO: easiest way to speed this up would be to
-    // filter out points not within a range of interest BEFORE plotting, etc.
-    // Does any such method of extracting data exist?
+    // TODO: what can we do to make this faster?
     
     DataInputStream dis;
     TimeSeries ts = null;
@@ -87,14 +87,46 @@ public class TimeSeriesHelper {
             
             long interval = ONE_HZ_INTERVAL*mult/fact;
             
-            double[] data = dr.decompress().getAsDouble();
+            DecompressedData decomp = dr.decompress();
+
+            // get the original datatype of the series (loads data faster)
+            // otherwise the decompressed data gets converted (cloned) as
+            // the other type instead
+            int dataType = decomp.getType();
             
-            // TODO: can this be made faster?
-            
-            for(double dataPoint : data) {
-              RegularTimePeriod sampleTaken = new FixedMillisecond(active); 
-              ts.addOrUpdate(sampleTaken, dataPoint);
-              active += interval;
+            // This is probably the best way to do this since
+            // we have to add each point individually anyway
+            // and converting between types for 
+
+            switch (dataType) {
+            case B1000Types.INTEGER:
+              for (int dataPoint : decomp.getAsInt() ) {
+                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
+                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                active += interval;
+              }
+              break;
+            case B1000Types.FLOAT:
+              for (float dataPoint : decomp.getAsFloat() ) {
+                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
+                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                active += interval;
+              }
+              break;
+            case B1000Types.SHORT:
+              for (short dataPoint : decomp.getAsShort() ) {
+                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
+                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                active += interval;
+              }
+              break;
+            default:
+              for (double dataPoint : decomp.getAsDouble() ) {
+                RegularTimePeriod thisTimeStamp = new FixedMillisecond(active);
+                ts.addOrUpdate(thisTimeStamp, dataPoint);
+                active += interval;
+              }
+              break;
             }
           }
         } catch(EOFException e) {

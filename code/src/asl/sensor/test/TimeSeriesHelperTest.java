@@ -1,6 +1,9 @@
 package asl.sensor.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedInputStream;
 import java.io.DataInput;
@@ -9,13 +12,18 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.jfree.data.time.FixedMillisecond;
+import org.jfree.data.time.Millisecond;
 import org.jfree.data.time.RegularTimePeriod;
 import org.jfree.data.time.TimeSeries;
 import org.junit.Test;
 
 import asl.sensor.TimeSeriesHelper;
+import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
 import edu.iris.dmc.seedcodec.UnsupportedCompressionType;
@@ -23,7 +31,7 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
-public class InputFileReaderTest {
+public class TimeSeriesHelperTest {
 
   public String station = "TST5";
   public String location = "00";
@@ -131,45 +139,69 @@ public class InputFileReaderTest {
             new BufferedInputStream( 
             new FileInputStream(filename1) ) );
       while ( true ) {
-
+       
         try{
-          // we're going to assume this file's data is continuous. isn't it?
+          // going to assume this file's data is continuous. isn't it?
           SeedRecord sr = SeedRecord.read(dis,4096);
           if(sr instanceof DataRecord) {
-
+            
             DataRecord dr = (DataRecord)sr;
-
+            
             int fact = dr.getHeader().getSampleRateFactor();
             int mult = dr.getHeader().getSampleRateMultiplier();
             long interval = TimeSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
-
-            long startMillisecd = dr.getHeader()
-                .getStartBtime()
-                .convertToCalendar()
-                .getTimeInMillis();
             
-            // System.out.println(dr.getHeader().getStartTime());
-
-            long activeTime = startMillisecd;
-
+            long startMilli = dr.getHeader()
+                                 .getStartBtime()
+                                 .convertToCalendar()
+                                 .getTimeInMillis();
+            
+            long activeTime = startMilli;
+            
             DecompressedData decomp = dr.decompress();
+                        
+            // get the original datatype of the series (loads data faster)
+            int dataType = decomp.getType();
+            // System.out.println(decomp.getTypeString());
+            
+            // no easy way to do this...
+            
+            switch (dataType) {
+            case B1000Types.INTEGER:
+              for (float dataPoint : decomp.getAsInt() ) {
+                RegularTimePeriod milli = new FixedMillisecond(activeTime);
+                ts.addOrUpdate(milli, dataPoint);
+                activeTime += interval;
+              }
+              break;
+            case B1000Types.FLOAT:
+              for (float dataPoint : decomp.getAsFloat() ) {
+                RegularTimePeriod milli = new FixedMillisecond(activeTime);
+                ts.addOrUpdate(milli, dataPoint);
+                activeTime += interval;
+              }
+              break;
+            case B1000Types.SHORT:
+              for (short dataPoint : decomp.getAsShort() ) {
+                RegularTimePeriod milli = new FixedMillisecond(activeTime);
+                ts.addOrUpdate(milli, dataPoint);
+                activeTime += interval;
+              }
+              break;
+            default:
+              for (double dataPoint : decomp.getAsDouble() ) {
+                RegularTimePeriod milli = new FixedMillisecond(activeTime);
+                ts.addOrUpdate(milli, dataPoint);
+                activeTime += interval;
+              }
+              break;
+            }
 
-            double[] seedTimeSeries = decomp.getAsDouble();
-
-            for(double dataPoint : seedTimeSeries) {
-              RegularTimePeriod thisTimeStamp = 
-                  new FixedMillisecond(activeTime);
-              ts.addOrUpdate(thisTimeStamp, dataPoint);
-              //System.out.println(activeTime+"\t("+interval+")");
-              activeTime += interval;
-              //System.out.println(activeTime);
-            } 
           }
-
+        
         } catch (EOFException e) {
           break;
         }
-        
       }
       
       TimeSeries testAgainst = TimeSeriesHelper.getTimeSeries(filename1);
