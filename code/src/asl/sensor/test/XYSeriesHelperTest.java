@@ -12,16 +12,18 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 import org.junit.Test;
 
+import asl.sensor.DataBlock;
 import asl.sensor.DataSeriesHelper;
 import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
 import edu.iris.dmc.seedcodec.UnsupportedCompressionType;
+import edu.sc.seis.seisFile.mseed.DataHeader;
 import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
@@ -128,75 +130,110 @@ public class XYSeriesHelperTest {
   @Test
   public void inputFileReaderCreatesXYSeries() {
     DataInput dis;
-    XYSeries ts = new XYSeries(fileID);
+    DataBlock db = null;
+    List<Number> data = new ArrayList<Number>();
+    
     try {
       dis = new DataInputStream( 
             new BufferedInputStream( 
             new FileInputStream(filename1) ) );
       while ( true ) {
-       
-        try{
-          // going to assume this file's data is continuous. isn't it?
+
+        try {
+          long interval = 0L;
           SeedRecord sr = SeedRecord.read(dis,4096);
           if(sr instanceof DataRecord) {
-            
             DataRecord dr = (DataRecord)sr;
+            DataHeader dh = dr.getHeader();
+            if (db == null){
+              StringBuilder fileID = new StringBuilder();
+              fileID.append(dh.getStationIdentifier() + "_");
+              fileID.append(dh.getLocationIdentifier() + "_");
+              fileID.append(dh.getChannelIdentifier());
+              db = new DataBlock(data, interval, fileID.toString(), -1);
+            }
+
+
+            byte af = dh.getActivityFlags();
+            byte correctionFlag = 0b00000010; // is there a time correction?
+            int correction = 0;
+            if ( (af & correctionFlag) == 0 ) {
+              correction = dh.getTimeCorrection();
+            }
+
+            long start = dh.getStartBtime()
+                .convertToCalendar()
+                .getTimeInMillis() + correction;
+
+            if(db.getStartTime() < 0) {
+              db.setStartTime(start);
+            }
+
+            int fact = dh.getSampleRateFactor();
+            int mult = dh.getSampleRateMultiplier();
+
+            final long ONE_HZ_INTERVAL = DataSeriesHelper.ONE_HZ_INTERVAL;
             
-            int fact = dr.getHeader().getSampleRateFactor();
-            int mult = dr.getHeader().getSampleRateMultiplier();
-            long interval = DataSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
-            
-            long startMilli = dr.getHeader()
-                                 .getStartBtime()
-                                 .convertToCalendar()
-                                 .getTimeInMillis();
-            
-            long activeTime = startMilli;
-            
+            if( fact > 0 && mult > 0) {
+              interval = ONE_HZ_INTERVAL / (fact * mult);
+            } else if (fact > 0 && mult < 0) {
+              interval = Math.abs( (ONE_HZ_INTERVAL * mult) / fact);
+            } else if (fact < 0 && mult > 0) {
+              interval = Math.abs( (ONE_HZ_INTERVAL * fact) / mult);
+            } else {
+              interval = ONE_HZ_INTERVAL * fact * mult;
+            }
+
+            db.setInterval(interval);
+
             DecompressedData decomp = dr.decompress();
-                        
+
             // get the original datatype of the series (loads data faster)
+            // otherwise the decompressed data gets converted (cloned) as
+            // the other type instead
             int dataType = decomp.getType();
-            // System.out.println(decomp.getTypeString());
-            
-            // no easy way to do this...
-            
+
+            // This is probably the best way to do this since
+            // we have to add each point individually anyway
+            // and converting between types for 
+
+
+
             switch (dataType) {
             case B1000Types.INTEGER:
-              for (float dataPoint : decomp.getAsInt() ) {
-                ts.addOrUpdate(activeTime, dataPoint);
-                activeTime += interval;
+              int[] decomArrayInt = decomp.getAsInt();
+              for (int dataPoint : decomArrayInt ) {
+                data.add(dataPoint);
               }
               break;
             case B1000Types.FLOAT:
-              for (float dataPoint : decomp.getAsFloat() ) {
-                ts.addOrUpdate(activeTime, dataPoint);
-                activeTime += interval;
+              float[] decomArrayFlt = decomp.getAsFloat();
+              for (float dataPoint : decomArrayFlt ) {
+                data.add(dataPoint);
               }
               break;
             case B1000Types.SHORT:
-              for (short dataPoint : decomp.getAsShort() ) {
-                ts.addOrUpdate(activeTime, dataPoint);
-                activeTime += interval;
+              short[] decomArrayShr = decomp.getAsShort();
+              for (short dataPoint : decomArrayShr ) {
+                data.add(dataPoint);
               }
               break;
-            default: // assume default is double
-              for (double dataPoint : decomp.getAsDouble() ) {
-                ts.addOrUpdate(activeTime, dataPoint);
-                activeTime += interval;
+            default:
+              double[] decomArrayDbl = decomp.getAsDouble();
+              for (double dataPoint : decomArrayDbl ) {
+                data.add(dataPoint);
               }
               break;
             }
-
           }
-        
-        } catch (EOFException e) {
+        } catch(EOFException e) {
           break;
         }
+        
       }
       
-      XYSeries testAgainst = DataSeriesHelper.getXYSeries(filename1);
-      assertEquals( ts.getItemCount(), testAgainst.getItemCount() );
+      DataBlock testAgainst = DataSeriesHelper.getXYSeries(filename1);
+      assertEquals( db.getData().size(), testAgainst.getData().size() );
       
     } catch (FileNotFoundException e) {
       assertNull(e);

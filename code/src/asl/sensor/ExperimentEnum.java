@@ -10,10 +10,10 @@ public enum ExperimentEnum {
   // if adding a new test to this, make sure to also create a new extender for
   // experiment and a corresponding constructor call in experimentfactory
   
+  NOISE ("Self-noise"),
   ORTHO ("Orthogonality"),
-  RGAIN ("Relative gain"),
-  NOISE ("Self-noise");
-  
+  RGAIN ("Relative gain");
+
   private String name;
   
   ExperimentEnum(String name) {

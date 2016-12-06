@@ -6,35 +6,59 @@ import org.jfree.data.xy.XYSeries;
 
 public class DataBlock {
   
-  List<Number> data;
-  long interval;
+  private List<Number> data;
+  private long interval;
   String name;
-  long startTime;
+  private long startTime;
   
   public DataBlock
         (List<Number> dataIn, long intervalIn, String nameIn, long timeIn) {
-    data = dataIn;
-    interval = intervalIn;
+    setData(dataIn);
+    setInterval(intervalIn);
     name = nameIn;
-    startTime = timeIn;
+    setStartTime(timeIn);
   }
   
   public DataBlock(DataBlock in) {
-    interval = in.interval;
-    data = in.data;
+    setInterval(in.getInterval());
+    setData(in.getData());
     name = in.name;
-    startTime = in.startTime;
+    setStartTime(in.getStartTime());
   }
   
   public XYSeries toXYSeries() {
     XYSeries out = new XYSeries(name);
-    long thisTime = startTime;
-    for (Number point : data) {
+    long thisTime = getStartTime();
+    for (Number point : getData()) {
       out.add(thisTime, point);
-      thisTime += interval;
+      thisTime += getInterval();
     }
     
     return out;
+  }
+
+  public long getStartTime() {
+    return startTime;
+  }
+
+  public void setStartTime(long startTime) {
+    this.startTime = startTime;
+  }
+
+  public long getInterval() {
+    return interval;
+  }
+
+  public void setInterval(long interval) {
+    this.interval = interval;
+  }
+
+  public List<Number> getData() {
+    return data;
+  }
+
+  public void setData(List<Number> data) {
+    this.data = data;
   }
   
   

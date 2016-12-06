@@ -24,15 +24,11 @@ import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
 public class DataSeriesHelper {
-  
-  // TODO: 2 slow 4 me, need to fix that
 
   public final static long ONE_HZ_INTERVAL = 1000000L;
   public final static double ONE_HZ = 1.0;
   
   public static DataBlock getXYSeries(String filename) {
-    
-    // TODO: what can we do to make this faster?
     
     DataInputStream dis;
     // XYSeries xys = null;
@@ -70,8 +66,8 @@ public class DataSeriesHelper {
                            .convertToCalendar()
                            .getTimeInMillis() + correction;
             
-            if(db.startTime < 0) {
-              db.startTime = start;
+            if(db.getStartTime() < 0) {
+              db.setStartTime(start);
             }
             
             int fact = dh.getSampleRateFactor();
@@ -87,7 +83,7 @@ public class DataSeriesHelper {
               interval = ONE_HZ_INTERVAL * fact * mult;
             }
             
-            db.interval = interval;
+            db.setInterval(interval);
             
             DecompressedData decomp = dr.decompress();
 
@@ -152,7 +148,7 @@ public class DataSeriesHelper {
       e.printStackTrace();
     }
     
-    db.data = data;
+    db.setData(data);
     
     return db;
   }
