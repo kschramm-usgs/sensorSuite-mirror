@@ -49,16 +49,38 @@ public class DataSeriesHelper {
               xys = new XYSeries(fileID.toString());
             }
             
-            // TODO: do we need a check that file datarecords are all contiguous?
+            
+            byte af = dh.getActivityFlags();
+            byte correctionFlag = 0b00000010; // is there a time correction?
+            byte qf = dh.getDataQualityFlags();
+            byte glitchFlag = 0b00001000; // does the record have errors?
+            if( ( qf & glitchFlag) != 0) {
+              continue;
+            }
+            int correction = 0;
+            if ( (af & correctionFlag) == 0 ) {
+              correction = dh.getTimeCorrection();
+            }
+
             long start = dh.getStartBtime()
                            .convertToCalendar()
-                           .getTimeInMillis();
+                           .getTimeInMillis() + correction;
             long active = start;
             
             int fact = dh.getSampleRateFactor();
             int mult = dh.getSampleRateMultiplier();
             
-            long interval = ONE_HZ_INTERVAL*mult/fact;
+            long interval; // mult inverse of sample rate
+            
+            if( fact > 0 && mult > 0) {
+              interval = ONE_HZ_INTERVAL / (fact * mult);
+            } else if (fact > 0 && mult < 0) {
+              interval = Math.abs( (ONE_HZ_INTERVAL * mult) / fact);
+            } else if (fact < 0 && mult > 0) {
+              interval = Math.abs( (ONE_HZ_INTERVAL * fact) / mult);
+            } else {
+              interval = ONE_HZ_INTERVAL * fact * mult;
+            }
             
             DecompressedData decomp = dr.decompress();
 
