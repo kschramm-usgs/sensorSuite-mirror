@@ -36,7 +36,7 @@ public class MainWindow extends JPanel implements ActionListener {
   
   
   private void resetTabPlots() {
-    XYSeriesCollection tsc = dataBox.getData();
+    DataBlock[] tsc = dataBox.getData();
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
       ep.updateData(tsc);
@@ -59,7 +59,7 @@ public class MainWindow extends JPanel implements ActionListener {
     tabbedPane = new JTabbedPane();
     
     for( ExperimentEnum exp : ExperimentEnum.values() ){
-      JPanel tab = new ExperimentPanel(exp, null);
+      JPanel tab = new ExperimentPanel(exp);
       tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
       tabbedPane.addTab( exp.getName(), tab );
     }

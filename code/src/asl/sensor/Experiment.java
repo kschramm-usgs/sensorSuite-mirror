@@ -7,20 +7,21 @@ public abstract class Experiment {
   // defines template pattern for each type of test, given by backend
   // each test returns new (set of) timeseries data from the input data
   
-  // TODO: throw exception if dataIn not same size as FILE_COUNT?
+  // TODO: include axis scale definitions constructed along with axis titles
+  // (i.e., logarithmic, etc.)
   
   protected XYSeriesCollection xySeriesData;
   protected String xAxisTitle, yAxisTitle;
   
-  public Experiment(XYSeriesCollection dataIn) {
-    xySeriesData = backend(dataIn);
+  public Experiment() {
+    
   }
   
   public XYSeriesCollection getData(){
     return xySeriesData;
   }
   
-  public void setData(XYSeriesCollection tsc) {
+  public void setData(DataBlock[] tsc) {
     xySeriesData = backend(tsc);
   }
   
@@ -33,6 +34,6 @@ public abstract class Experiment {
   }
   
   // java don't allow no static methods 'round here
-  abstract XYSeriesCollection backend(XYSeriesCollection tsc);
+  abstract XYSeriesCollection backend(DataBlock[] tsc);
   
 }

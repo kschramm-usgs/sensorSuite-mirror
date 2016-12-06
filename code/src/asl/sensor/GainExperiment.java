@@ -4,16 +4,16 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class GainExperiment extends Experiment {
 
-  public GainExperiment(XYSeriesCollection dataIn) {
-    super(dataIn);
+  public GainExperiment() {
+    super();
     xAxisTitle = "Gain X Axis (units)";
     yAxisTitle = "Gain Y Axis (units)";
   }
 
   @Override
-  XYSeriesCollection backend(XYSeriesCollection dataIn) {
+  XYSeriesCollection backend(DataBlock[] dataIn) {
     // TODO Auto-generated method stub
-    return dataIn;
+    return null;
   }
 
 }

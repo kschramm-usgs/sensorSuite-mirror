@@ -1,7 +1,6 @@
 package asl.sensor;
 
 import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 
 public class DataStore {
 
@@ -27,18 +26,11 @@ public class DataStore {
      
   }
   
-  public XYSeriesCollection getData() {
-    XYSeriesCollection xysc = new XYSeriesCollection();
-    
-    for (XYSeries xys : outToPlots) {
-      // TimeSeries reduced = TimeSeriesHelper.reduce(ts);
-      xysc.addSeries(xys);
-    }
-    
-    return xysc;
+  public DataBlock[] getData() {
+    return dataBlockArray;
   }
   
-  public XYSeries getSeries(int idx) {
+  public XYSeries getPlotSeries(int idx) {
     return outToPlots[idx];
   }
 }

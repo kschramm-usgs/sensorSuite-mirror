@@ -22,7 +22,6 @@ import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
@@ -60,7 +59,7 @@ public class DataPanel extends JPanel implements ActionListener {
           "",
           "Time",
           "Seismic reading",
-          new XYSeriesCollection( ds.getSeries(i) ),
+          new XYSeriesCollection( ds.getPlotSeries(i) ),
           PlotOrientation.VERTICAL,
           false, false, false);
       
@@ -115,7 +114,7 @@ public class DataPanel extends JPanel implements ActionListener {
     
   }
   
-  public XYSeriesCollection getData() { 
+  public DataBlock[] getData() { 
     
     return ds.getData();
 

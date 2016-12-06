@@ -4,16 +4,16 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class OrthogonalExperiment extends Experiment {
 
-  public OrthogonalExperiment(XYSeriesCollection dataIn) {
-    super(dataIn);
+  public OrthogonalExperiment() {
+    super();
     xAxisTitle = "Ortho X Axis (units)";
     yAxisTitle = "Ortho Y Axis (units)";
   }
 
   @Override
-  XYSeriesCollection backend(XYSeriesCollection dataIn) {
+  XYSeriesCollection backend(DataBlock[] dataIn) {
     // TODO Auto-generated method stub
-    return dataIn;
+    return null;
   }
 
 }

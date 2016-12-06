@@ -53,11 +53,12 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     return chart;
   }
   
-  public ExperimentPanel(ExperimentEnum exp, XYSeriesCollection tsc) {
+  // TODO: replace with 
+  public ExperimentPanel(ExperimentEnum exp) {
     
     expType = exp;
-    // TODO: reset with actual input data
-    expResult = ExperimentFactory.createExperiment(exp, tsc);
+
+    expResult = ExperimentFactory.createExperiment(exp);
     
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     
@@ -75,7 +76,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
   }
   
-  public void updateData(XYSeriesCollection tsc) {
+  public void updateData(DataBlock[] tsc) {
     
     expResult.setData(tsc);
     

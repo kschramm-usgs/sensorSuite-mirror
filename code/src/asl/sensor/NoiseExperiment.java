@@ -4,16 +4,20 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class NoiseExperiment extends Experiment {
 
-  public NoiseExperiment(XYSeriesCollection dataIn) {
-    super(dataIn);
+  public NoiseExperiment() {
+    super();
     xAxisTitle = "Period (s)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
   }
 
   @Override
-  XYSeriesCollection backend(XYSeriesCollection dataIn) {
+  XYSeriesCollection backend(DataBlock[] dataIn) {
     // TODO Auto-generated method stub
-    return dataIn;
+    return null;
+  }
+  
+  private void calcCrossPower(){
+    
   }
 
 }
