@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -17,10 +18,13 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.CategoryPlot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -33,6 +37,10 @@ public class DataPanel extends JPanel implements ActionListener {
   
   DataStore ds;
   private ChartPanel[] chartPanels = new ChartPanel[DataStore.FILE_COUNT];
+  private Color[] defaultColor = {
+          ChartColor.LIGHT_RED, 
+          ChartColor.LIGHT_BLUE, 
+          ChartColor.LIGHT_GREEN };
   private JButton save;
   private JFileChooser fc;
   private JPanel allCharts; // parent of chartpanels, used for image saving
@@ -61,7 +69,7 @@ public class DataPanel extends JPanel implements ActionListener {
       Dimension dim = chartPanels[i].getPreferredSize();
       chartPanels[i].setPreferredSize(
           new Dimension( (int) dim.getWidth(), (int) dim.getHeight()/2));
-      chartPanels[i].setMouseZoomable(false);
+      chartPanels[i].setMouseZoomable(true);
       
       allCharts.add(chartPanels[i]);
       
@@ -91,15 +99,19 @@ public class DataPanel extends JPanel implements ActionListener {
     
     XYSeries ts = ds.setData(idx, filepath);
     
-    JFreeChart chart = ChartFactory.createTimeSeriesChart(
+    JFreeChart chart = ChartFactory.createXYLineChart(
         ts.getKey().toString(),
         "Time",
         "Seismic reading",
         new XYSeriesCollection(ts),
+        PlotOrientation.VERTICAL,
         false, false, false);
     
+    XYPlot xyp = (XYPlot) chart.getPlot();
+    xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+    
     chartPanels[idx].setChart(chart);
-    chartPanels[idx].setMouseZoomable(false);
+    chartPanels[idx].setMouseZoomable(true);
     
   }
   

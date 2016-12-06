@@ -6,26 +6,31 @@ import org.jfree.data.xy.XYSeriesCollection;
 public class DataStore {
 
   final static int FILE_COUNT = 3;
-  XYSeries[] xySeriesArray;
+  DataBlock[] dataBlockArray;
+  XYSeries[] outToPlots;
   
   public DataStore(){
-   xySeriesArray = new XYSeries[FILE_COUNT];
+   dataBlockArray = new DataBlock[FILE_COUNT];
+   outToPlots = new XYSeries[FILE_COUNT];
    for (int i = 0; i < FILE_COUNT; ++i) {
-     xySeriesArray[i] = new XYSeries("(EMPTY)" + i);
+     outToPlots[i] = new XYSeries("(EMPTY) " + i);
    }
   }
   
   public XYSeries setData(int idx, String filepath) {
-    XYSeries xy = DataSeriesHelper.getXYSeries(filepath);
-    xySeriesArray[idx] = xy;
-    return xy;
+    DataBlock xy = DataSeriesHelper.getXYSeries(filepath);
+    
+    dataBlockArray[idx] = xy;
+    outToPlots[idx] = xy.toXYSeries();
+    System.out.println(outToPlots[idx].getX(0)+","+outToPlots[idx].getY(0));
+    return outToPlots[idx];
      
   }
   
   public XYSeriesCollection getData() {
     XYSeriesCollection xysc = new XYSeriesCollection();
     
-    for (XYSeries xys : xySeriesArray) {
+    for (XYSeries xys : outToPlots) {
       // TimeSeries reduced = TimeSeriesHelper.reduce(ts);
       xysc.addSeries(xys);
     }
@@ -34,6 +39,6 @@ public class DataStore {
   }
   
   public XYSeries getSeries(int idx) {
-    return xySeriesArray[idx];
+    return outToPlots[idx];
   }
 }
