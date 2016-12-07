@@ -28,7 +28,7 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
-public class XYSeriesHelperTest {
+public class DataSeriesHelperTest {
 
   public String station = "TST5";
   public String location = "00";

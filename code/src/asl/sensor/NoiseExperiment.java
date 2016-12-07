@@ -1,10 +1,21 @@
 package asl.sensor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
 import org.jfree.data.xy.XYSeriesCollection;
 
+/**
+ * Produces the data for a self-noise test. Calculates PSD to get cross-power.
+ * Based on code in the seedscan timeseries package, see
+ * https://github.com/usgs/seedscan/tree/master/src/main/java/asl/timeseries
+ * @author akearns, jholland 
+ *
+ */
 public class NoiseExperiment extends Experiment {
 
   /**
@@ -28,20 +39,161 @@ public class NoiseExperiment extends Experiment {
    */
   @Override
   XYSeriesCollection backend(DataBlock[] dataIn) {
+    XYSeriesCollection plottable = new XYSeriesCollection();
     // TODO Auto-generated method stub
     for (DataBlock data : dataIn) {
       if( data == null ||  data.getData().size() == 0 ) {
         return new XYSeriesCollection();
         // don't actually do any plotting until we have data for everything
       }
+      
+      
+      // first, get crosspower
+      
+      PSDStruct powSpectResult = powerSpectralDensity(data);
+      Complex[] density = powSpectResult.getPSD();
+      double[] freqs = powSpectResult.getFreqs();
+      
+      // next we need to get the instrument response for acceleration
+      // and remove that from the PSD
+      
     }
     
     return null;
   }
   
-  public static void calcCrossPower(DataBlock dataIn) {
+  /**
+   * Helper function to calculate power spectral density
+   * @param dataIn DataBlock with relevant time series data
+   * @return A structure with two arrays: an array of Complex numbers 
+   * representing the PSD result, and an array of doubles representing the
+   * frequencies of the PSD.
+   */
+  public PSDStruct powerSpectralDensity(DataBlock dataIn) {
     
+    // divide into windows of 1/4, moving up 1/16 of the data at a time
     
+    int range = dataIn.getData().size()/4;
+    int slider = range/4;
+    
+    // period is 1/sample rate in seconds
+    // since the interval data is just that multiplied by a large number
+    // let's delete it by that large number to get our period
+    
+    // shouldn't need to worry about a cast here
+    double period = 1.0 / DataSeriesHelper.ONE_HZ_INTERVAL;
+    period *= dataIn.getInterval();
+    
+    int padding = 2;
+    while (padding < range) {
+      padding *= 2;
+    }
+    
+    int singleSide = padding / 2 + 1;
+    double deltaFreq = 1. / (padding * period);
+    
+    Complex[] powSpectDens = new Complex[singleSide];
+    double wss = 0;
+    
+    int segsProcessed = 0;
+    int rangeStart = 0;
+    int rangeEnd = range;
+    
+    for (int i = 0; i < powSpectDens.length; ++i) {
+      powSpectDens[i] = Complex.ZERO;
+    }
+    
+    while ( rangeEnd <= dataIn.getData().size() ) {
+      
+      Complex[] fftResult = new Complex[singleSide]; // first half of FFT reslt
+      
+      // give us a new list we can modify to get the data of
+      List<Number> dataInRange = 
+          new ArrayList<Number>(dataIn.getData().subList(rangeStart, rangeEnd));
+      
+      
+      // demean and detrend work in-place on the list
+      demean(dataInRange);
+      detrend(dataInRange);
+      
+      wss = cosineTaper(dataInRange, TAPER_WIDTH);
+      
+      // double arrays initialized with zeros, set as a power of two for FFT
+      // (i.e., effectively pre-padded on initialization)
+      double[] toFFT = new double[padding];
+      for (int i = 0; i < dataInRange.size(); ++i) {
+        // no point in using arraycopy -- must make sure each Number's a double
+        toFFT[i] = dataInRange.get(i).doubleValue();
+      }
+      
+      FastFourierTransformer fft = 
+          new FastFourierTransformer(DftNormalization.STANDARD);
+
+
+      Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+      
+      // use arraycopy now (as it's fast) to get the first half of the fft
+      System.arraycopy(frqDomn, 0, fftResult, 0, fftResult.length);
+      
+      for (int i = 0; i < singleSide; ++i) {
+        powSpectDens[i] = 
+            powSpectDens[i].add( 
+                fftResult[i].multiply( 
+                    fftResult[i].conjugate() ) );
+      }
+      
+      ++segsProcessed;
+      rangeStart  += slider;
+      rangeEnd    += slider;
+      
+    }
+    
+    // normalization time!
+    
+    double psdNormalization = 2.0 * period / padding;
+    double windowCorrection = wss / (double) range;
+    // it only uses the last value of wss, but that was how the original
+    // code was
+    
+    psdNormalization /= windowCorrection;
+    psdNormalization /= segsProcessed; // NOTE: divisor here should be 13
+    
+    double[] frequencies = new double[singleSide];
+    
+    for (int i = 0; i < singleSide; ++i) {
+      powSpectDens[i] = powSpectDens[i].multiply(psdNormalization);
+      frequencies[i] = i * deltaFreq;
+    }
+    
+    // do smoothing over neighboring frequencies; values taken from 
+    // asl.timeseries' PSD function
+    int nSmooth = 11, nHalf = 5;
+    Complex[] psdCFSmooth = new Complex[singleSide];
+    
+    int iw = 0;
+    
+    for (iw = 0; iw < nHalf; ++iw) {
+      psdCFSmooth[iw] = powSpectDens[iw];
+    }
+    
+    // iw should be icenter of nsmooth point window
+    for (; iw < singleSide - nHalf; ++iw){
+      int k1 = iw - nHalf;
+      int k2 = iw + nHalf;
+      
+      Complex sumC = Complex.ZERO;
+      for (int k = k1; k < k2; ++k) {
+        sumC = sumC.add(powSpectDens[k]);
+      }
+      psdCFSmooth[iw] = sumC.divide((double) nSmooth);
+    }
+    
+    // copy remaining into smoothed array
+    for (; iw < singleSide; ++iw) {
+      psdCFSmooth[iw] = powSpectDens[iw];
+    }
+    
+    return new PSDStruct(psdCFSmooth, frequencies);
     
   }
   
@@ -53,8 +205,6 @@ public class NoiseExperiment extends Experiment {
   public static void demean(List<Number> dataSet) {
     
     // I'm always getting the demeaning tasks, huh?
-    
-    // TODO: test that the dataset formed by this is still valid
     
     if(dataSet.size() == 0) return; // shouldn't happen but just in case
     
@@ -68,10 +218,11 @@ public class NoiseExperiment extends Experiment {
     
     for(int i = 0; i < dataSet.size(); ++i) {
       // iterate over index rather than for-each cuz we must replace data
+      // ugly syntax because numeric data types are immutable
       dataSet.set(i, dataSet.get(i).doubleValue() - mean);
     }
     
-    // test will show if we need to return or not or if this works in-place
+    // test shows this works as in-place method
   }
   
   /**
@@ -81,8 +232,6 @@ public class NoiseExperiment extends Experiment {
    */
   public static void detrend(List<Number> dataSet) {
     
-    // TODO: also test this
-    
     double sumX = 0.0;
     double sumY = 0.0;
     double sumXSqd = 0.0;
@@ -90,17 +239,23 @@ public class NoiseExperiment extends Experiment {
     
     for (int i = 0; i < dataSet.size(); ++i) {
       sumX += (double) i;
-      sumXSqd += (double) i * i;
+      sumXSqd += (double) i * (double) i;
       double value = dataSet.get(i).doubleValue();
-      sumXY += value * i;
+      sumXY += value * (double) i;
       sumY += value;
     }
     
-    double del = sumXSqd - (sumX * sumX);
+    // brackets here so you don't get confused thinking this should be
+    // algebraic division (in which case we'd just factor out the size term)
+    // 
     
-    double slope = (sumXY - (sumX * sumY) ) / (del);
+    double del = sumXSqd - ( sumX * sumX / dataSet.size() );
     
-    double yOffset = ( (sumXSqd * sumY) - (sumX * sumXY) ) / (del);
+    double slope = sumXY - ( sumX * sumY / dataSet.size() );
+    slope /= del;
+    
+    double yOffset = (sumXSqd * sumY) - (sumX * sumXY);
+    yOffset /= del * dataSet.size();
     
     for (int i = 0; i < dataSet.size(); ++i) {
       dataSet.set(i, dataSet.get(i).doubleValue() - ( (slope * i) + yOffset) );
@@ -113,9 +268,9 @@ public class NoiseExperiment extends Experiment {
    * @param dataSet The dataset to have the taper applied to.
    * @return Value corresponding to power loss from application of taper.
    */
-  public static double cosineTaper(List<Number> dataSet) {
+  public static double cosineTaper(List<Number> dataSet, double taperW) {
     
-    double ramp = TAPER_WIDTH * dataSet.size();
+    double ramp = taperW * dataSet.size();
     double taper;
     double Wss = 0.0; // represents power loss
     
@@ -127,10 +282,30 @@ public class NoiseExperiment extends Experiment {
       Wss += 2.0 * taper * taper;
     }
     
+    Wss += ( dataSet.size() - (2*ramp) );
+    
     return Wss;
   }
   
-  
+  private class PSDStruct {
+    
+    Complex[] PSD;
+    double[] freqs;
+    
+    public PSDStruct(Complex[] inPSD, double[] inFreq) {
+      PSD = inPSD;
+      freqs = inFreq;
+    }
+    
+    public double[] getFreqs() {
+      return freqs;
+    }
+    
+    public Complex[] getPSD() {
+      return PSD;
+    }
+    
+  }
   
   
 }
