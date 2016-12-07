@@ -41,7 +41,15 @@ public class DataSeriesHelper {
   
   /**
    * Reads in the time series data from a miniSEED file and produces it as a
-   * list of objects TODO continue writing this
+   * list of Java numerics, which can be shorts, floats, doubles, or longs,
+   * reflecting the format of the data in the file which can be any of these.
+   * This is packaged into a data structure that also includes the file's
+   * metadata (station, channel, etc.) and the start time and period between
+   * samples.
+   * Some of this code is based on the miniseed to float array example given
+   * in the repository for the included seisFile miniSEED parser library;
+   * see the src/.../examples folder under
+   * https://github.com/crotwell/seisFile/ for more
    * @param filename The full path to the file to be loaded in
    * @return A structure containing the time series and metadata for the file
    */

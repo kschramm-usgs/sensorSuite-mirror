@@ -7,6 +7,9 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class NoiseExperiment extends Experiment {
 
+  /**
+   * Specifies the width of the cosine taper function used in windowing
+   */
   private static final double TAPER_WIDTH = 0.10;
   
   /**
