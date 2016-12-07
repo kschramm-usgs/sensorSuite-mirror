@@ -27,6 +27,12 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+
+/**
+ * Panel used to hold the plots for the files taken in as input
+ * @author akearns
+ *
+ */
 public class DataPanel extends JPanel implements ActionListener {
 
   /**
@@ -42,8 +48,14 @@ public class DataPanel extends JPanel implements ActionListener {
           ChartColor.LIGHT_GREEN };
   private JButton save;
   private JFileChooser fc;
-  private JPanel allCharts; // parent of chartpanels, used for image saving
+  private JPanel allCharts; // parent of the chartpanels, used for image saving
   
+  
+  /**
+   * Creates a new data panel -- instantiates each chart, to be populated with
+   * data when a file is loaded in. Also creates a save button for writing all
+   * the inputted data plots into a single PNG file.
+   */
   public DataPanel() {
     
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
@@ -94,6 +106,12 @@ public class DataPanel extends JPanel implements ActionListener {
     
   }
   
+  /**
+   * Takes a loaded and converted miniSEED time series and plots it
+   * by calling the underlying DataStore
+   * @param idx Index of chart to be loaded to (0 to DataStore.FILE_COUNT)
+   * @param filepath The full address of the file to be loaded in
+   */
   public void setData(int idx, String filepath) { 
     
     XYSeries ts = ds.setData(idx, filepath);
@@ -114,12 +132,22 @@ public class DataPanel extends JPanel implements ActionListener {
     
   }
   
+  /**
+   * Returns the underlying DataStore's image, to be fed into experiments
+   * for processing (the results of which will be plotted)
+   * @return An array of DataBlocks (time series and metadata), indexed by plot
+   *         order.
+   */
   public DataBlock[] getData() { 
     
     return ds.getData();
 
   }
 
+  /**
+   * Handles saving this panel's plots to file (PNG image)
+   * when the save button is clicked.
+   */
   @Override
   public void actionPerformed(ActionEvent e) {
 

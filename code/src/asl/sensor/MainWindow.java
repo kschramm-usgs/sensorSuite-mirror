@@ -18,9 +18,16 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
-import org.jfree.data.xy.XYSeriesCollection;
 
+// TODO: include a button for saving plots to PDF somehow
+// (double-check on the way that the PDF should be laid out
 
+/**
+ * Main window of the sensor test program and the program's launcher
+ * Handles GUI for getting user-specified files and showing data plots
+ * @author akearns
+ *
+ */
 public class MainWindow extends JPanel implements ActionListener {
   
   /**
@@ -44,6 +51,12 @@ public class MainWindow extends JPanel implements ActionListener {
     }
   }
   
+  /**
+   * Creates the main window of the program when called
+   * (Three main panels: the top panel for displaying the results
+   * of sensor tests; the lower panel for displaying plots of raw data from
+   * miniSEED files; the side panel for most file-IO operations
+   */
   public MainWindow() {
     
     super( new BorderLayout() );
@@ -96,6 +109,12 @@ public class MainWindow extends JPanel implements ActionListener {
 
   }
   
+  /**
+   * Instantiate a button used to load in a file
+   * @param button The button that, when clicked, loads a file
+   * @param text Filename (defaults to NO FILE LOADED when created)
+   * @param panel The (side) panel that holds the button
+   */
   private static void initFile(JButton button, JLabel text, JPanel panel){
     button.setAlignmentX(SwingConstants.CENTER);
     
@@ -106,6 +125,10 @@ public class MainWindow extends JPanel implements ActionListener {
     panel.add(text);
   }
   
+  /**
+   * Starts the program -- instantiate the top-level GUI
+   * @param args (Any parameters fed in on command line are currently ignored)
+   */
   public static void main(String[] args) {
     //Schedule a job for the event dispatch thread:
     //creating and showing this application's GUI.
@@ -120,6 +143,9 @@ public class MainWindow extends JPanel implements ActionListener {
   }
   
 
+  /**
+   * Loads the main window for the program on launch
+   */
   private static void createAndShowGUI() {
     JFrame frame = new JFrame("Sensor Tests");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -130,6 +156,9 @@ public class MainWindow extends JPanel implements ActionListener {
     frame.setVisible(true);
   }
   
+  /**
+   * Handles actions when a side-panel button is clicked (file-IO)
+   */
   @Override
   public void actionPerformed(ActionEvent e) {
     // TODO: add more checks here as we add components

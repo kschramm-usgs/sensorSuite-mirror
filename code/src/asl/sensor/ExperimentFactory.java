@@ -1,11 +1,18 @@
 package asl.sensor;
 
-import org.jfree.data.xy.XYSeriesCollection;
-
+/**
+ * Simple factory method for specifying a type of sensor test to calculate
+ * @author akearns
+ *
+ */
 public class ExperimentFactory {
   
-  // simple factory method for creating test data generators
-
+  /**
+   * Instantiates an Experiment from which the ExperimentPanel generates data
+   * based on the type of Experiment given by the enum
+   * @param exp Type of experiment (see the enum for details on kinds)
+   * @return An implementation of the Experiment interface
+   */
   public static Experiment createExperiment(
       ExperimentEnum exp){
     switch(exp){

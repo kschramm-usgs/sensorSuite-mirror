@@ -2,12 +2,25 @@ package asl.sensor;
 
 import org.jfree.data.xy.XYSeries;
 
+/**
+ * Holds the inputted data from miniSEED files both as a simple struct
+ * (see DataBlock) and as a plottable format for the DataPanel
+ * @author akearns
+ *
+ */
 public class DataStore {
 
+  /**
+   * Defines the maximum number of plots to be shown
+   */
   final static int FILE_COUNT = 3;
   DataBlock[] dataBlockArray;
   XYSeries[] outToPlots;
   
+  /**
+   * Instantiate the collections, including empty datasets to be sent to
+   * charts for plotting (see DataPanel)
+   */
   public DataStore(){
    dataBlockArray = new DataBlock[FILE_COUNT];
    outToPlots = new XYSeries[FILE_COUNT];
@@ -16,6 +29,12 @@ public class DataStore {
    }
   }
   
+  /**
+   * Takes a loaded miniSEED data series and converts it to a plottable format
+   * @param idx The plot (range 0 to FILE_COUNT) to be given new data
+   * @param filepath Full address of file to be loaded in
+   * @return The miniSEED data, in a plottable format
+   */
   public XYSeries setData(int idx, String filepath) {
     DataBlock xy = DataSeriesHelper.getXYSeries(filepath);
     
@@ -26,10 +45,20 @@ public class DataStore {
      
   }
   
+  /**
+   * Returns the set of structures used to hold the loaded miniSeed data sets
+   * @return An array of DataBlocks (time series and metadata)
+   */
   public DataBlock[] getData() {
     return dataBlockArray;
   }
   
+  /**
+   * Returns the plottable format of the data held in the arrays at 
+   * the specified index
+   * @param idx Which of this structure's plottable series should be loaded
+   * @return The time series data at given index, to be sent to a chart
+   */
   public XYSeries getPlotSeries(int idx) {
     return outToPlots[idx];
   }

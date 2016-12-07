@@ -17,9 +17,12 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.time.TimeSeriesCollection;
-import org.jfree.data.xy.XYSeriesCollection;
 
+/**
+ * Panel used to display the data produced from a specified sensor test
+ * @author akearns
+ *
+ */
 public class ExperimentPanel extends JPanel implements ActionListener {
  
   private static final long serialVersionUID = -5591522915365766604L;
@@ -39,6 +42,12 @@ public class ExperimentPanel extends JPanel implements ActionListener {
   private Experiment expResult;
           // used to get the actual data from loaded-in files
   
+  /**
+   * Defines the type of test results this panel's chart will display
+   * @param expT The type of experiment (refer to the enum for valid types)
+   * @param expR The experiment to be performed
+   * @return A chart displaying the data from the performed experiment
+   */
   public static JFreeChart populateChart(ExperimentEnum expT, Experiment expR) {
     JFreeChart chart = ChartFactory.createXYLineChart(
         expT.getName(),
@@ -50,10 +59,17 @@ public class ExperimentPanel extends JPanel implements ActionListener {
         false, 
         false);
     
+    // TODO: selection of axes' scale based on how an experiment sets them
+    
     return chart;
   }
   
-  // TODO: replace with 
+  /**
+   * Generates a new ExperimentPanel from an enumerated type (as well as
+   * gathering the respective experiment backend from the simple factory).
+   * Includes a save button so the plotted data can be written to an image.
+   * @param exp Type of experiment that will be instantiated (see enum)
+   */
   public ExperimentPanel(ExperimentEnum exp) {
     
     expType = exp;
@@ -76,6 +92,11 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
   }
   
+  /**
+   * Used to propagate changes in data into the underlying experiment process.
+   * @param tsc The new data, in DataBlock format 
+   *            (List, startTime, name, interval [inverse of sample rate])
+   */
   public void updateData(DataBlock[] tsc) {
     
     expResult.setData(tsc);
@@ -86,6 +107,10 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     // setting the new chart is enough to update the plots
   }
 
+  /**
+   * Handle's saving this plot's chart to file (PNG image) 
+   * when the save button is clicked.
+   */
   @Override
   public void actionPerformed(ActionEvent e) {
     

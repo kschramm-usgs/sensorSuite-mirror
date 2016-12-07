@@ -23,11 +23,28 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
+/**
+ * Contains static methods for grabbing data from miniSEED files and
+ * @author akearns
+ *
+ */
 public class DataSeriesHelper {
 
+  /**
+   * Interval for data that has been sampled at 1 Hz in milliseconds
+   */
   public final static long ONE_HZ_INTERVAL = 1000000L;
+  /**
+   * Sample rate of a 1 Hz sample, in Hz, as a double (that is, 1.0)
+   */
   public final static double ONE_HZ = 1.0;
   
+  /**
+   * Reads in the time series data from a miniSEED file and produces it as a
+   * list of objects TODO continue writing this
+   * @param filename The full path to the file to be loaded in
+   * @return A structure containing the time series and metadata for the file
+   */
   public static DataBlock getXYSeries(String filename) {
     
     DataInputStream dis;
