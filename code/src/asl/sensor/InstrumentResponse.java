@@ -60,11 +60,11 @@ public class InstrumentResponse {
     return poles;
   }
   
-  private Unit getUnits() {
+  public Unit getUnits() {
     return unitType;
   }
   
-  private double getNormalization() {
+  public double getNormalization() {
     return normalization;
   }
   
@@ -106,7 +106,7 @@ public class InstrumentResponse {
           line = br.readLine();
           continue;
         } else {
-          // the components of each 
+          // the components of each line, assuming split by 2 or more spaces
           String[] words = line.split("[ ]{2,}");
           String hexIdentifier = words[0];
           
@@ -161,13 +161,13 @@ public class InstrumentResponse {
           case "B053F10-13":
             // these are the lists of response zeros, in order with index,
             // real (double), imaginary (double), & corresponding error terms
-            parseAndApplyComplex(words,zerosArr);
+            parseAndApplyComplex(line,zerosArr);
             break;
           case "B053F15-18":
             // as above but for poles
-            parseAndApplyComplex(words, polesArr);
+            parseAndApplyComplex(line, polesArr);
             break;
-          case "B058F43":
+          case "B058F03":
             // gain stage sequence number; again, full third word as int
             // this is used to map the gain value to an index
             gainStage = Integer.parseInt(words[2]);
@@ -182,12 +182,12 @@ public class InstrumentResponse {
           }
           
           line = br.readLine();
-        }
+        } // else
         
-        zeros = Arrays.asList(zerosArr);
-        poles = Arrays.asList(polesArr);
-        
-      }
+      } // end of file-read loop (EOF reached, line is null)
+      
+      zeros = Arrays.asList(zerosArr);
+      poles = Arrays.asList(polesArr);
       
       br.close();
     } catch (FileNotFoundException e) {
@@ -197,11 +197,17 @@ public class InstrumentResponse {
     
   }
   
-  private void parseAndApplyComplex(String[] words, Complex[] array) {
+  private void parseAndApplyComplex(String line, Complex[] array) {
+    // reparse the line. why are we doing this?
+    // if a number is negative, only one space between it and prev. number
+    // and the previous split operation assumed > 2 spaces between numbers
+    String[] words = line.split("[ ]{1,}");
+    System.out.println(Arrays.toString(words));
     // index 0 is the identifier for the field types
     // index 1 is where in the list this zero or pole is
     // index 2 is the real part, and index 3 the imaginary
     // indices 4 and 5 are error terms (ignored)
+    
     int index = Integer.parseInt(words[1]);
     double realPart = Double.parseDouble(words[2]);
     double imagPart = Double.parseDouble(words[3]);
