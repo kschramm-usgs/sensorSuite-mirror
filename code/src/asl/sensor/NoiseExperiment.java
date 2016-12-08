@@ -62,6 +62,10 @@ public class NoiseExperiment extends Experiment {
     return null;
   }
   
+  // TODO: move these signal processing functions into their own
+  // class -- or possibly even a new package that can be easily libraried?
+  // along with the DataSeriesHelper code
+  
   /**
    * Helper function to calculate power spectral density
    * @param dataIn DataBlock with relevant time series data
@@ -287,7 +291,13 @@ public class NoiseExperiment extends Experiment {
     return Wss;
   }
   
-  private class PSDStruct {
+  /**
+   * Holds the data returned from a power spectral density calculation
+   * (The PSD data (without response correction) and frequencies of the FFT)
+   * @author akearns
+   *
+   */
+  public class PSDStruct {
     
     Complex[] PSD;
     double[] freqs;
