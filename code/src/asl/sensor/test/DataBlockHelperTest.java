@@ -18,7 +18,7 @@ import java.util.List;
 import org.junit.Test;
 
 import asl.sensor.DataBlock;
-import asl.sensor.DataSeriesHelper;
+import asl.sensor.DataBlockHelper;
 import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
@@ -28,7 +28,7 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
-public class DataSeriesHelperTest {
+public class DataBlockHelperTest {
 
   public String station = "TST5";
   public String location = "00";
@@ -106,10 +106,10 @@ public class DataSeriesHelperTest {
           
           // checking the correct values for the intervals
           
-          double multOf1Hz = rate/DataSeriesHelper.ONE_HZ;
-          long inverse = DataSeriesHelper.ONE_HZ_INTERVAL/(long)multOf1Hz;
+          double multOf1Hz = rate/DataBlockHelper.ONE_HZ;
+          long inverse = DataBlockHelper.ONE_HZ_INTERVAL/(long)multOf1Hz;
           
-          long interval = DataSeriesHelper.ONE_HZ_INTERVAL*mult/fact;
+          long interval = DataBlockHelper.ONE_HZ_INTERVAL*mult/fact;
           
           assertEquals( inverse, interval);
           // System.out.println(interval);
@@ -172,7 +172,7 @@ public class DataSeriesHelperTest {
             int fact = dh.getSampleRateFactor();
             int mult = dh.getSampleRateMultiplier();
 
-            final long ONE_HZ_INTERVAL = DataSeriesHelper.ONE_HZ_INTERVAL;
+            final long ONE_HZ_INTERVAL = DataBlockHelper.ONE_HZ_INTERVAL;
             
             if( fact > 0 && mult > 0) {
               interval = ONE_HZ_INTERVAL / (fact * mult);
@@ -232,7 +232,7 @@ public class DataSeriesHelperTest {
         
       }
       
-      DataBlock testAgainst = DataSeriesHelper.getXYSeries(filename1);
+      DataBlock testAgainst = DataBlockHelper.getXYSeries(filename1);
       assertEquals( db.getData().size(), testAgainst.getData().size() );
       
     } catch (FileNotFoundException e) {

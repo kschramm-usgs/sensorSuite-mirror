@@ -21,8 +21,8 @@ public abstract class Experiment {
     return xySeriesData;
   }
   
-  public void setData(DataBlock[] tsc) {
-    xySeriesData = backend(tsc);
+  public void setData(DataStore ds) {
+    xySeriesData = backend(ds);
   }
   
   public String getXTitle() {
@@ -34,6 +34,6 @@ public abstract class Experiment {
   }
   
   // java don't allow no static methods 'round here
-  abstract XYSeriesCollection backend(DataBlock[] tsc);
+  abstract XYSeriesCollection backend(DataStore ds);
   
 }

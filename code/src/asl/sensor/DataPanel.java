@@ -138,9 +138,9 @@ public class DataPanel extends JPanel implements ActionListener {
    * @return An array of DataBlocks (time series and metadata), indexed by plot
    *         order.
    */
-  public DataBlock[] getData() { 
+  public DataStore getData() { 
     
-    return ds.getData();
+    return ds;
 
   }
 

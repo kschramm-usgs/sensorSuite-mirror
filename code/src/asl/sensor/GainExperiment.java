@@ -11,7 +11,7 @@ public class GainExperiment extends Experiment {
   }
 
   @Override
-  XYSeriesCollection backend(DataBlock[] dataIn) {
+  XYSeriesCollection backend(DataStore ds) {
     // TODO Auto-generated method stub
     return null;
   }

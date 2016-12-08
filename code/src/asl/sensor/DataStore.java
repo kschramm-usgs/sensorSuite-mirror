@@ -4,7 +4,8 @@ import org.jfree.data.xy.XYSeries;
 
 /**
  * Holds the inputted data from miniSEED files both as a simple struct
- * (see DataBlock) and as a plottable format for the DataPanel
+ * (see DataBlock) and as a plottable format for the DataPanel.
+ * Also serves as container for loaded-in instrument response files
  * @author akearns
  *
  */
@@ -15,6 +16,7 @@ public class DataStore {
    */
   final static int FILE_COUNT = 3;
   DataBlock[] dataBlockArray;
+  InstrumentResponse[] responses;
   XYSeries[] outToPlots;
   
   /**
@@ -23,6 +25,7 @@ public class DataStore {
    */
   public DataStore(){
    dataBlockArray = new DataBlock[FILE_COUNT];
+   responses = new InstrumentResponse[FILE_COUNT];
    outToPlots = new XYSeries[FILE_COUNT];
    for (int i = 0; i < FILE_COUNT; ++i) {
      outToPlots[i] = new XYSeries("(EMPTY) " + i);
@@ -36,7 +39,7 @@ public class DataStore {
    * @return The miniSEED data, in a plottable format
    */
   public XYSeries setData(int idx, String filepath) {
-    DataBlock xy = DataSeriesHelper.getXYSeries(filepath);
+    DataBlock xy = DataBlockHelper.getXYSeries(filepath);
     
     dataBlockArray[idx] = xy;
     outToPlots[idx] = xy.toXYSeries();

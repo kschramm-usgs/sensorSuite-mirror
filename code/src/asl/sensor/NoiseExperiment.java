@@ -38,9 +38,11 @@ public class NoiseExperiment extends Experiment {
    * The formula for self-noise calculation is (TODO description)
    */
   @Override
-  XYSeriesCollection backend(DataBlock[] dataIn) {
+  XYSeriesCollection backend(DataStore ds) {
+    
+    DataBlock[] dataIn = ds.getData();
+    
     XYSeriesCollection plottable = new XYSeriesCollection();
-    // TODO Auto-generated method stub
     for (DataBlock data : dataIn) {
       if( data == null ||  data.getData().size() == 0 ) {
         return new XYSeriesCollection();
@@ -85,7 +87,7 @@ public class NoiseExperiment extends Experiment {
     // let's delete it by that large number to get our period
     
     // shouldn't need to worry about a cast here
-    double period = 1.0 / DataSeriesHelper.ONE_HZ_INTERVAL;
+    double period = 1.0 / DataBlockHelper.ONE_HZ_INTERVAL;
     period *= dataIn.getInterval();
     
     int padding = 2;

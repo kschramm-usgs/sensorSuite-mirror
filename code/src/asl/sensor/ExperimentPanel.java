@@ -97,9 +97,9 @@ public class ExperimentPanel extends JPanel implements ActionListener {
    * @param tsc The new data, in DataBlock format 
    *            (List, startTime, name, interval [inverse of sample rate])
    */
-  public void updateData(DataBlock[] tsc) {
+  public void updateData(DataStore ds) {
     
-    expResult.setData(tsc);
+    expResult.setData(ds);
     
     chartPanel.setChart( populateChart(expType, expResult) );
     chartPanel.setMouseZoomable(false);

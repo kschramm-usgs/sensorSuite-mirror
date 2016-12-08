@@ -34,8 +34,12 @@ public class MainWindow extends JPanel implements ActionListener {
    * 
    */
   private static final long serialVersionUID = 2866426897343097822L;
-  private JButton[] fileButtons     = new JButton[DataStore.FILE_COUNT];
-  private JLabel[] filenameBoxes = new JLabel[DataStore.FILE_COUNT];
+  
+  private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
+  private JLabel[] seedFileNames = new JLabel[DataStore.FILE_COUNT];
+  private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
+  private JLabel[] respFileNames = new JLabel[DataStore.FILE_COUNT];
+  
   
   private JFileChooser fc; // loads in files based on parameter
   private DataPanel dataBox;
@@ -43,10 +47,10 @@ public class MainWindow extends JPanel implements ActionListener {
   
   
   private void resetTabPlots() {
-    DataBlock[] tsc = dataBox.getData();
+    DataStore ds = dataBox.getData();
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      ep.updateData(tsc);
+      ep.updateData(ds);
       // updating the chartpanel auto-updates display
     }
   }
@@ -83,12 +87,17 @@ public class MainWindow extends JPanel implements ActionListener {
     buttonPanel.setPreferredSize(new Dimension(100,0));
     buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS) );
     
-    for (int i = 0; i < fileButtons.length; i++){
-      fileButtons[i] = new JButton("Load File " + i);
-      fileButtons[i].addActionListener(this);
-      filenameBoxes[i] = new JLabel();
+    for (int i = 0; i < seedLoaders.length; i++){
+      seedLoaders[i] = new JButton("Load SEED File " + (i+1) );
+      seedLoaders[i].addActionListener(this);
+      seedFileNames[i] = new JLabel();
       
-      initFile(fileButtons[i], filenameBoxes[i], buttonPanel);
+      respLoaders[i] = new JButton("Load Response " + (i+1) );
+      respLoaders[i].addActionListener(this);
+      respFileNames[i] = new JLabel();
+      
+      initFile(seedLoaders[i], seedFileNames[i], buttonPanel);
+      initFile(respLoaders[i], respFileNames[i], buttonPanel);
     }
 
     buttonPanel.setBorder( new EmptyBorder(5,5,5,5) );
@@ -163,20 +172,30 @@ public class MainWindow extends JPanel implements ActionListener {
   public void actionPerformed(ActionEvent e) {
     // TODO: add more checks here as we add components
     
-    for(int i = 0; i < fileButtons.length; ++i) {
-      JButton button = fileButtons[i];
-      if ( e.getSource() == button ) {
+    for(int i = 0; i < seedLoaders.length; ++i) {
+      JButton seedButton = seedLoaders[i];
+      JButton respButton = respLoaders[i];
+      if ( e.getSource() == seedButton ) {
         
         // TODO: try-catch on set data to prevent premature renaming
-        int returnVal = fc.showOpenDialog(button);
+        int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
 
           dataBox.setData(i,file.getAbsolutePath());
-          filenameBoxes[i].setText(file.getName());
+          seedFileNames[i].setText(file.getName());
           this.resetTabPlots();
         }
         return;
+      } else if ( e.getSource() == respButton ) {
+        
+        int returnVal = fc.showOpenDialog(seedButton);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+          File file = fc.getSelectedFile();
+          
+          // TODO: set this as the associated instrument response
+          
+        }
       }
     }
   }

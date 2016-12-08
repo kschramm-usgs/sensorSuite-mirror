@@ -28,7 +28,7 @@ import edu.sc.seis.seisFile.mseed.SeedRecord;
  * @author akearns
  *
  */
-public class DataSeriesHelper {
+public class DataBlockHelper {
 
   /**
    * Interval for data that has been sampled at 1 Hz in milliseconds
