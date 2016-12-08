@@ -182,8 +182,8 @@ public class MainWindow extends JPanel implements ActionListener {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
 
-          dataBox.setData(i,file.getAbsolutePath());
-          seedFileNames[i].setText(file.getName());
+          dataBox.setData( i, file.getAbsolutePath() );
+          seedFileNames[i].setText( file.getName() );
           this.resetTabPlots();
         }
         return;
@@ -192,10 +192,9 @@ public class MainWindow extends JPanel implements ActionListener {
         int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
-          
-          // TODO: set this as the associated instrument response
-          
+          dataBox.setResponse( i, file.getAbsolutePath() );
         }
+        return;
       }
     }
   }

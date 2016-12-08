@@ -202,12 +202,12 @@ public class InstrumentResponse {
     // if a number is negative, only one space between it and prev. number
     // and the previous split operation assumed > 2 spaces between numbers
     String[] words = line.split("[ ]{1,}");
-    System.out.println(Arrays.toString(words));
+
+
     // index 0 is the identifier for the field types
     // index 1 is where in the list this zero or pole is
     // index 2 is the real part, and index 3 the imaginary
-    // indices 4 and 5 are error terms (ignored)
-    
+    // indices 4 and 5 are error terms (ignored)    
     int index = Integer.parseInt(words[1]);
     double realPart = Double.parseDouble(words[2]);
     double imagPart = Double.parseDouble(words[3]);

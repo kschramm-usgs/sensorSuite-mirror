@@ -133,6 +133,19 @@ public class DataPanel extends JPanel implements ActionListener {
   }
   
   /**
+   * Parent function to load in a response file to this panel's
+   * DataStore object
+   * @param idx Index of the file/chart this response corresponds to
+   * @param filepath Full address of the file to be loaded in
+   */
+  public void setResponse(int idx, String filepath) {
+    
+    ds.setData(idx, filepath);
+    
+  }
+  
+  
+  /**
    * Returns the underlying DataStore's image, to be fed into experiments
    * for processing (the results of which will be plotted)
    * @return An array of DataBlocks (time series and metadata), indexed by plot

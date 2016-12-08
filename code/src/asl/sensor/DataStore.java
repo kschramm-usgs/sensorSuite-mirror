@@ -1,5 +1,7 @@
 package asl.sensor;
 
+import java.io.IOException;
+
 import org.jfree.data.xy.XYSeries;
 
 /**
@@ -46,6 +48,15 @@ public class DataStore {
     System.out.println(outToPlots[idx].getX(0)+","+outToPlots[idx].getY(0));
     return outToPlots[idx];
      
+  }
+  
+  public void setResponse(int idx, String filepath) {
+    try {
+      responses[idx] = new InstrumentResponse(filepath);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
   
   /**
