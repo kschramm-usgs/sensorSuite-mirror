@@ -60,6 +60,16 @@ public class DataStore {
   }
   
   /**
+   * Returns the instrument responses as an array, ordered such that the
+   * response at index i is the response associated with the DataBlock at i
+   * in the array of DataBlocks
+   * @return
+   */
+  public InstrumentResponse[] getResponses() {
+    return responses;
+  }
+  
+  /**
    * Returns the set of structures used to hold the loaded miniSeed data sets
    * @return An array of DataBlocks (time series and metadata)
    */

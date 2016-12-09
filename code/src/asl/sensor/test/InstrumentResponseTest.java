@@ -28,6 +28,9 @@ public class InstrumentResponseTest {
       double nml = Double.parseDouble("3.948580E+03");
       assertEquals( nml, ir.getNormalization(), 0.0001 );
       
+      double nmf = Double.parseDouble("3.000000E-01");
+      assertEquals( nmf, ir.getNormalizationFrequency(), 0.0001 );
+      
       double[] gn = {2.400000e+03, 2.400000e+03, 1.000000e+00};
       assertTrue( Arrays.equals( gn, ir.getGain() ) );
       

@@ -31,7 +31,7 @@ import edu.sc.seis.seisFile.mseed.SeedRecord;
 public class DataBlockHelper {
 
   /**
-   * Interval for data that has been sampled at 1 Hz in milliseconds
+   * Interval for data that has been sampled at 1 Hz in microseconds
    */
   public final static long ONE_HZ_INTERVAL = 1000000L;
   /**

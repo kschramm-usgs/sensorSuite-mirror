@@ -41,9 +41,14 @@ public class NoiseExperiment extends Experiment {
   XYSeriesCollection backend(DataStore ds) {
     
     DataBlock[] dataIn = ds.getData();
+    InstrumentResponse[] responses = ds.getResponses();
     
     XYSeriesCollection plottable = new XYSeriesCollection();
-    for (DataBlock data : dataIn) {
+    for (int i =0; i < dataIn.length; ++i) {
+      
+      DataBlock data = dataIn[i];
+      InstrumentResponse response = responses[i];
+      
       if( data == null ||  data.getData().size() == 0 ) {
         return new XYSeriesCollection();
         // don't actually do any plotting until we have data for everything
@@ -56,12 +61,15 @@ public class NoiseExperiment extends Experiment {
       Complex[] density = powSpectResult.getPSD();
       double[] freqs = powSpectResult.getFreqs();
       
+      // TODO
       // next we need to get the instrument response for acceleration
       // and remove that from the PSD
       
+      double[] corrected = response.removeResponseFromInput(freqs);
+      
     }
     
-    return null;
+    return plottable;
   }
   
   // TODO: move these signal processing functions into their own

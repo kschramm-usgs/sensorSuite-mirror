@@ -25,6 +25,7 @@ public class InstrumentResponse {
   private Unit unitType;
   
   private double normalization;
+  private double normalFreq; // ♫ cuz she's a normalFreq, normalFreq 
   
   public InstrumentResponse(String filename) throws IOException {
     parseResponseFile(filename);
@@ -41,7 +42,8 @@ public class InstrumentResponse {
     
     unitType = responseIn.getUnits();
     
-    normalization = Double.valueOf( responseIn.getNormalization() );   
+    normalization = Double.valueOf( responseIn.getNormalization() );
+    normalFreq = Double.valueOf( responseIn.getNormalizationFrequency() );
   }
   
   public TransferFunction getTransferFunction() {
@@ -68,6 +70,14 @@ public class InstrumentResponse {
     return normalization;
   }
   
+  public double getNormalizationFrequency() {
+    return normalFreq;
+  }
+  
+  public double[] removeResponseFromInput(double[] frequencies) {
+    // TODO actually implement this stuff
+    return new double[] {1.0};
+  }
   
   /**
    * Parses a response file of the sort found on the Iris Nominal Response
@@ -127,7 +137,7 @@ public class InstrumentResponse {
           case "B053F05":
             // parse the units of the transfer function (usually velocity)
             // first *word* of the third component of words
-            // TODO
+            // TODO support more unit types
             String[] unitString = words[2].split(" ");
             String unit = unitString[0];
             switch (unit.toLowerCase()) {
@@ -146,6 +156,11 @@ public class InstrumentResponse {
             // this is the normalization factor A0
             // this is the entire third word of the line, as a double
             normalization = Double.parseDouble(words[2]);
+            break;
+          case "B053F08":
+            // this is the normalization frequency
+            // once again the entire third word of the line as double
+            normalFreq = Double.parseDouble(words[2]);
             break;
           case "B053F09":
             // the number of zeros listed in reponse pole/zero lines

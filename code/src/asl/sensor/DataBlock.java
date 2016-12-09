@@ -61,8 +61,8 @@ public class DataBlock {
   /**
    * Gives the start timestamp of the miniSEED data. This is a long compatible
    * with the Java System Library's Date and Calendar objects and expressed
-   * as milliseconds from the UTC epoch
-   * @return When the miniSEED data logging started in milliseconds 
+   * as microseconds from the UTC epoch
+   * @return When the miniSEED data logging started in microseconds 
    */
   public long getStartTime() {
     return startTime;
@@ -70,9 +70,9 @@ public class DataBlock {
 
   /**
    * Set the start timestamp of the data with a given long, expressed as
-   * milliseconds from UTC epoch (compatible with Java System Library Date and
+   * microseconds from UTC epoch (compatible with Java System Library Date and
    * Calendar objects)
-   * @param startTime The start time in milliseconds
+   * @param startTime The start time in microseconds
    */
   public void setStartTime(long startTime) {
     this.startTime = startTime;
@@ -81,7 +81,7 @@ public class DataBlock {
   /**
    * Get the interval of the data. The timestamp for a given data point in the
    * block can be calculated by startTime + (index * interval). This
-   * @return The time between two samples of data in milliseconds
+   * @return The time between two samples of data in microseconds
    */
   public long getInterval() {
     return interval;
@@ -90,7 +90,7 @@ public class DataBlock {
   /**
    * Used to set the interval of the data (to be used, for example, when the
    * time series has had decimation applied)
-   * @param interval The time between two samples of data in milliseconds
+   * @param interval The time between two samples of data in microseconds
    */
   public void setInterval(long interval) {
     this.interval = interval;
@@ -120,7 +120,7 @@ public class DataBlock {
    * This is the preferred call when data is resampled as it requires a new
    * interval to be specified, so that the old sample rate does not persist.
    * @param data New time series data, such as the result of decimation
-   * @param interval The new interval (time between samples in milliseconds)
+   * @param interval The new interval (time between samples in microseconds)
    */
   public void resample(List<Number> data, long interval) {
     this.data = data;
