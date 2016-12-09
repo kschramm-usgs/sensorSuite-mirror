@@ -12,10 +12,20 @@ public enum TransferFunction {
    * Specifies that response is calculated with 2*pi*f*i for frequency f
    * (Equivalent to Fourier transform given positive time values)
    */
-  LAPLACIAN,
+  LAPLACIAN (2*Math.PI),
   /**
    * Specifies that response is calculated with f*i for frequency f
    */
-  LINEAR;
+  LINEAR (1.0);
+  
+  TransferFunction(double function) {
+    this.function = function;
+  }
+  
+  private double function;
+  
+  public double getFunction(){
+    return function;
+  }
   
 }

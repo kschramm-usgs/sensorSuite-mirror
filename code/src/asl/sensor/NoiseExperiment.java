@@ -7,6 +7,7 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
+import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 /**
@@ -47,6 +48,8 @@ public class NoiseExperiment extends Experiment {
     for (int i =0; i < dataIn.length; ++i) {
       
       DataBlock data = dataIn[i];
+      XYSeries xys = new XYSeries( data.getName()+" SELF_NOISE" );
+      
       InstrumentResponse response = responses[i];
       
       if( data == null ||  data.getData().size() == 0 ) {
@@ -54,18 +57,28 @@ public class NoiseExperiment extends Experiment {
         // don't actually do any plotting until we have data for everything
       }
       
-      
       // first, get crosspower
-      
       PSDStruct powSpectResult = powerSpectralDensity(data);
       Complex[] density = powSpectResult.getPSD();
       double[] freqs = powSpectResult.getFreqs();
       
-      // TODO
-      // next we need to get the instrument response for acceleration
-      // and remove that from the PSD
+      // now, get responses to resulting frequencies
+      Complex[] corrected = response.applyResponseToInput(freqs);
       
-      double[] corrected = response.removeResponseFromInput(freqs);
+      for (int j = 0; j < freqs.length; ++j) {
+        Complex respMagnitude = 
+            corrected[j].multiply( corrected[j].conjugate() );
+        if(respMagnitude.abs() == 0) {
+          throw new RuntimeException("Divide by zero error from responses");
+        }
+        density[j] = density[j].divide(respMagnitude);
+        
+        // TODO: determine the proper units for x-axis
+        xys.add( j, density[j].abs());
+        
+      }
+
+      plottable.addSeries(xys);
       
     }
     

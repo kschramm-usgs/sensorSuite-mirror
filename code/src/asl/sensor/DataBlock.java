@@ -13,7 +13,7 @@ public class DataBlock {
   
   private List<Number> data;
   private long interval;
-  String name;
+  private String name;
   private long startTime;
   
   /**
@@ -38,8 +38,12 @@ public class DataBlock {
   public DataBlock(DataBlock in) {
     setInterval(in.getInterval());
     setData(in.getData());
-    name = in.name;
+    name = in.getName();
     setStartTime(in.getStartTime());
+  }
+  
+  public String getName() {
+    return name;
   }
   
   /**

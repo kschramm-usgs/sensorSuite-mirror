@@ -13,10 +13,10 @@ import org.apache.commons.math3.complex.Complex;
 public class InstrumentResponse {
 
   public static final int GAIN_STAGES = 3; // sensitivity, stage 1, stage 2
-  // (for self-noise, 
   
   private TransferFunction transferType;
   
+  // gain values, indexed by stage
   private double[] gain = new double[GAIN_STAGES];
   
   private List<Complex> zeros;
@@ -74,9 +74,61 @@ public class InstrumentResponse {
     return normalFreq;
   }
   
-  public double[] removeResponseFromInput(double[] frequencies) {
-    // TODO actually implement this stuff
-    return new double[] {1.0};
+  public Complex[] applyResponseToInput(double[] frequencies) {
+   
+    Complex[] resps = new Complex[frequencies.length];
+    
+    // precalculate gain for scaling the response
+    // use gain1 * gain2 unless gain0 differs by more than 10%
+    // (apparently an issue with Q680 detectors)
+    double diff = 100 * ( gain[0] - (gain[1]*gain[2]) ) / gain[0];
+    double scale;
+    if (Math.abs(diff) > 10) {
+      scale = gain[0];
+    } else {
+      scale = gain[1] * gain[2];
+    }
+    
+    
+    for (int i =0; i < frequencies.length; ++i) {
+      // TODO: check this is right (Adam seemed to be saying so)
+      double deltaFrq = frequencies[i];
+      
+      // pole-zero expansion
+      Complex s = new Complex( 0, deltaFrq*transferType.getFunction() );
+      
+      Complex numerator = Complex.ONE;
+      Complex denominator = Complex.ONE;
+      
+      for (Complex zero : zeros) {
+        numerator = numerator.multiply( s.subtract(zero) );
+      }
+      
+      for (Complex pole : poles) {
+        denominator = denominator.multiply( s.subtract(pole) );
+      }
+      
+      resps[i] = numerator.multiply(normalization).divide(denominator);
+      
+      // how many times do we need to do differentiation?
+      int differentiations = Unit.ACCELERATION.getDifferentiations(unitType);
+      
+      // TODO: also do a check for differentiations?
+      for (int j = 0; j < differentiations; ++j ) {
+        // unlike S this is always 2Pi
+        double integConstant = 2*Math.PI;
+        // i*omega -- differentiate n times by taking I(omg) / (i*omg)^n
+        Complex iw = new Complex(0.0, -1.0 / (integConstant * frequencies[i]) );
+        // (just need to do this one to go from vel to accel)
+        resps[i] = iw.multiply(resps[i]);
+      }
+      
+      // lastly, scale by the scale we chose (gain0 or gain1*gain2)
+      resps[i] = resps[i].multiply(scale);
+      
+    }
+    
+    return resps;
   }
   
   /**
@@ -128,10 +180,13 @@ public class InstrumentResponse {
             case 'A':
               transferType = TransferFunction.LAPLACIAN;
               break;
+            case 'B':
+              transferType = TransferFunction.LINEAR;
+              break;
             default:
               // TODO: want to make sure that we're setting this right
               // because if a Fourier is specified, we should set to LAPLACIAN
-              transferType = TransferFunction.LINEAR;
+              transferType = TransferFunction.LAPLACIAN;
             }
             break;
           case "B053F05":
