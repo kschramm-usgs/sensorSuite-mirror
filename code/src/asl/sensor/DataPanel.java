@@ -145,12 +145,7 @@ public class DataPanel extends JPanel implements ActionListener {
   }
   
   public boolean dataIsSet() {
-    for (boolean set : ds.dataIsSet() ) {
-      if(!set) {
-        return false;
-      }
-    }
-    return true;
+    return ds.isPlottable();
   }
   
   

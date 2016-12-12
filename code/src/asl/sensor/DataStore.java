@@ -22,6 +22,7 @@ public class DataStore {
   XYSeries[] outToPlots;
   
   boolean[] dataIsSet;
+  boolean[] responseIsSet;
   
   /**
    * Instantiate the collections, including empty datasets to be sent to
@@ -32,9 +33,11 @@ public class DataStore {
    responses = new InstrumentResponse[FILE_COUNT];
    outToPlots = new XYSeries[FILE_COUNT];
    dataIsSet = new boolean[FILE_COUNT];
+   responseIsSet = new boolean[FILE_COUNT];
    for (int i = 0; i < FILE_COUNT; ++i) {
      outToPlots[i] = new XYSeries("(EMPTY) " + i);
      dataIsSet[i] = false;
+     responseIsSet[i] = false;
    }
   }
   
@@ -58,15 +61,22 @@ public class DataStore {
   public void setResponse(int idx, String filepath) {
     try {
       responses[idx] = new InstrumentResponse(filepath);
+      responseIsSet[idx] = true;
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
   
-  public boolean[] dataIsSet() {
-    return dataIsSet;
-  }
+  public boolean isPlottable() {
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (!dataIsSet[i] || !responseIsSet[i]) {
+        return false;
+      }
+    }
+    
+    return true;
+}
   
   /**
    * Returns the instrument responses as an array, ordered such that the
