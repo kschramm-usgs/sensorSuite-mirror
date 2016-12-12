@@ -7,6 +7,10 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
+import org.jfree.chart.axis.LogAxis;
+import org.jfree.chart.axis.LogarithmicAxis;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.data.RangeType;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -31,6 +35,10 @@ public class NoiseExperiment extends Experiment {
     super();
     xAxisTitle = "Period (s)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
+    xAxis = new LogAxis(xAxisTitle);
+    xAxis.setAutoRange(true);
+    yAxis = new NumberAxis(yAxisTitle);
+    yAxis.setAutoRange(true);
   }
 
   /**
@@ -45,17 +53,24 @@ public class NoiseExperiment extends Experiment {
     InstrumentResponse[] responses = ds.getResponses();
     
     XYSeriesCollection plottable = new XYSeriesCollection();
+    
+    for (int i =0; i < dataIn.length; ++i) {
+      // don't calculate if all the data isn't in yet
+      if( dataIn[i] == null ||  
+          dataIn[i].getData().size() == 0 ||
+          responses[i] == null ) {
+        return new XYSeriesCollection();
+        // we can't plot without all the data (certainly need responses loaded)
+      }
+    }
+    
     for (int i =0; i < dataIn.length; ++i) {
       
       DataBlock data = dataIn[i];
-      XYSeries xys = new XYSeries( data.getName()+" SELF_NOISE" );
+      XYSeries powerSeries = new XYSeries("PSD "+data.getName() );
+      XYSeries noiseSeries = new XYSeries( "Noise "+data.getName() );
       
       InstrumentResponse response = responses[i];
-      
-      if( data == null ||  data.getData().size() == 0 ) {
-        return new XYSeriesCollection();
-        // don't actually do any plotting until we have data for everything
-      }
       
       // first, get crosspower
       PSDStruct powSpectResult = powerSpectralDensity(data);
@@ -66,6 +81,11 @@ public class NoiseExperiment extends Experiment {
       Complex[] corrected = response.applyResponseToInput(freqs);
       
       for (int j = 0; j < freqs.length; ++j) {
+        
+        // before we modify the actual density value, set up the PSD plot
+        // at the current value
+        powerSeries.add( freqs[j], density[j].abs() );
+        
         Complex respMagnitude = 
             corrected[j].multiply( corrected[j].conjugate() );
         if(respMagnitude.abs() == 0) {
@@ -74,11 +94,12 @@ public class NoiseExperiment extends Experiment {
         density[j] = density[j].divide(respMagnitude);
         
         // TODO: determine the proper units for x-axis
-        xys.add( j, density[j].abs());
+        noiseSeries.add( freqs[j] , density[j].abs());
         
       }
 
-      plottable.addSeries(xys);
+      plottable.addSeries(noiseSeries);
+      //plottable.addSeries(powerSeries);
       
     }
     

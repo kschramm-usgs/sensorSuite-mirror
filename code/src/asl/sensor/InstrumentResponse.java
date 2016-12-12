@@ -113,7 +113,7 @@ public class InstrumentResponse {
       // how many times do we need to do differentiation?
       int differentiations = Unit.ACCELERATION.getDifferentiations(unitType);
       
-      // TODO: also do a check for differentiations?
+      // TODO: also do a check for integration?
       for (int j = 0; j < differentiations; ++j ) {
         // unlike S this is always 2Pi
         double integConstant = 2*Math.PI;

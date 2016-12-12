@@ -17,6 +17,7 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
 
 /**
  * Panel used to display the data produced from a specified sensor test
@@ -59,7 +60,12 @@ public class ExperimentPanel extends JPanel implements ActionListener {
         false, 
         false);
     
-    // TODO: selection of axes' scale based on how an experiment sets them
+    XYPlot xyPlot = chart.getXYPlot();
+    
+    xyPlot.setDomainAxis(expR.getXAxis());
+    xyPlot.setRangeAxis(expR.getYAxis());
+    
+    
     
     return chart;
   }
@@ -101,7 +107,10 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
     expResult.setData(ds);
     
-    chartPanel.setChart( populateChart(expType, expResult) );
+    chart = populateChart(expType, expResult);
+    
+    chartPanel.setChart(chart);
+    
     chartPanel.setMouseZoomable(false);
     
     // setting the new chart is enough to update the plots

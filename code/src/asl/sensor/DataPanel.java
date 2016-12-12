@@ -140,7 +140,7 @@ public class DataPanel extends JPanel implements ActionListener {
    */
   public void setResponse(int idx, String filepath) {
     
-    ds.setData(idx, filepath);
+    ds.setResponse(idx, filepath);
     
   }
   

@@ -170,7 +170,7 @@ public class MainWindow extends JPanel implements ActionListener {
    */
   @Override
   public void actionPerformed(ActionEvent e) {
-    // TODO: add more checks here as we add components
+    // TODO: change control flow 
     
     for(int i = 0; i < seedLoaders.length; ++i) {
       JButton seedButton = seedLoaders[i];
@@ -193,6 +193,8 @@ public class MainWindow extends JPanel implements ActionListener {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
           dataBox.setResponse( i, file.getAbsolutePath() );
+          
+          respFileNames[i].setText( file.getName() );
         }
         return;
       }

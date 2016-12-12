@@ -2,6 +2,9 @@ package asl.sensor;
 
 import org.jfree.data.xy.XYSeriesCollection;
 
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
+
 public abstract class Experiment {
 
   // defines template pattern for each type of test, given by backend
@@ -12,6 +15,7 @@ public abstract class Experiment {
   
   protected XYSeriesCollection xySeriesData;
   protected String xAxisTitle, yAxisTitle;
+  protected ValueAxis xAxis, yAxis;
   
   public Experiment() {
     
@@ -31,6 +35,14 @@ public abstract class Experiment {
   
   public String getYTitle() {
     return yAxisTitle;
+  }
+  
+  public ValueAxis getXAxis() {
+    return xAxis;
+  }
+  
+  public ValueAxis getYAxis() {
+    return yAxis;
   }
   
   // java don't allow no static methods 'round here
