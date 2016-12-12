@@ -144,6 +144,15 @@ public class DataPanel extends JPanel implements ActionListener {
     
   }
   
+  public boolean dataIsSet() {
+    for (boolean set : ds.dataIsSet() ) {
+      if(!set) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
   
   /**
    * Returns the underlying DataStore's image, to be fed into experiments

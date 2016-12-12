@@ -184,9 +184,8 @@ public class MainWindow extends JPanel implements ActionListener {
 
           dataBox.setData( i, file.getAbsolutePath() );
           seedFileNames[i].setText( file.getName() );
-          this.resetTabPlots();
+          
         }
-        return;
       } else if ( e.getSource() == respButton ) {
         
         int returnVal = fc.showOpenDialog(seedButton);
@@ -196,8 +195,11 @@ public class MainWindow extends JPanel implements ActionListener {
           
           respFileNames[i].setText( file.getName() );
         }
-        return;
       }
+    }
+    
+    if( dataBox.dataIsSet() ) {
+      this.resetTabPlots();
     }
   }
   

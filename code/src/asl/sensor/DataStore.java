@@ -21,6 +21,8 @@ public class DataStore {
   InstrumentResponse[] responses;
   XYSeries[] outToPlots;
   
+  boolean[] dataIsSet;
+  
   /**
    * Instantiate the collections, including empty datasets to be sent to
    * charts for plotting (see DataPanel)
@@ -29,8 +31,10 @@ public class DataStore {
    dataBlockArray = new DataBlock[FILE_COUNT];
    responses = new InstrumentResponse[FILE_COUNT];
    outToPlots = new XYSeries[FILE_COUNT];
+   dataIsSet = new boolean[FILE_COUNT];
    for (int i = 0; i < FILE_COUNT; ++i) {
      outToPlots[i] = new XYSeries("(EMPTY) " + i);
+     dataIsSet[i] = false;
    }
   }
   
@@ -45,9 +49,10 @@ public class DataStore {
     
     dataBlockArray[idx] = xy;
     outToPlots[idx] = xy.toXYSeries();
-    System.out.println(outToPlots[idx].getX(0)+","+outToPlots[idx].getY(0));
+    
+    dataIsSet[idx] = true;
+    
     return outToPlots[idx];
-     
   }
   
   public void setResponse(int idx, String filepath) {
@@ -57,6 +62,10 @@ public class DataStore {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
+  }
+  
+  public boolean[] dataIsSet() {
+    return dataIsSet;
   }
   
   /**
