@@ -181,14 +181,7 @@ public class DataPanel extends JPanel implements ActionListener {
         }
         try {
           
-          BufferedImage bi = new BufferedImage(
-                  allCharts.getWidth(), 
-                  allCharts.getHeight(), 
-                  BufferedImage.TYPE_INT_ARGB);
-          
-          Graphics2D g = bi.createGraphics();
-          allCharts.printAll(g);
-          g.dispose();
+          BufferedImage bi = getAsImage(0, 0);
           
           ImageIO.write(bi,"png",selFile);
         } catch (IOException e1) {
@@ -199,6 +192,23 @@ public class DataPanel extends JPanel implements ActionListener {
     }
   }
   
+  
+  public BufferedImage getAsImage(int width, int height) {
+    
+    width = Math.max( width, allCharts.getWidth() );
+    height = Math.max( height, allCharts.getHeight() );
+    
+    BufferedImage bi = new BufferedImage(
+        width, 
+        height, 
+        BufferedImage.TYPE_INT_ARGB);
+
+    Graphics2D g = bi.createGraphics();
+    allCharts.printAll(g);
+    g.dispose();
+
+    return bi;
+  }
   
   
 }

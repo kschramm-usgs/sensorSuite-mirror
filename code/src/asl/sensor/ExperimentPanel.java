@@ -1,11 +1,15 @@
 package asl.sensor;
 
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -118,6 +122,26 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     return chart;
   }
 
+  public BufferedImage getAsImage(int width, int height) {
+    
+    width = Math.max( width, chartPanel.getWidth() );
+    height = Math.max( height, chartPanel.getHeight() );
+    
+    ChartPanel outPanel = new ChartPanel(chart);
+    outPanel.setSize( new Dimension(width, height) );
+    
+    BufferedImage bi = new BufferedImage(
+        width, 
+        height, 
+        BufferedImage.TYPE_INT_ARGB);
+
+    Graphics2D g = bi.createGraphics();
+    outPanel.printAll(g);
+    g.dispose();
+
+    return bi;
+  }
+  
   /**
    * Handle's saving this plot's chart to file (PNG image) 
    * when the save button is clicked.

@@ -2,10 +2,15 @@ package asl.sensor;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -17,6 +22,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 
 // TODO: include a button for saving plots to PDF somehow
@@ -109,7 +115,7 @@ public class MainWindow extends JPanel implements ActionListener {
     generate.addActionListener(this);
     buttonPanel.add(generate);
     
-    savePDF = new JButton("Save charts to PDF");
+    savePDF = new JButton("Save display (PNG)");
     savePDF.setEnabled(false);
     savePDF.addActionListener(this);
     buttonPanel.add(savePDF);
@@ -220,14 +226,76 @@ public class MainWindow extends JPanel implements ActionListener {
     if ( e.getSource() == generate ) {
       this.resetTabPlots();
     } else if ( e.getSource() == savePDF ) {
-      System.out.println("PDF save feature not yet implemented!");
-      // TODO: implement this
-      // need to get all the component charts to save to PDF
-      // then we get the layout for them
-      // then actually do the PDF writing
+      
+      String ext = ".png";
+      fc.addChoosableFileFilter(
+          new FileNameExtensionFilter("PNG image (.png)",ext) );
+      fc.setFileFilter(fc.getChoosableFileFilters()[1]);
+      int returnVal = fc.showSaveDialog(savePDF);
+      if (returnVal == JFileChooser.APPROVE_OPTION) {
+        File selFile = fc.getSelectedFile();
+        if( !selFile.getName().endsWith( ext.toLowerCase() ) ) {
+          selFile = new File( selFile.toString() + ext);
+        }
+        try {
+          plotsToPNG(selFile);
+        } catch (IOException e1) {
+          // TODO Auto-generated catch block
+          e1.printStackTrace();
+        }
+      }
+      
     }
     
 
+  }
+  
+  /**
+   * Handles function to create a PNG image with all currently-displayed plots
+   * @param file File (PNG) that image will be saved to
+   * @throws IOException
+   */
+  public void plotsToPNG(File file) throws IOException {
+    // using 0s to set image height and width to default values (match window)
+    BufferedImage inPlot = dataBox.getAsImage(0, 0);
+    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+    BufferedImage outPlot = ep.getAsImage( inPlot.getWidth(), 0 );
+    
+    int width = Math.max( inPlot.getWidth(), outPlot.getWidth() );
+    // 5px tall buffer used to separate result plot from inputs
+    BufferedImage space = getSpace(width, 5);
+    int height = inPlot.getHeight() + outPlot.getHeight() + space.getHeight();
+    
+    System.out.println(space.getHeight());
+    
+    BufferedImage toFile = new BufferedImage(width, height, 
+        BufferedImage.TYPE_INT_ARGB);
+    
+    Graphics2D combined = toFile.createGraphics();
+    combined.drawImage(outPlot, null, 0, 0);
+    combined.drawImage(space, null, 0, outPlot.getHeight() );
+    combined.drawImage( inPlot, null, 0, 
+        outPlot.getHeight() + space.getHeight() );
+    combined.dispose();
+    
+    // for now, it's a png. TODO: write to PDF?
+    
+    ImageIO.write(toFile,"png",file);
+    
+  }
+  
+  public static BufferedImage getSpace(int width, int height) {
+    BufferedImage space = new BufferedImage(
+        width, 
+        height, 
+        BufferedImage.TYPE_INT_RGB);
+    Graphics2D tmp = space.createGraphics();
+    JPanel margin = new JPanel();
+    margin.add( Box.createRigidArea( new Dimension(0,5) ) );
+    margin.printAll(tmp);
+    tmp.dispose();
+    
+    return space;
   }
   
 
