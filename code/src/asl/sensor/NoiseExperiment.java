@@ -7,10 +7,8 @@ import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
-import org.jfree.chart.axis.LogAxis;
 import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.data.RangeType;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -35,12 +33,11 @@ public class NoiseExperiment extends Experiment {
     super();
     xAxisTitle = "Period (s)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
-    xAxis = new LogAxis(xAxisTitle);
-    xAxis.setAutoRange(true);
+    xAxis = new LogarithmicAxis(xAxisTitle);
     yAxis = new NumberAxis(yAxisTitle);
-    yAxis.setAutoRange(true);
+    
   }
-
+  
   /**
    * Generates power spectral density of each inputted file, and calculates
    * self-noise based on that result
@@ -53,6 +50,7 @@ public class NoiseExperiment extends Experiment {
     InstrumentResponse[] responses = ds.getResponses();
     
     XYSeriesCollection plottable = new XYSeriesCollection();
+    plottable.setAutoWidth(true);
     
     for (int i =0; i < dataIn.length; ++i) {
       // don't calculate if all the data isn't in yet
@@ -80,11 +78,7 @@ public class NoiseExperiment extends Experiment {
       // now, get responses to resulting frequencies
       Complex[] corrected = response.applyResponseToInput(freqs);
       
-      for (int j = 0; j < freqs.length; ++j) {
-        
-        // before we modify the actual density value, set up the PSD plot
-        // at the current value
-        powerSeries.add( freqs[j], density[j].abs() );
+      for (int j = freqs.length-1; j >= 0; --j) {
         
         Complex respMagnitude = 
             corrected[j].multiply( corrected[j].conjugate() );
@@ -93,8 +87,12 @@ public class NoiseExperiment extends Experiment {
         }
         density[j] = density[j].divide(respMagnitude);
         
+        double dB = 10*Math.log10( density[j].abs());
+        
         // TODO: determine the proper units for x-axis
-        noiseSeries.add( freqs[j] , density[j].abs());
+        if (1/freqs[j] < 1.0E3) {
+          noiseSeries.add( 1/freqs[j] , dB);
+        }
         
       }
 

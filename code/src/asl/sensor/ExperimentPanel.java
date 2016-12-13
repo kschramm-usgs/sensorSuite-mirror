@@ -16,6 +16,8 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.axis.LogAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 
@@ -65,8 +67,6 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     xyPlot.setDomainAxis(expR.getXAxis());
     xyPlot.setRangeAxis(expR.getYAxis());
     
-    
-    
     return chart;
   }
   
@@ -86,8 +86,9 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
     save = new JButton("Save Plot");
     save.addActionListener(this);
-
-    chartPanel = new ChartPanel( populateChart(expType, expResult) );
+    
+    chart = populateChart(expType, expResult);
+    chartPanel = new ChartPanel(chart);
     chartPanel.setMouseZoomable(false);
     
     this.add(chartPanel);
@@ -110,7 +111,6 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     chart = populateChart(expType, expResult);
     
     chartPanel.setChart(chart);
-    
     chartPanel.setMouseZoomable(false);
     
     // setting the new chart is enough to update the plots

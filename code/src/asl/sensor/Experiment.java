@@ -15,7 +15,7 @@ public abstract class Experiment {
   
   protected XYSeriesCollection xySeriesData;
   protected String xAxisTitle, yAxisTitle;
-  protected ValueAxis xAxis, yAxis;
+  protected NumberAxis xAxis, yAxis;
   
   public Experiment() {
     
