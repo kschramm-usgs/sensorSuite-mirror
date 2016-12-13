@@ -45,6 +45,9 @@ public class MainWindow extends JPanel implements ActionListener {
   private DataPanel dataBox;
   private JTabbedPane tabbedPane; // holds set of experiment panels
   
+  private JButton generate;
+  private JButton savePDF;
+  
   
   private void resetTabPlots() {
     DataStore ds = dataBox.getData();
@@ -53,6 +56,7 @@ public class MainWindow extends JPanel implements ActionListener {
       ep.updateData(ds);
       // updating the chartpanel auto-updates display
     }
+    savePDF.setEnabled(true);
   }
   
   /**
@@ -100,6 +104,16 @@ public class MainWindow extends JPanel implements ActionListener {
       initFile(respLoaders[i], respFileNames[i], buttonPanel);
     }
 
+    generate = new JButton("Generate plots");
+    generate.setEnabled(false);
+    generate.addActionListener(this);
+    buttonPanel.add(generate);
+    
+    savePDF = new JButton("Save charts to PDF");
+    savePDF.setEnabled(false);
+    savePDF.addActionListener(this);
+    buttonPanel.add(savePDF);
+    
     buttonPanel.setBorder( new EmptyBorder(5,5,5,5) );
     
     //holds everything except the side panel used for file IO stuff
@@ -196,11 +210,24 @@ public class MainWindow extends JPanel implements ActionListener {
           respFileNames[i].setText( file.getName() );
         }
       }
+      
+      if( dataBox.dataIsSet() ) {
+        generate.setEnabled(true);
+      }
+      
+    } // end for loop 
+    
+    if ( e.getSource() == generate ) {
+      this.resetTabPlots();
+    } else if ( e.getSource() == savePDF ) {
+      System.out.println("PDF save feature not yet implemented!");
+      // TODO: implement this
+      // need to get all the component charts to save to PDF
+      // then we get the layout for them
+      // then actually do the PDF writing
     }
     
-    if( dataBox.dataIsSet() ) {
-      this.resetTabPlots();
-    }
+
   }
   
 
