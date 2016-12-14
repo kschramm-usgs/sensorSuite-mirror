@@ -85,13 +85,13 @@ public class NoiseExperiment extends Experiment {
         if(respMagnitude.abs() == 0) {
           throw new RuntimeException("Divide by zero error from responses");
         }
-        density[j] = density[j].divide(respMagnitude);
-        
+
+        density[j] = density[j].divide(respMagnitude);        
         double dB = 10*Math.log10( density[j].abs());
         
         // TODO: determine the proper units for x-axis
         if (1/freqs[j] < 1.0E3) {
-          noiseSeries.add( 1/freqs[j] , dB);
+          noiseSeries.add(1/freqs[j], dB);
         }
         
       }
