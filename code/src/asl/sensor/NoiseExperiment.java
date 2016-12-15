@@ -86,18 +86,17 @@ public class NoiseExperiment extends Experiment {
           throw new RuntimeException("Divide by zero error from responses");
         }
 
-        density[j] = density[j].divide(respMagnitude);        
+        density[j] = density[j].divide(respMagnitude);
         double dB = 10*Math.log10( density[j].abs());
         
-        // TODO: determine the proper units for x-axis
         if (1/freqs[j] < 1.0E3) {
-          noiseSeries.add(1/freqs[j], dB);
+          powerSeries.add(1/freqs[j], dB);
         }
         
       }
 
-      plottable.addSeries(noiseSeries);
-      //plottable.addSeries(powerSeries);
+      //plottable.addSeries(noiseSeries);
+      plottable.addSeries(powerSeries);
       
     }
     
@@ -124,7 +123,7 @@ public class NoiseExperiment extends Experiment {
     
     // period is 1/sample rate in seconds
     // since the interval data is just that multiplied by a large number
-    // let's delete it by that large number to get our period
+    // let's divide it by that large number to get our period
     
     // shouldn't need to worry about a cast here
     double period = 1.0 / DataBlockHelper.ONE_HZ_INTERVAL;
