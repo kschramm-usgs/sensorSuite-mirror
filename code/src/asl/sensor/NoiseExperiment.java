@@ -135,7 +135,7 @@ public class NoiseExperiment extends Experiment {
     }
     
     int singleSide = padding / 2 + 1;
-    double deltaFreq = 1. / (padding * period);
+    double deltaFreq = 1. / (padding * period); // TODO: check this line
     
     Complex[] powSpectDens = new Complex[singleSide];
     double wss = 0;
@@ -195,7 +195,7 @@ public class NoiseExperiment extends Experiment {
     
     // normalization time!
     
-    double psdNormalization = 2.0 * period / padding;
+    double psdNormalization = 2.0 * period / padding; // TODO: check this line
     double windowCorrection = wss / (double) range;
     // it only uses the last value of wss, but that was how the original
     // code was
