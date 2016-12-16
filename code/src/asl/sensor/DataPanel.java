@@ -42,6 +42,8 @@ public class DataPanel extends JPanel implements ActionListener {
    */
   private static final long serialVersionUID = -7302813951637543526L;
   
+  public static final int IMAGE_HEIGHT = 240*DataStore.FILE_COUNT;
+  
   DataStore ds;
   private ChartPanel[] chartPanels = new ChartPanel[DataStore.FILE_COUNT];
   private Color[] defaultColor = {
@@ -182,8 +184,8 @@ public class DataPanel extends JPanel implements ActionListener {
           selFile = new File( selFile.toString() + ext);
         }
         try {
-          
-          BufferedImage bi = getAsImage(640, 240*DataStore.FILE_COUNT);
+          // each chart gets displayed as 640x240 image; merge to one file
+          BufferedImage bi = getAsImage(640, IMAGE_HEIGHT);
           
           ImageIO.write(bi,"png",selFile);
         } catch (IOException e1) {
@@ -194,6 +196,9 @@ public class DataPanel extends JPanel implements ActionListener {
     }
   }
   
+  public BufferedImage getAsImage() {
+    return getAsImage( allCharts.getWidth(), allCharts.getHeight() );
+  }
   
   public BufferedImage getAsImage(int width, int height) {
     
@@ -229,7 +234,11 @@ public class DataPanel extends JPanel implements ActionListener {
       toDraw.add(outPanel);
     }
     
-
+    // used to make sure that everything is laid out correctly when we save
+    // (forces the Java windowing tools to respect the specified layout above)
+    // we do this since the panel is instantiated here, not displayed, and
+    // is built from multiple subcomponents, unlike experimentpanel
+    // Before the frame exists, Java tends to ignore any layout instructions
     JFrame jw = new JFrame();
     jw.add(toDraw);
     jw.pack();
@@ -243,8 +252,6 @@ public class DataPanel extends JPanel implements ActionListener {
     toDraw.printAll(g);
     g.dispose();
     
-    jw.setVisible(false);
-
     return bi;
   }
   

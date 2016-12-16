@@ -123,9 +123,6 @@ public class ExperimentPanel extends JPanel implements ActionListener {
 
   public BufferedImage getAsImage(int width, int height) {
     
-    width = Math.max( width, chartPanel.getWidth() );
-    height = Math.max( height, chartPanel.getHeight() );
-    
     ChartPanel outPanel = new ChartPanel(chart);
     outPanel.setSize( new Dimension(width, height) );
     

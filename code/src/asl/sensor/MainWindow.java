@@ -256,9 +256,9 @@ public class MainWindow extends JPanel implements ActionListener {
    */
   public void plotsToPNG(File file) throws IOException {
     // using 0s to set image height and width to default values (match window)
-    int inHeight = 240*DataStore.FILE_COUNT;
-    BufferedImage inPlot = dataBox.getAsImage(640, inHeight);
-    int width = inPlot.getWidth();
+    int inHeight = DataPanel.IMAGE_HEIGHT;
+    int width = 640;
+    BufferedImage inPlot = dataBox.getAsImage(width, inHeight);
     ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
 
     BufferedImage outPlot = ep.getAsImage( width, 480);
