@@ -15,7 +15,9 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JWindow;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jfree.chart.ChartColor;
@@ -86,7 +88,7 @@ public class DataPanel extends JPanel implements ActionListener {
       
       // don't add a space below the last plot (yet)
       if( i+1 < DataStore.FILE_COUNT) {
-        allCharts.add( Box.createRigidArea( new Dimension(0,5) ) );
+        allCharts.add( Box.createVerticalStrut(5) );
       }
 
       
@@ -95,7 +97,7 @@ public class DataPanel extends JPanel implements ActionListener {
     this.add(allCharts);
     
     // now we can add the space between the last plot and the save button
-    this.add( Box.createRigidArea( new Dimension(0,5) ) );
+    this.add( Box.createVerticalStrut(5) );
     
     save = new JButton("Save");
     this.add(save);
@@ -181,7 +183,7 @@ public class DataPanel extends JPanel implements ActionListener {
         }
         try {
           
-          BufferedImage bi = getAsImage(0, 0);
+          BufferedImage bi = getAsImage(640, 240*DataStore.FILE_COUNT);
           
           ImageIO.write(bi,"png",selFile);
         } catch (IOException e1) {
@@ -195,8 +197,42 @@ public class DataPanel extends JPanel implements ActionListener {
   
   public BufferedImage getAsImage(int width, int height) {
     
-    width = Math.max( width, allCharts.getWidth() );
-    height = Math.max( height, allCharts.getHeight() );
+    // int shownHeight = allCharts.getHeight();
+    
+    width = Math.max( width, chartPanels[0].getWidth() );
+    // height = Math.max( height, shownHeight );
+    
+    // cheap way to make sure height is a multiple of the chart count
+    height = (height*DataStore.FILE_COUNT)/DataStore.FILE_COUNT;
+    
+    int chartHeight = height/DataStore.FILE_COUNT;
+    
+    Dimension outSize = new Dimension(width, height);
+
+    JPanel toDraw = new JPanel(); // what we're going to draw to image
+    toDraw.setSize(outSize);
+    toDraw.setPreferredSize(outSize);
+    toDraw.setMinimumSize(outSize);
+    toDraw.setMaximumSize(outSize);
+    
+    toDraw.setLayout( new BoxLayout(toDraw, BoxLayout.Y_AXIS) );
+
+    for (ChartPanel cp : chartPanels) {
+      // toDraw.add( Box.createVerticalStrut(5) );
+      Dimension chartSize = new Dimension(width, chartHeight);
+      ChartPanel outPanel = new ChartPanel( cp.getChart() );
+      outPanel.setSize(chartSize);
+      outPanel.setPreferredSize(chartSize);
+      outPanel.setMinimumSize(chartSize);
+      outPanel.setMaximumSize(chartSize);
+      outPanel.setMinimumDrawHeight(chartHeight);
+      toDraw.add(outPanel);
+    }
+    
+
+    JFrame jw = new JFrame();
+    jw.add(toDraw);
+    jw.pack();
     
     BufferedImage bi = new BufferedImage(
         width, 
@@ -204,8 +240,10 @@ public class DataPanel extends JPanel implements ActionListener {
         BufferedImage.TYPE_INT_ARGB);
 
     Graphics2D g = bi.createGraphics();
-    allCharts.printAll(g);
+    toDraw.printAll(g);
     g.dispose();
+    
+    jw.setVisible(false);
 
     return bi;
   }

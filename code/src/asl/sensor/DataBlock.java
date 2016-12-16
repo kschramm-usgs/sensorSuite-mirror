@@ -54,6 +54,7 @@ public class DataBlock {
   public XYSeries toXYSeries() {
     
     final int TRUNCATED_INTERVAL = 100; // used to cheaply decimate plots
+    // (the data loaded in is unchanged, this just speeds up display)
     
     XYSeries out = new XYSeries(name);
     long thisTime = getStartTime();

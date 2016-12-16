@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,9 +34,11 @@ public class NoiseExperiment extends Experiment {
     super();
     xAxisTitle = "Period (s)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
-    xAxis = new LogarithmicAxis(xAxisTitle);
+    xAxis = new LogarithmicAxis(xAxisTitle); 
     yAxis = new NumberAxis(yAxisTitle);
-    
+    Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
+    xAxis.setLabelFont(bold);
+    yAxis.setLabelFont(bold);
   }
   
   /**

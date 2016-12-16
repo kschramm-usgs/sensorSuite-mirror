@@ -117,12 +117,6 @@ public class DataBlockHelper {
             // the other type instead
             int dataType = decomp.getType();
             
-            // This is probably the best way to do this since
-            // we have to add each point individually anyway
-            // and converting between types for 
-
-
-            
             switch (dataType) {
             case B1000Types.INTEGER:
               int[] decomArrayInt = decomp.getAsInt();

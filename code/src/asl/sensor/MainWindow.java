@@ -116,7 +116,7 @@ public class MainWindow extends JPanel implements ActionListener {
     buttonPanel.add(generate);
     
     savePDF = new JButton("Save display (PNG)");
-    savePDF.setEnabled(false);
+    savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
     buttonPanel.add(savePDF);
     
@@ -196,8 +196,7 @@ public class MainWindow extends JPanel implements ActionListener {
       JButton seedButton = seedLoaders[i];
       JButton respButton = respLoaders[i];
       if ( e.getSource() == seedButton ) {
-        
-        // TODO: try-catch on set data to prevent premature renaming
+        fc.resetChoosableFileFilters();
         int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
@@ -207,12 +206,12 @@ public class MainWindow extends JPanel implements ActionListener {
           
         }
       } else if ( e.getSource() == respButton ) {
-        
+        fc.resetChoosableFileFilters();
         int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
-          dataBox.setResponse( i, file.getAbsolutePath() );
           
+          dataBox.setResponse( i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
         }
       }
@@ -257,25 +256,27 @@ public class MainWindow extends JPanel implements ActionListener {
    */
   public void plotsToPNG(File file) throws IOException {
     // using 0s to set image height and width to default values (match window)
-    BufferedImage inPlot = dataBox.getAsImage(0, 0);
+    int inHeight = 240*DataStore.FILE_COUNT;
+    BufferedImage inPlot = dataBox.getAsImage(640, inHeight);
+    int width = inPlot.getWidth();
     ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
-    BufferedImage outPlot = ep.getAsImage( inPlot.getWidth(), 0 );
+
+    BufferedImage outPlot = ep.getAsImage( width, 480);
     
-    int width = Math.max( inPlot.getWidth(), outPlot.getWidth() );
+    // int width = Math.max( inPlot.getWidth(), outPlot.getWidth() );
     // 5px tall buffer used to separate result plot from inputs
-    BufferedImage space = getSpace(width, 5);
-    int height = inPlot.getHeight() + outPlot.getHeight() + space.getHeight();
+    // BufferedImage space = getSpace(width, 0);
+    int height = inPlot.getHeight() + outPlot.getHeight();
     
-    System.out.println(space.getHeight());
+    // System.out.println(space.getHeight());
     
     BufferedImage toFile = new BufferedImage(width, height, 
         BufferedImage.TYPE_INT_ARGB);
     
     Graphics2D combined = toFile.createGraphics();
     combined.drawImage(outPlot, null, 0, 0);
-    combined.drawImage(space, null, 0, outPlot.getHeight() );
     combined.drawImage( inPlot, null, 0, 
-        outPlot.getHeight() + space.getHeight() );
+        outPlot.getHeight() );
     combined.dispose();
     
     // for now, it's a png. TODO: write to PDF?
@@ -291,7 +292,7 @@ public class MainWindow extends JPanel implements ActionListener {
         BufferedImage.TYPE_INT_RGB);
     Graphics2D tmp = space.createGraphics();
     JPanel margin = new JPanel();
-    margin.add( Box.createRigidArea( new Dimension(0,5) ) );
+    margin.add( Box.createRigidArea( new Dimension(width,height) ) );
     margin.printAll(tmp);
     tmp.dispose();
     

@@ -9,7 +9,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -161,7 +160,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
           selFile = new File( selFile.toString() + ext);
         }
         try {
-          ChartUtilities.saveChartAsPNG(selFile,chart,1280,960);
+          ChartUtilities.saveChartAsPNG(selFile,chart,640,480);
         } catch (IOException e1) {
           // TODO Auto-generated catch block
           e1.printStackTrace();
