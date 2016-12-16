@@ -52,9 +52,13 @@ public class DataBlock {
    * @return JFreeChart XYSeries representation of the data
    */
   public XYSeries toXYSeries() {
+    
+    final int TRUNCATED_INTERVAL = 100; // used to cheaply decimate plots
+    
     XYSeries out = new XYSeries(name);
     long thisTime = getStartTime();
-    for (Number point : getData()) {
+    for (int i = 0; i < data.size(); i+=TRUNCATED_INTERVAL) {
+      Number point = data.get(i);
       out.add(thisTime, point);
       thisTime += getInterval();
     }

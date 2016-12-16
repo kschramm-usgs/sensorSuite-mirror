@@ -27,7 +27,7 @@ public class NoiseExperiment extends Experiment {
   private static final double TAPER_WIDTH = 0.10;
   
   /**
-   * Instantiates a noise experiment -- axis titles and (TODO) scales
+   * Instantiates a noise experiment -- axis titles and scales
    */
   public NoiseExperiment() {
     super();
@@ -52,6 +52,9 @@ public class NoiseExperiment extends Experiment {
     XYSeriesCollection plottable = new XYSeriesCollection();
     plottable.setAutoWidth(true);
     
+    Complex[][] spectra = new Complex[dataIn.length][];
+    double[] freqs = new double[1]; // initialize to prevent later errors
+    
     for (int i =0; i < dataIn.length; ++i) {
       // don't calculate if all the data isn't in yet
       if( dataIn[i] == null ||  
@@ -62,44 +65,91 @@ public class NoiseExperiment extends Experiment {
       }
     }
     
-    for (int i =0; i < dataIn.length; ++i) {
+    for (int i = 0; i < dataIn.length; ++i) {
       
       DataBlock data = dataIn[i];
       XYSeries powerSeries = new XYSeries("PSD "+data.getName() );
-      XYSeries noiseSeries = new XYSeries( "Noise "+data.getName() );
       
       InstrumentResponse response = responses[i];
       
       // first, get crosspower
       PSDStruct powSpectResult = powerSpectralDensity(data);
       Complex[] density = powSpectResult.getPSD();
-      double[] freqs = powSpectResult.getFreqs();
+      freqs = powSpectResult.getFreqs();
+      
+      spectra[i] = new Complex[freqs.length];
       
       // now, get responses to resulting frequencies
       Complex[] corrected = response.applyResponseToInput(freqs);
       
-      for (int j = freqs.length-1; j >= 0; --j) {
+      for (int j = 1; j < freqs.length; ++j) {
+        // moved some additional unit conversion calcs into response calculation
+        Complex respMagnitude = corrected[j];
         
-        Complex respMagnitude = 
-            corrected[j].multiply( corrected[j].conjugate() );
         if(respMagnitude.abs() == 0) {
-          throw new RuntimeException("Divide by zero error from responses");
+          // let's get as close to zero as we can
+          respMagnitude = new Complex(Double.MIN_VALUE, 0);
+          //throw new RuntimeException("Divide by zero error from responses");
         }
 
         density[j] = density[j].divide(respMagnitude);
         double dB = 10*Math.log10( density[j].abs());
         
-        if (1/freqs[j] < 1.0E3) {
+        spectra[i][j] = density[j];
+        
+        if(1/freqs[j] < 1.0E3){
           powerSeries.add(1/freqs[j], dB);
         }
         
       }
-
-      //plottable.addSeries(noiseSeries);
+      
+      
       plottable.addSeries(powerSeries);
       
     }
     
+    // WIP: use PSD results to get noise at each point see spectra
+    int length = spectra[0].length;
+    XYSeries[] noiseSeriesArr = new XYSeries[dataIn.length];
+    for(int j = 0; j < dataIn.length; ++j) {
+      // initialize each xySeries with proper name for the data
+      noiseSeriesArr[j] = new XYSeries( "Noise " + dataIn[j].getName() );
+    }
+
+    System.out.println(length+", "+spectra.length);
+    
+    for (int i = 1; i < length; ++i) {
+      for (int j = 0; j < spectra.length; ++j){
+        if (1/freqs[i] > 1.0E3){
+          continue;
+        }
+
+        // pi is psd value for signal i
+        Complex p1 = spectra[j][i];
+        Complex p2 = spectra[(j+1)%spectra.length][i];
+        Complex p3 = spectra[(j+2)%spectra.length][i];
+        // pij = pi * conj(pj)
+        Complex p11 = p1.multiply( p1.conjugate() );
+        Complex p12 = p1.multiply( p2.conjugate() );
+        Complex p13 = p1.multiply( p3.conjugate() );
+        Complex p23 = p2.multiply( p3.conjugate() );
+        // hij = pik/pjk
+        Complex h12 = p13.divide(p23);
+        // nii = pii - pij*hij
+        Complex n11 = p11.subtract( p12.multiply(h12) );
+        // now get magnitude and convert to dB
+        double toShow = 10*Math.log10(n11.abs());
+        if (Math.abs(toShow) != Double.POSITIVE_INFINITY) {
+          noiseSeriesArr[j].add(1/freqs[i], toShow);
+        }
+      }
+    }
+    
+    for (XYSeries noiseSeries : noiseSeriesArr) {
+      plottable.addSeries(noiseSeries);
+    }
+    
+ 
     return plottable;
   }
   

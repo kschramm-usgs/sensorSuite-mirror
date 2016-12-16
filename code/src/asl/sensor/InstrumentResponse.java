@@ -89,6 +89,10 @@ public class InstrumentResponse {
       scale = gain[1] * gain[2];
     }
     
+    // how many times do we need to do differentiation?
+    int differentiations = Unit.ACCELERATION.getDifferentiations(unitType);
+    // unlike s (see below) this is always 2Pi
+    double integConstant = 2*Math.PI;
     
     for (int i =0; i < frequencies.length; ++i) {
       // TODO: check this is right (Adam seemed to be saying so)
@@ -109,14 +113,11 @@ public class InstrumentResponse {
       }
       
       resps[i] = numerator.multiply(normalization).divide(denominator);
-      
-      // how many times do we need to do differentiation?
-      int differentiations = Unit.ACCELERATION.getDifferentiations(unitType);
+     
       
       // TODO: also do a check for integration?
       for (int j = 0; j < differentiations; ++j ) {
-        // unlike S this is always 2Pi
-        double integConstant = 2*Math.PI;
+
         // i*omega -- differentiate n times by taking I(omg) / (i*omg)^n
         Complex iw = new Complex(0.0, -1.0 / (integConstant * frequencies[i]) );
         // (just need to do this one to go from vel to accel)
@@ -125,6 +126,11 @@ public class InstrumentResponse {
       
       // lastly, scale by the scale we chose (gain0 or gain1*gain2)
       resps[i] = resps[i].multiply(scale);
+      
+      // unit conversion back out of acceleration
+      double conversion =  frequencies[i]*2*Math.PI;
+      resps[i] = resps[i].multiply( resps[i].conjugate() );
+      resps[i] = resps[i].multiply( Math.pow(conversion, 2) );
       
     }
     
