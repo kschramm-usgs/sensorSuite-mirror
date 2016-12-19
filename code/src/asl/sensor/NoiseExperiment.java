@@ -8,7 +8,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -70,7 +69,19 @@ public class NoiseExperiment extends Experiment {
     Complex[][] freqRespd = new Complex[dataIn.length][];
     double[] freqs = new double[1]; // initialize to prevent later errors
     
-    for (int i =0; i < dataIn.length; ++i) {
+    long interval = dataIn[0].getInterval();
+    int length = dataIn[0].getData().size();
+    for (DataBlock data : dataIn) {
+      if ( data.getInterval() != interval ) {
+        throw new RuntimeException("Interval mismatch on datasets.");
+      }
+      if( data.getData().size() != length ) {
+        // TODO: truncate data on read-in so this doesn't happen
+        throw new RuntimeException("Length mismatch on datasets.");
+      }
+    }
+    
+    for (int i = 0; i < dataIn.length; ++i) {
       // don't calculate if all the data isn't in yet
       if( dataIn[i] == null ||  
           dataIn[i].getData().size() == 0 ||
@@ -80,96 +91,85 @@ public class NoiseExperiment extends Experiment {
       }
     }
     
+    
+    // TODO: send to an external method so it's not duplicated?
     for (int i = 0; i < dataIn.length; ++i) {
       
       DataBlock data = dataIn[i];
+      InstrumentResponse ir = responses[i];
       XYSeries powerSeries = new XYSeries("PSD "+data.getName() );
       
-      InstrumentResponse response = responses[i];
+      FFTStruct fft = crossPower(data, data, ir, ir);
       
-      // first, get crosspower
-      PSDStruct powSpectResult = powerSpectralDensity(data);
-      Complex[] density = powSpectResult.getPSD();
-      freqs = powSpectResult.getFreqs();
+      Complex[] resultPSD = fft.getFFT();
       
-      spectra[i] = new Complex[freqs.length];
+      spectra[i] = resultPSD; // array of pii values
+      freqs = fft.getFreqs();
       
-      // now, get responses to resulting frequencies
-      Complex[] corrected = response.applyResponseToInput(freqs);
-      freqRespd[i] = corrected;
+      // TODO: find a way to refactor since this is technically redundant
+      freqRespd[i] = ir.applyResponseToInput(freqs);
       
-      for (int j = 1; j < freqs.length; ++j) {
-        // moved some additional unit conversion calcs into response calculation
-        Complex respMagnitude = corrected[j];
-        
-        if(respMagnitude.abs() == 0) {
-          // let's get as close to zero as we can
-          respMagnitude = new Complex(Double.MIN_VALUE, 0);
-          //throw new RuntimeException("Divide by zero error from responses");
+      for (int j = 0; j < freqs.length; ++j) {
+        if (1/freqs[j] > 1.0E3) {
+          continue;
         }
-
-        density[j] = density[j].divide(respMagnitude);
-        double dB = 10*Math.log10( density[j].abs());
-        
-        spectra[i][j] = density[j];
-        
-        if(1/freqs[j] < 1.0E3){
-          powerSeries.add(1/freqs[j], dB);
-        }
-        
+         
+        powerSeries.add( 1/freqs[j], 10*Math.log10( resultPSD[j].abs() ) );
       }
-      
-      
+     
       plottable.addSeries(powerSeries);
       
     }
     
+    // spectra[i] is crosspower pii, now to get pij terms for i!=j
+    FFTStruct fft = 
+        crossPower(dataIn[0], dataIn[2], responses[0], responses[2]);
+    Complex[] c13 = fft.getFFT();
+    fft = crossPower(dataIn[1], dataIn[0], responses[1], responses[0]);
+    Complex[] c21 = fft.getFFT();
+    fft = crossPower(dataIn[1], dataIn[2], responses[1], responses[2]);
+    Complex[] c23 = fft.getFFT();
+    
     // WIP: use PSD results to get noise at each point see spectra
-    int length = spectra[0].length;
     XYSeries[] noiseSeriesArr = new XYSeries[dataIn.length];
     for(int j = 0; j < dataIn.length; ++j) {
       // initialize each xySeries with proper name for the data
       noiseSeriesArr[j] = new XYSeries( "Noise " + dataIn[j].getName() );
     }
-
-    System.out.println(length+", "+spectra.length);
     
-    for (int i = 1; i < length; ++i) {
+    for (int i = 1; i < freqs.length; ++i) {
         if (1/freqs[i] > 1.0E3){
           continue;
         }
-        Complex f1 = freqRespd[1][i];
-        // assuming here that we are doing single-input noise (per sensor)
-        // pi is psd value for signal i
-        Complex p1 = spectra[0][i];
-        Complex p2 = spectra[1][i];
-        Complex p3 = spectra[2][i];
+        Complex f1 = freqRespd[0][i];
+        Complex f2 = freqRespd[1][i];
+        Complex f3 = freqRespd[2][i];
         
-        // pij = pi * conj(pj)
-        Complex p11 = p1.multiply( p1.conjugate() );
-        Complex p13 = p1.multiply( p3.conjugate() );
-        Complex p21 = p2.multiply( p1.conjugate() );
-        Complex p22 = p2.multiply( p2.conjugate() );
-        Complex p23 = p2.multiply( p3.conjugate() );
-        Complex p33 = p3.multiply( p3.conjugate() );
+        Complex p11 = spectra[0][i];
+        Complex p22 = spectra[1][i];
+        Complex p33 = spectra[2][i];
+
+        Complex p13 = c13[i];
+        Complex p21 = c21[i];
+        Complex p23 = c23[i];
         
         // nii = pii - pij*hij
         Complex n11 = 
             p11.subtract(
                 p21.multiply(p13).divide(p23) )
-              .divide(freqRespd[0][i]);
+              .divide(f1);
         n11 = n11.multiply(Math.pow(2*Math.PI*freqs[i],2));
         
         Complex n22 = 
             p22.subtract(
                 ( p23.conjugate() ).multiply(p21).divide( p13.conjugate() ) )
-              .divide(freqRespd[1][i]);
+              .divide(f2);
         n22 = n22.multiply(Math.pow(2*Math.PI*freqs[i],2));
         
         Complex n33 = 
             p33.subtract(
                 p23.multiply( p13.conjugate() ).divide( p21 ) )
-              .divide(freqRespd[2][i]);
+              .divide(f3);
         n33 = n33.multiply(Math.pow(2*Math.PI*freqs[i],2));
         
         // now get magnitude and convert to dB
@@ -193,8 +193,33 @@ public class NoiseExperiment extends Experiment {
     
     plottable.addSeries( getLowNoiseModel() );
     
- 
     return plottable;
+  }
+  
+  public FFTStruct crossPower(DataBlock data1, DataBlock data2,
+      InstrumentResponse ir1, InstrumentResponse ir2) {
+    
+    FFTStruct selfPSD = spectralCalc(data1, data2);
+    Complex[] results = selfPSD.getFFT();
+    double[] freqs = selfPSD.getFreqs();
+    Complex[] out = new Complex[freqs.length];
+    Complex[] freqRespd1 = ir1.applyResponseToInput(freqs);
+    Complex[] freqRespd2 = ir2.applyResponseToInput(freqs);
+    freqs = selfPSD.getFreqs();
+    
+    for (int j = 0; j < freqs.length; ++j) {
+      Complex respMagnitude = 
+          freqRespd1[j].multiply( freqRespd2[j].conjugate() );
+      if (respMagnitude.abs() == 0) {
+        respMagnitude = new Complex(Double.MIN_VALUE, 0);
+      }
+      
+      out[j] = results[j].divide(respMagnitude);
+      
+    }
+    
+    return new FFTStruct(out, freqs);
+    
   }
   
   // TODO: move these signal processing functions into their own
@@ -208,11 +233,18 @@ public class NoiseExperiment extends Experiment {
    * representing the PSD result, and an array of doubles representing the
    * frequencies of the PSD.
    */
-  public PSDStruct powerSpectralDensity(DataBlock dataIn) {
+  public FFTStruct spectralCalc(DataBlock data1, DataBlock data2) {
+    
+    // TODO: try to split off some of the windowed FFT calculations
+    // in order to improve quality of code
+    
+    // this is ugly logic here, but this saves us issues with looping
+    // and calculating the same data twice
+    boolean sameData = data1.getName().equals(data2.getName());
     
     // divide into windows of 1/4, moving up 1/16 of the data at a time
     
-    int range = dataIn.getData().size()/4;
+    int range = data1.getData().size()/4;
     int slider = range/4;
     
     // period is 1/sample rate in seconds
@@ -221,7 +253,7 @@ public class NoiseExperiment extends Experiment {
     
     // shouldn't need to worry about a cast here
     double period = 1.0 / DataBlockHelper.ONE_HZ_INTERVAL;
-    period *= dataIn.getInterval();
+    period *= data1.getInterval();
     
     int padding = 2;
     while (padding < range) {
@@ -242,43 +274,82 @@ public class NoiseExperiment extends Experiment {
       powSpectDens[i] = Complex.ZERO;
     }
     
-    while ( rangeEnd <= dataIn.getData().size() ) {
+    while ( rangeEnd <= data1.getData().size() ) {
       
-      Complex[] fftResult = new Complex[singleSide]; // first half of FFT reslt
+      Complex[] fftResult1 = new Complex[singleSide]; // first half of FFT reslt
+      Complex[] fftResult2 = null;
+      
+      if (!sameData) {
+        fftResult2 = new Complex[singleSide];
+      }
       
       // give us a new list we can modify to get the data of
-      List<Number> dataInRange = 
-          new ArrayList<Number>(dataIn.getData().subList(rangeStart, rangeEnd));
+      List<Number> data1Range = 
+          new ArrayList<Number>(
+              data1.getData().subList(rangeStart, rangeEnd) );
+      List<Number> data2Range = null;
       
-      
-      // demean and detrend work in-place on the list
-      demean(dataInRange);
-      detrend(dataInRange);
-      
-      wss = cosineTaper(dataInRange, TAPER_WIDTH);
-      
+      if (!sameData) {
+        data2Range = 
+            new ArrayList<Number>(
+                data2.getData().subList(rangeStart, rangeEnd) );
+      }
+       
       // double arrays initialized with zeros, set as a power of two for FFT
       // (i.e., effectively pre-padded on initialization)
-      double[] toFFT = new double[padding];
-      for (int i = 0; i < dataInRange.size(); ++i) {
+      double[] toFFT1 = new double[padding];
+      double[] toFFT2 = null;
+      
+      // demean and detrend work in-place on the list
+      demean(data1Range);
+      detrend(data1Range);
+      wss = cosineTaper(data1Range, TAPER_WIDTH);
+      // TODO: check that we only need the last value of wss
+      
+      if (!sameData) {
+        demean(data2Range);
+        detrend(data2Range);
+        wss = cosineTaper(data2Range, TAPER_WIDTH);
+        toFFT2 = new double[padding];
+      }
+      
+
+      for (int i = 0; i < data1Range.size(); ++i) {
         // no point in using arraycopy -- must make sure each Number's a double
-        toFFT[i] = dataInRange.get(i).doubleValue();
+        toFFT1[i] = data1Range.get(i).doubleValue();
+        if (!sameData) {
+          toFFT2[i] = data2Range.get(i).doubleValue();
+        }
       }
       
       FastFourierTransformer fft = 
           new FastFourierTransformer(DftNormalization.STANDARD);
 
 
-      Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-      
+      Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
       // use arraycopy now (as it's fast) to get the first half of the fft
-      System.arraycopy(frqDomn, 0, fftResult, 0, fftResult.length);
+      System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
+      
+      Complex[] frqDomn2 = null;
+      if (toFFT2 != null) {
+        frqDomn2 = fft.transform(toFFT2, TransformType.FORWARD);
+        System.arraycopy(frqDomn2, 0, fftResult2, 0, fftResult2.length);
+      }
+      
+
       
       for (int i = 0; i < singleSide; ++i) {
+        
+        Complex val1 = fftResult1[i];
+        Complex val2 = val1;
+        if (fftResult2 != null) {
+          val2 = fftResult2[i];
+        }
+        
         powSpectDens[i] = 
             powSpectDens[i].add( 
-                fftResult[i].multiply( 
-                    fftResult[i].conjugate() ) );
+                val1.multiply( 
+                    val2.conjugate() ) );
       }
       
       ++segsProcessed;
@@ -332,7 +403,7 @@ public class NoiseExperiment extends Experiment {
       psdCFSmooth[iw] = powSpectDens[iw];
     }
     
-    return new PSDStruct(psdCFSmooth, frequencies);
+    return new FFTStruct(psdCFSmooth, frequencies);
     
   }
   
@@ -463,13 +534,13 @@ public class NoiseExperiment extends Experiment {
    * @author akearns
    *
    */
-  public class PSDStruct {
+  public class FFTStruct {
     
-    Complex[] PSD;
+    Complex[] transform;
     double[] freqs;
     
-    public PSDStruct(Complex[] inPSD, double[] inFreq) {
-      PSD = inPSD;
+    public FFTStruct(Complex[] inPSD, double[] inFreq) {
+      transform = inPSD;
       freqs = inFreq;
     }
     
@@ -477,8 +548,8 @@ public class NoiseExperiment extends Experiment {
       return freqs;
     }
     
-    public Complex[] getPSD() {
-      return PSD;
+    public Complex[] getFFT() {
+      return transform;
     }
     
   }
