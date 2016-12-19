@@ -65,7 +65,9 @@ public class NoiseExperiment extends Experiment {
     XYSeriesCollection plottable = new XYSeriesCollection();
     plottable.setAutoWidth(true);
     
+    // TODO: make sure (i.e., when reading in data) that series lengths' match
     Complex[][] spectra = new Complex[dataIn.length][];
+    Complex[][] freqRespd = new Complex[dataIn.length][];
     double[] freqs = new double[1]; // initialize to prevent later errors
     
     for (int i =0; i < dataIn.length; ++i) {
@@ -94,6 +96,7 @@ public class NoiseExperiment extends Experiment {
       
       // now, get responses to resulting frequencies
       Complex[] corrected = response.applyResponseToInput(freqs);
+      freqRespd[i] = corrected;
       
       for (int j = 1; j < freqs.length; ++j) {
         // moved some additional unit conversion calcs into response calculation
@@ -132,30 +135,56 @@ public class NoiseExperiment extends Experiment {
     System.out.println(length+", "+spectra.length);
     
     for (int i = 1; i < length; ++i) {
-      for (int j = 0; j < spectra.length; ++j){
         if (1/freqs[i] > 1.0E3){
           continue;
         }
-
+        Complex f1 = freqRespd[1][i];
+        // assuming here that we are doing single-input noise (per sensor)
         // pi is psd value for signal i
-        Complex p1 = spectra[j][i];
-        Complex p2 = spectra[(j+1)%spectra.length][i];
-        Complex p3 = spectra[(j+2)%spectra.length][i];
+        Complex p1 = spectra[0][i];
+        Complex p2 = spectra[1][i];
+        Complex p3 = spectra[2][i];
+        
         // pij = pi * conj(pj)
         Complex p11 = p1.multiply( p1.conjugate() );
-        Complex p12 = p1.multiply( p2.conjugate() );
         Complex p13 = p1.multiply( p3.conjugate() );
+        Complex p21 = p2.multiply( p1.conjugate() );
+        Complex p22 = p2.multiply( p2.conjugate() );
         Complex p23 = p2.multiply( p3.conjugate() );
-        // hij = pik/pjk
-        Complex h12 = p13.divide(p23);
+        Complex p33 = p3.multiply( p3.conjugate() );
+        
         // nii = pii - pij*hij
-        Complex n11 = p11.subtract( p12.multiply(h12) );
+        Complex n11 = 
+            p11.subtract(
+                p21.multiply(p13).divide(p23) )
+              .divide(freqRespd[0][i]);
+        n11 = n11.multiply(Math.pow(2*Math.PI*freqs[i],2));
+        
+        Complex n22 = 
+            p22.subtract(
+                ( p23.conjugate() ).multiply(p21).divide( p13.conjugate() ) )
+              .divide(freqRespd[1][i]);
+        n22 = n22.multiply(Math.pow(2*Math.PI*freqs[i],2));
+        
+        Complex n33 = 
+            p33.subtract(
+                p23.multiply( p13.conjugate() ).divide( p21 ) )
+              .divide(freqRespd[2][i]);
+        n33 = n33.multiply(Math.pow(2*Math.PI*freqs[i],2));
+        
         // now get magnitude and convert to dB
-        double toShow = 10*Math.log10(n11.abs());
-        if (Math.abs(toShow) != Double.POSITIVE_INFINITY) {
-          noiseSeriesArr[j].add(1/freqs[i], toShow);
+        double plot1 = 10*Math.log10( n11.abs() );
+        double plot2 = 10*Math.log10( n22.abs() );
+        double plot3 = 10*Math.log10( n33.abs() );
+        if (Math.abs(plot1) != Double.POSITIVE_INFINITY) {
+          noiseSeriesArr[0].add(1/freqs[i], plot1);
         }
-      }
+        if (Math.abs(plot2) != Double.POSITIVE_INFINITY) {
+          noiseSeriesArr[1].add(1/freqs[i], plot2);
+        }
+        if (Math.abs(plot3) != Double.POSITIVE_INFINITY) {
+          noiseSeriesArr[2].add(1/freqs[i], plot3);
+        }
     }
     
     for (XYSeries noiseSeries : noiseSeriesArr) {
