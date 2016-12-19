@@ -1,8 +1,14 @@
 package asl.sensor;
 
 import java.awt.Font;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -41,6 +47,10 @@ public class NoiseExperiment extends Experiment {
     yAxis.setLabelFont(bold);
   }
   
+  @Override
+  public String[] getBoldSeriesNames() {
+    return new String[]{"NLNM"};
+  }
   /**
    * Generates power spectral density of each inputted file, and calculates
    * self-noise based on that result
@@ -151,6 +161,8 @@ public class NoiseExperiment extends Experiment {
     for (XYSeries noiseSeries : noiseSeriesArr) {
       plottable.addSeries(noiseSeries);
     }
+    
+    plottable.addSeries( getLowNoiseModel() );
     
  
     return plottable;
@@ -383,6 +395,37 @@ public class NoiseExperiment extends Experiment {
     Wss += ( dataSet.size() - (2*ramp) );
     
     return Wss;
+  }
+  
+  public static XYSeries getLowNoiseModel() {
+    // TODO: define NLNM as an array or something in a different class
+    XYSeries xys = new XYSeries("NLNM");
+    try {
+      BufferedReader fr = new BufferedReader(
+                            new FileReader(
+                              new File("data/NLNM.txt") ) );
+      String str = fr.readLine();
+      while (str != null) {
+        String[] values = str.split("\\s+");
+        double x = Double.parseDouble(values[0]);
+        if (x > 1.0E3) {
+          break;
+        }
+        double y = Double.parseDouble(values[3]);
+        
+        xys.add(x,y);
+        
+        str = fr.readLine();
+      }
+      fr.close();
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return xys;
   }
   
   /**

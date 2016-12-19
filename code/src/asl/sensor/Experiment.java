@@ -21,8 +21,12 @@ public abstract class Experiment {
     
   }
   
-  public XYSeriesCollection getData(){
+  public XYSeriesCollection getData() {
     return xySeriesData;
+  }
+  
+  public String[] getBoldSeriesNames() {
+    return new String[]{};
   }
   
   public void setData(DataStore ds) {

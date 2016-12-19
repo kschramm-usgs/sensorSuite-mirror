@@ -1,8 +1,10 @@
 package asl.sensor;
 
+import java.awt.BasicStroke;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -21,6 +23,8 @@ import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYItemRenderer;
+import org.jfree.data.xy.XYSeriesCollection;
 
 /**
  * Panel used to display the data produced from a specified sensor test
@@ -53,17 +57,29 @@ public class ExperimentPanel extends JPanel implements ActionListener {
    * @return A chart displaying the data from the performed experiment
    */
   public static JFreeChart populateChart(ExperimentEnum expT, Experiment expR) {
+    
+    XYSeriesCollection data = expR.getData();
+    
     JFreeChart chart = ChartFactory.createXYLineChart(
         expT.getName(),
         expR.getXTitle(),
         expR.getYTitle(),
-        expR.getData(),
+        data,
         PlotOrientation.VERTICAL,
         true, // include legend
         false, 
         false);
     
     XYPlot xyPlot = chart.getXYPlot();
+    
+    String[] bold = expR.getBoldSeriesNames();
+    XYItemRenderer xyir = xyPlot.getRenderer();
+    for (String series : bold) {
+      int seriesIdx = data.getSeriesIndex(series);
+      BasicStroke stroke = (BasicStroke) xyir.getBaseStroke();
+      stroke = new BasicStroke( stroke.getLineWidth()*2 );
+      xyir.setSeriesStroke(seriesIdx, stroke);
+    }
     
     xyPlot.setDomainAxis(expR.getXAxis());
     xyPlot.setRangeAxis(expR.getYAxis());
@@ -88,7 +104,9 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     save = new JButton("Save Plot");
     save.addActionListener(this);
     
-    chart = populateChart(expType, expResult);
+    // chart = populateChart(expType, expResult);
+    chart = ChartFactory.createXYLineChart(expType.getName(), 
+        expResult.getXTitle(), expResult.getYTitle(), null);
     chartPanel = new ChartPanel(chart);
     chartPanel.setMouseZoomable(false);
     
