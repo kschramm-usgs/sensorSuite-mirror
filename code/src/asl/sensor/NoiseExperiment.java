@@ -85,7 +85,6 @@ public class NoiseExperiment extends Experiment {
         throw new RuntimeException("Interval mismatch on datasets.");
       }
       if( data.getData().size() != length ) {
-        // TODO: truncate data on read-in so this doesn't happen
         throw new RuntimeException("Length mismatch on datasets.");
       }
     }
@@ -101,7 +100,6 @@ public class NoiseExperiment extends Experiment {
     }
     
     
-    // TODO: send to an external method so it's not duplicated?
     for (int i = 0; i < dataIn.length; ++i) {
       
       DataBlock data = dataIn[i];
@@ -264,9 +262,6 @@ public class NoiseExperiment extends Experiment {
    * frequencies of the PSD.
    */
   private FFTStruct spectralCalc(DataBlock data1, DataBlock data2) {
-    
-    // TODO: try to split off some of the windowed FFT calculations
-    // in order to improve quality of code
     
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
@@ -556,10 +551,8 @@ public class NoiseExperiment extends Experiment {
       }
       fr.close();
     } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     } catch (IOException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
     return xys;
@@ -576,15 +569,31 @@ public class NoiseExperiment extends Experiment {
     Complex[] transform;
     double[] freqs;
     
+    /**
+     * Instantiate the structure holding an FFT and its frequency range
+     * (Used to return data from the spectral density calculations)
+     * Holds results of an FFT calculation already performed, usable in return
+     * statements
+     * @param inPSD Precalculated FFT result for some timeseries
+     * @param inFreq Frequencies matched up to each FFT value
+     */
     public FFTStruct(Complex[] inPSD, double[] inFreq) {
       transform = inPSD;
       freqs = inFreq;
     }
     
+    /**
+     * Get the frequency range for the (previously calculated) FFT
+     * @return Array of frequencies (doubles), matching index to each FFT point
+     */
     public double[] getFreqs() {
       return freqs;
     }
     
+    /**
+     * Get the FFT for some sort of previously calculated data
+     * @return Array of FFT results, as complex numbers
+     */
     public Complex[] getFFT() {
       return transform;
     }
