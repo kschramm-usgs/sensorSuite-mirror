@@ -52,8 +52,16 @@ public class NoiseExperiment extends Experiment {
   }
   /**
    * Generates power spectral density of each inputted file, and calculates
-   * self-noise based on that result
-   * The formula for self-noise calculation is (TODO description)
+   * self-noise based on that result.
+   * The overhead view is as follows: 
+   * Take a window of size 1/4 incrementing through 1/16 of the data and
+   * calculate the FFT of that region. Average these results together.
+   * Apply the magnitude of the frequency response (relative to the FFT indices)
+   * to that result and then take the complex conjugate. 
+   * This produces the PSD plots.
+   * Then, take the cross-powers of each of the terms (same calculation, but
+   * multiply one result by the complex conjugate of the other), producing the
+   * remaining terms for the formula for the self-noise results.
    */
   @Override
   XYSeriesCollection backend(DataStore ds) {
@@ -65,6 +73,7 @@ public class NoiseExperiment extends Experiment {
     plottable.setAutoWidth(true);
     
     // TODO: make sure (i.e., when reading in data) that series lengths' match
+    // rather than throwing the exceptions here
     Complex[][] spectra = new Complex[dataIn.length][];
     Complex[][] freqRespd = new Complex[dataIn.length][];
     double[] freqs = new double[1]; // initialize to prevent later errors
@@ -196,6 +205,19 @@ public class NoiseExperiment extends Experiment {
     return plottable;
   }
   
+  /**
+   * Root funtion for calculating crosspower. Gets spectral calculation of data
+   * from inputted data series by calling the spectralCalc function, and then
+   * applies the provided responses to that result. This is the Power Spectral
+   * Density of the inputted data if both sets are the same.
+   * @param data1 First data series
+   * @param data2 Second data series
+   * @param ir1 Response of instrument producing first series
+   * @param ir2 Response of instrument producing second series
+   * @return Data structure containing the crosspower result of the two data
+   * sets as a complex array and the frequencies matched to them in a double
+   * array. 
+   */
   public FFTStruct crossPower(DataBlock data1, DataBlock data2,
       InstrumentResponse ir1, InstrumentResponse ir2) {
     
@@ -227,13 +249,21 @@ public class NoiseExperiment extends Experiment {
   // along with the DataSeriesHelper code
   
   /**
-   * Helper function to calculate power spectral density
-   * @param dataIn DataBlock with relevant time series data
+   * Helper function to calculate power spectral density / crosspower.
+   * Takes in two time series data and produces the windowed FFT over each.
+   * The first is multiplied by the complex conjugate of the second.
+   * If the two series are the same, this is the PSD of that series. If they
+   * are different, this result is the crosspower.
+   * The result is smoothed but does not have the frequency response applied,
+   * and so does not give a full result -- this is merely a helper function
+   * for the crossPower function.
+   * @param data1 DataBlock with relevant time series data
+   * @param data2 DataBlock with relevant time series data
    * @return A structure with two arrays: an array of Complex numbers 
    * representing the PSD result, and an array of doubles representing the
    * frequencies of the PSD.
    */
-  public FFTStruct spectralCalc(DataBlock data1, DataBlock data2) {
+  private FFTStruct spectralCalc(DataBlock data1, DataBlock data2) {
     
     // TODO: try to split off some of the windowed FFT calculations
     // in order to improve quality of code
@@ -475,6 +505,7 @@ public class NoiseExperiment extends Experiment {
 
   /**
    * Calculates and performs an in-place cosine taper on an incoming data set.
+   * Used for windowing for performing FFT.
    * @param dataSet The dataset to have the taper applied to.
    * @return Value corresponding to power loss from application of taper.
    */
@@ -497,6 +528,12 @@ public class NoiseExperiment extends Experiment {
     return Wss;
   }
   
+  /**
+   * Collects the data points in the Peterson new low noise model to be plotted
+   * Assumes that there is a text file in the data folder that contains the
+   * NLNM data points for given input frequencies.
+   * @return Plottable data series representing the NLNM
+   */
   public static XYSeries getLowNoiseModel() {
     // TODO: define NLNM as an array or something in a different class
     XYSeries xys = new XYSeries("NLNM");
