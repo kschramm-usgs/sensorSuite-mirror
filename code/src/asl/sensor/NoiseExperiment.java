@@ -120,8 +120,11 @@ public class NoiseExperiment extends Experiment {
         if (1/freqs[j] > 1.0E3) {
           continue;
         }
+                
+        // TODO: is this right
+        Complex temp = resultPSD[j].multiply( Math.pow(2*Math.PI*freqs[j],2) );
          
-        powerSeries.add( 1/freqs[j], 10*Math.log10( resultPSD[j].abs() ) );
+        powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
       }
      
       plottable.addSeries(powerSeries);
@@ -262,14 +265,20 @@ public class NoiseExperiment extends Experiment {
    * frequencies of the PSD.
    */
   private FFTStruct spectralCalc(DataBlock data1, DataBlock data2) {
-    
+
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
-    boolean sameData = data1.getName().equals(data2.getName());
+    boolean sameData = data1.getName().equals( data2.getName() );
+    
+    List<Number> list1 = data1.getData();
+    List<Number> list2 = null;
+    if (!sameData) {
+      list2 = data2.getData();
+    }
     
     // divide into windows of 1/4, moving up 1/16 of the data at a time
     
-    int range = data1.getData().size()/4;
+    int range = list1.size()/4;
     int slider = range/4;
     
     // period is 1/sample rate in seconds
@@ -311,13 +320,13 @@ public class NoiseExperiment extends Experiment {
       // give us a new list we can modify to get the data of
       List<Number> data1Range = 
           new ArrayList<Number>(
-              data1.getData().subList(rangeStart, rangeEnd) );
+              list1.subList(rangeStart, rangeEnd) );
       List<Number> data2Range = null;
       
       if (!sameData) {
         data2Range = 
             new ArrayList<Number>(
-                data2.getData().subList(rangeStart, rangeEnd) );
+                list2.subList(rangeStart, rangeEnd) );
       }
        
       // double arrays initialized with zeros, set as a power of two for FFT

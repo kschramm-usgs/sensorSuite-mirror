@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jfree.data.xy.XYSeries;
@@ -37,7 +38,7 @@ public class DataBlock {
    */
   public DataBlock(DataBlock in) {
     setInterval(in.getInterval());
-    setData(in.getData());
+    setData( new ArrayList<Number>( in.getData() ) );
     name = in.getName();
     setStartTime(in.getStartTime());
   }

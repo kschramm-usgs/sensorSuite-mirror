@@ -3,6 +3,8 @@ package asl.sensor;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -17,8 +19,13 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.ScrollPaneLayout;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
@@ -42,9 +49,9 @@ public class MainWindow extends JPanel implements ActionListener {
   private static final long serialVersionUID = 2866426897343097822L;
   
   private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
-  private JLabel[] seedFileNames = new JLabel[DataStore.FILE_COUNT];
+  private JTextField[] seedFileNames = new JTextField[DataStore.FILE_COUNT];
   private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
-  private JLabel[] respFileNames = new JLabel[DataStore.FILE_COUNT];
+  private JTextField[] respFileNames = new JTextField[DataStore.FILE_COUNT];
   
   
   private JFileChooser fc; // loads in files based on parameter
@@ -95,19 +102,29 @@ public class MainWindow extends JPanel implements ActionListener {
     
     JPanel buttonPanel = new JPanel();
     buttonPanel.setPreferredSize(new Dimension(100,0));
-    buttonPanel.setLayout( new BoxLayout(buttonPanel, BoxLayout.Y_AXIS) );
+    buttonPanel.setLayout( new GridLayout(0, 1) );
     
     for (int i = 0; i < seedLoaders.length; i++){
       seedLoaders[i] = new JButton("Load SEED File " + (i+1) );
       seedLoaders[i].addActionListener(this);
-      seedFileNames[i] = new JLabel();
+      seedFileNames[i] = new JTextField();
       
       respLoaders[i] = new JButton("Load Response " + (i+1) );
       respLoaders[i].addActionListener(this);
-      respFileNames[i] = new JLabel();
+      respFileNames[i] = new JTextField();
       
-      initFile(seedLoaders[i], seedFileNames[i], buttonPanel);
-      initFile(respLoaders[i], respFileNames[i], buttonPanel);
+      seedFileNames[i].setEditable(false);
+      respFileNames[i].setEditable(false);
+      
+      JPanel combinedPanel = new JPanel();
+      combinedPanel.setLayout ( new GridLayout(0, 1) );
+      
+      initFile(seedLoaders[i], seedFileNames[i], combinedPanel);
+      initFile(respLoaders[i], respFileNames[i], combinedPanel);
+      
+      buttonPanel.add(combinedPanel);
+      
+      buttonPanel.add( new JSeparator() );
     }
 
     generate = new JButton("Generate plots");
@@ -121,6 +138,7 @@ public class MainWindow extends JPanel implements ActionListener {
     buttonPanel.add(savePDF);
     
     buttonPanel.setBorder( new EmptyBorder(5,5,5,5) );
+    
     
     //holds everything except the side panel used for file IO stuff
     JPanel temp = new JPanel();
@@ -144,14 +162,30 @@ public class MainWindow extends JPanel implements ActionListener {
    * @param text Filename (defaults to NO FILE LOADED when created)
    * @param panel The (side) panel that holds the button
    */
-  private static void initFile(JButton button, JLabel text, JPanel panel){
+  private static void initFile(JButton button, JTextField text, JPanel panel){
     button.setAlignmentX(SwingConstants.CENTER);
     
     text.setText("NO FILE LOADED");
     text.setAlignmentX(SwingConstants.CENTER);
+    
+    JScrollPane jsp = new JScrollPane();
 
-    panel.add(button);
-    panel.add(text);
+    jsp.setVerticalScrollBarPolicy(
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+
+    jsp.setViewportView(text);
+    
+    jsp.setPreferredSize( text.getPreferredSize() );
+    
+    JPanel buttonParent = new JPanel();
+    buttonParent.add(button);
+    
+    JPanel jspParent = new JPanel();
+    jspParent.add(jsp);
+    
+    
+    panel.add(buttonParent);
+    panel.add(jsp);
   }
   
   /**
