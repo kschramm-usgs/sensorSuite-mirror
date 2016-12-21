@@ -241,6 +241,7 @@ public class MainWindow extends JPanel implements ActionListener {
       JButton respButton = respLoaders[i];
       if ( e.getSource() == seedButton ) {
         fc.resetChoosableFileFilters();
+        fc.setDialogTitle("Load SEED file...");
         int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
@@ -251,6 +252,7 @@ public class MainWindow extends JPanel implements ActionListener {
         }
       } else if ( e.getSource() == respButton ) {
         fc.resetChoosableFileFilters();
+        fc.setDialogTitle("Load response file...");
         int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
@@ -274,6 +276,7 @@ public class MainWindow extends JPanel implements ActionListener {
       fc.addChoosableFileFilter(
           new FileNameExtensionFilter("PNG image (.png)",ext) );
       fc.setFileFilter(fc.getChoosableFileFilters()[1]);
+      fc.setDialogTitle("Save plot to PNG...");
       int returnVal = fc.showSaveDialog(savePDF);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         File selFile = fc.getSelectedFile();

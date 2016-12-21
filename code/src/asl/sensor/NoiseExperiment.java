@@ -113,6 +113,8 @@ public class NoiseExperiment extends Experiment {
       spectra[i] = resultPSD; // array of pii values
       freqs = fft.getFreqs();
       
+      // used for calculating crosspower later
+      // (response is already calculated into resultPSD array)
       freqRespd[i] = ir.applyResponseToInput(freqs);
       
       for (int j = 0; j < freqs.length; ++j) {
@@ -122,7 +124,7 @@ public class NoiseExperiment extends Experiment {
                 
         // TODO: is this right
         //Complex temp = resultPSD[j];
-        Complex temp = resultPSD[j].divide( Math.pow(2*Math.PI*freqs[j],2) );
+        Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],3));
          
         powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
       }
