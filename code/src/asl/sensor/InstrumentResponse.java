@@ -90,6 +90,7 @@ public class InstrumentResponse {
     }
     
     // how many times do we need to do differentiation?
+    // outUnits (acceleration) - inUnits
     int differentiations = Unit.ACCELERATION.getDifferentiations(unitType);
     // unlike s (see below) this is always 2Pi
     double integConstant = 2*Math.PI;
@@ -113,24 +114,33 @@ public class InstrumentResponse {
       }
       
       resps[i] = numerator.multiply(normalization).divide(denominator);
-     
       
-      // TODO: also do a check for integration?
-      for (int j = 0; j < differentiations; ++j ) {
-
-        // i*omega -- differentiate n times by taking I(omg) / (i*omg)^n
-        Complex iw = new Complex(0.0, -1.0 / (integConstant * frequencies[i]) );
-        // (just need to do this one to go from vel to accel)
+      if (differentiations > 0) {
+        // i*omega; integration is I(w) x (iw)^n
+        Complex iw = new Complex(0.0, integConstant*frequencies[i]);
+        for (int j = 1; j < Math.abs(differentiations); j++){
+          iw = iw.multiply(iw);
+        }
+        resps[i] = resps[i].multiply(iw);
+      } else if (differentiations > 0) { 
+        // differentiation is I(w) / (-i/w)^n
+        Complex iw = new Complex(0.0, -1.0 / (integConstant*frequencies[i]) );
+        for (int j = 1; j < Math.abs(differentiations); j++){
+          iw = iw.multiply(iw);
+        }
         resps[i] = iw.multiply(resps[i]);
       }
+      
       
       // lastly, scale by the scale we chose (gain0 or gain1*gain2)
       resps[i] = resps[i].multiply(scale);
       
       // unit conversion back out of acceleration
+      /*
       double conversion =  frequencies[i]*2*Math.PI;
       resps[i] = resps[i].multiply( resps[i].conjugate() );
       resps[i] = resps[i].multiply( Math.pow(conversion, 2) );
+      */
       
     }
     
@@ -175,7 +185,7 @@ public class InstrumentResponse {
           continue;
         } else {
           // the components of each line, assuming split by 2 or more spaces
-          String[] words = line.split("[ ]{2,}");
+          String[] words = line.split("\\s\\s+");
           String hexIdentifier = words[0];
           
           switch (hexIdentifier) {
@@ -199,7 +209,7 @@ public class InstrumentResponse {
             // parse the units of the transfer function (usually velocity)
             // first *word* of the third component of words
             // TODO support more unit types
-            String[] unitString = words[2].split(" ");
+            String[] unitString = words[2].split("\\s");
             String unit = unitString[0];
             switch (unit.toLowerCase()) {
             case "m/s":
@@ -209,6 +219,7 @@ public class InstrumentResponse {
               unitType = Unit.ACCELERATION;
               break;
             default:
+              System.out.println(unit);
               String e = "Nonstandard units, or not a velocity or acceleration";
               throw new IOException(e);
             }
@@ -251,7 +262,9 @@ public class InstrumentResponse {
           case "B058F04":
             // gain value -- has to have had stage sequence already set
             // again, it's the third full word, this time as a double
-            gain[gainStage] = Double.parseDouble(words[2]);
+            if (gainStage < 3) {
+              gain[gainStage] = Double.parseDouble(words[2]);
+            }
             // now reset gainStage to prevent it getting modified again
             gainStage = -1;
             break;
@@ -277,7 +290,7 @@ public class InstrumentResponse {
     // reparse the line. why are we doing this?
     // if a number is negative, only one space between it and prev. number
     // and the previous split operation assumed > 2 spaces between numbers
-    String[] words = line.split("[ ]{1,}");
+    String[] words = line.split("\\s+");
 
 
     // index 0 is the identifier for the field types
