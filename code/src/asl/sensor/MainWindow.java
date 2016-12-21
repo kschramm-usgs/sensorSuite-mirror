@@ -96,9 +96,12 @@ public class MainWindow extends JPanel implements ActionListener {
 
     tabbedPane.setBorder( new EmptyBorder(5, 0, 0, 0) );
 
-    JPanel buttonPanel = new JPanel();
-    buttonPanel.setPreferredSize(new Dimension(100, 0));
-    buttonPanel.setLayout( new GridLayout(0, 1) );
+    JPanel leftPanel = new JPanel();
+    leftPanel.setLayout( new BoxLayout(leftPanel, BoxLayout.Y_AXIS) );
+    
+    JPanel loadingPanel = new JPanel();
+    loadingPanel.setPreferredSize(new Dimension(100, 0));
+    loadingPanel.setLayout( new BoxLayout(loadingPanel, BoxLayout.Y_AXIS) );
 
     for (int i = 0; i < seedLoaders.length; i++){
       seedLoaders[i] = new JButton("Load SEED File " + (i+1) );
@@ -114,29 +117,30 @@ public class MainWindow extends JPanel implements ActionListener {
 
       // used to hold the buttons and filenames associated with plot i
       JPanel combinedPanel = new JPanel();
+      combinedPanel.setLayout( new BoxLayout(combinedPanel, BoxLayout.Y_AXIS) );
+      
       initFile(seedLoaders[i], seedFileNames[i], combinedPanel);
       initFile(respLoaders[i], respFileNames[i], combinedPanel);
 
-
-      combinedPanel.setLayout( new BoxLayout(combinedPanel, BoxLayout.Y_AXIS) );
-
-      buttonPanel.add(combinedPanel);
-
-      // prevent vertical expansion of the text boxes
-      buttonPanel.add( Box.createVerticalGlue() );
+      loadingPanel.add(combinedPanel);
+      
     }
+    
 
+    leftPanel.add(loadingPanel);
+    leftPanel.add( Box.createGlue() );
+    
     generate = new JButton("Generate plots");
     generate.setEnabled(false);
     generate.addActionListener(this);
-    buttonPanel.add(generate);
+    leftPanel.add(generate);
 
     savePDF = new JButton("Save display (PNG)");
     savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
-    buttonPanel.add(savePDF);
+    leftPanel.add(savePDF);
 
-    buttonPanel.setBorder( new EmptyBorder(5,5,5,5) );
+    leftPanel.setBorder( new EmptyBorder(5, 5, 5, 5) );
 
 
     //holds everything except the side panel used for file IO stuff
@@ -145,11 +149,11 @@ public class MainWindow extends JPanel implements ActionListener {
     temp.add(tabbedPane);
     // temp.add(save);
     temp.add(dataBox);
-    temp.setBorder( new EmptyBorder(5,5,5,5) );
+    temp.setBorder( new EmptyBorder(5, 5, 5, 5) );
 
     JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     splitPane.setLeftComponent(temp);
-    splitPane.setRightComponent(buttonPanel);
+    splitPane.setRightComponent(leftPanel);
     splitPane.setResizeWeight(1.0);
     this.add(splitPane);
 
@@ -169,22 +173,29 @@ public class MainWindow extends JPanel implements ActionListener {
     text.setHorizontalAlignment(JTextField.CENTER);
 
     text.setMaximumSize( new Dimension( 
-        Integer.MAX_VALUE, text.getHeight() ) );
+        Integer.MAX_VALUE, text.getHeight()*2 ) );
 
     JScrollPane jsp = new JScrollPane();
 
     jsp.setVerticalScrollBarPolicy(
         ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+    jsp.setHorizontalScrollBarPolicy(
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+    
 
     jsp.setViewportView(text);
 
+    // restrict resizable panel to be the size of the text
+    jsp.setMaximumSize( new Dimension( 
+        Integer.MAX_VALUE, text.getHeight()*2 ) );
+    
     BoxLayout bl = new BoxLayout(parent, BoxLayout.Y_AXIS);
     parent.setLayout( bl );
 
     parent.add(button);
     parent.add(jsp);
     // prevent vertical expansion of text box
-    parent.add( Box.createVerticalGlue() ); 
+    parent.add( Box.createGlue() );
   }
 
   /**
