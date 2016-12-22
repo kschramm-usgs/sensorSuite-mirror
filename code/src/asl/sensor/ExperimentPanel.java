@@ -1,6 +1,7 @@
 package asl.sensor;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -79,6 +80,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
       BasicStroke stroke = (BasicStroke) xyir.getBaseStroke();
       stroke = new BasicStroke( stroke.getLineWidth()*2 );
       xyir.setSeriesStroke(seriesIdx, stroke);
+      xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
     }
     
     xyPlot.setDomainAxis(expR.getXAxis());

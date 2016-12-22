@@ -124,7 +124,7 @@ public class NoiseExperiment extends Experiment {
                 
         // TODO: is this right
         //Complex temp = resultPSD[j];
-        Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],3));
+        Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],4));
          
         powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
       }
@@ -170,19 +170,19 @@ public class NoiseExperiment extends Experiment {
             p11.subtract(
                 p21.multiply(p13).divide(p23) )
               .divide(f1);
-        n11 = n11.multiply(Math.pow(2*Math.PI*freqs[i],2));
+        //n11 = n11.multiply(Math.pow(2*Math.PI*freqs[i],4));
         
         Complex n22 = 
             p22.subtract(
                 ( p23.conjugate() ).multiply(p21).divide( p13.conjugate() ) )
               .divide(f2);
-        n22 = n22.multiply(Math.pow(2*Math.PI*freqs[i],2));
+        //n22 = n22.multiply(Math.pow(2*Math.PI*freqs[i],4));
         
         Complex n33 = 
             p33.subtract(
                 p23.multiply( p13.conjugate() ).divide( p21 ) )
               .divide(f3);
-        n33 = n33.multiply(Math.pow(2*Math.PI*freqs[i],2));
+        //n33 = n33.multiply(Math.pow(2*Math.PI*freqs[i],4));
         
         // now get magnitude and convert to dB
         double plot1 = 10*Math.log10( n11.abs() );

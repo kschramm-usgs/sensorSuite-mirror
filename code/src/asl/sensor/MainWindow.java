@@ -240,6 +240,7 @@ public class MainWindow extends JPanel implements ActionListener {
       JButton seedButton = seedLoaders[i];
       JButton respButton = respLoaders[i];
       if ( e.getSource() == seedButton ) {
+        fc.setCurrentDirectory( new File("data") );
         fc.resetChoosableFileFilters();
         fc.setDialogTitle("Load SEED file...");
         int returnVal = fc.showOpenDialog(seedButton);
@@ -251,6 +252,7 @@ public class MainWindow extends JPanel implements ActionListener {
 
         }
       } else if ( e.getSource() == respButton ) {
+        fc.setCurrentDirectory( new File("responses") );
         fc.resetChoosableFileFilters();
         fc.setDialogTitle("Load response file...");
         int returnVal = fc.showOpenDialog(seedButton);
@@ -273,6 +275,7 @@ public class MainWindow extends JPanel implements ActionListener {
     } else if ( e.getSource() == savePDF ) {
 
       String ext = ".png";
+      fc.setCurrentDirectory(null);
       fc.addChoosableFileFilter(
           new FileNameExtensionFilter("PNG image (.png)",ext) );
       fc.setFileFilter(fc.getChoosableFileFilters()[1]);
