@@ -41,6 +41,8 @@ public class NoiseExperiment extends Experiment {
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
     xAxis = new LogarithmicAxis(xAxisTitle); 
     yAxis = new NumberAxis(yAxisTitle);
+    yAxis.setAutoRangeIncludesZero(false);
+    yAxis.setAutoRange(true);
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);
@@ -170,19 +172,19 @@ public class NoiseExperiment extends Experiment {
             p11.subtract(
                 p21.multiply(p13).divide(p23) )
               .divide(f1);
-        //n11 = n11.multiply(Math.pow(2*Math.PI*freqs[i],4));
+        n11 = n11.multiply(Math.pow(2*Math.PI*freqs[i],4));
         
         Complex n22 = 
             p22.subtract(
                 ( p23.conjugate() ).multiply(p21).divide( p13.conjugate() ) )
               .divide(f2);
-        //n22 = n22.multiply(Math.pow(2*Math.PI*freqs[i],4));
+        n22 = n22.multiply(Math.pow(2*Math.PI*freqs[i],4));
         
         Complex n33 = 
             p33.subtract(
                 p23.multiply( p13.conjugate() ).divide( p21 ) )
               .divide(f3);
-        //n33 = n33.multiply(Math.pow(2*Math.PI*freqs[i],4));
+        n33 = n33.multiply(Math.pow(2*Math.PI*freqs[i],4));
         
         // now get magnitude and convert to dB
         double plot1 = 10*Math.log10( n11.abs() );
