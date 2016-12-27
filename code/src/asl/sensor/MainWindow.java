@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
@@ -280,6 +282,9 @@ public class MainWindow extends JPanel implements ActionListener {
           new FileNameExtensionFilter("PNG image (.png)",ext) );
       fc.setFileFilter(fc.getChoosableFileFilters()[1]);
       fc.setDialogTitle("Save plot to PNG...");
+      String tStamp = 
+          new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format( new Date() );
+      fc.setSelectedFile( new File(tStamp+"_ALL.png") );
       int returnVal = fc.showSaveDialog(savePDF);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         File selFile = fc.getSelectedFile();
