@@ -21,6 +21,9 @@ public class DataStore {
   InstrumentResponse[] responses;
   XYSeries[] outToPlots;
   
+  long startTime = 0L;
+  long endTime = Long.MAX_VALUE;
+  
   boolean[] dataIsSet;
   boolean[] responseIsSet;
   
@@ -50,7 +53,25 @@ public class DataStore {
   public XYSeries setData(int idx, String filepath) {
     DataBlock xy = DataBlockHelper.getXYSeries(filepath);
     
+    long start = xy.getStartTime();
+    long interval = xy.getInterval();
+    long end = start + xy.getData().size()*interval;
+    
+    // get latest start time and earliest end time, trim data to that length
+    long maxStart = Long.max(start, startTime);
+    long minEnd = Long.min(end, endTime);
+    
     dataBlockArray[idx] = xy;
+    
+    for (DataBlock db : dataBlockArray) {
+      if (db != null) {
+        db.trim(maxStart, minEnd);
+      }
+    }
+    
+    startTime = maxStart;
+    endTime = minEnd;
+    
     outToPlots[idx] = xy.toXYSeries();
     
     dataIsSet[idx] = true;

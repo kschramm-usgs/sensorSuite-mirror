@@ -43,8 +43,37 @@ public class DataBlock {
     setStartTime(in.getStartTime());
   }
   
+  /**
+   * Get the name of the dataset (used as a key in dataseries, etc.)
+   * The name is defined by station-location-channel.
+   * @return Name of dataset
+   */
   public String getName() {
     return name;
+  }
+  
+  /**
+   * Trim data to a given range (start time, end time)
+   * @param start Start time to trim to in nanoseconds from epoch
+   * @param end End time to trim to in nanoseconds from epoch
+   */
+  public void trim(long start, long end) {
+    int startIdx = 0, endIdx = data.size();
+    if (startTime < start) {
+      long diff = start - startTime;
+      // how many data points in the time range we're removing? 
+      startIdx = (int) (diff / interval); // (start offset = 0)
+    }
+    long endTime = startTime + ( interval * data.size() );
+    if ( end < endTime ) {
+      long diff = endTime - end;
+      // diff/interval is number of points from ending index, need to subtract
+      // (quick reminder that upper index of sublist method is exclusive)
+      endIdx = endIdx - (int) (diff / interval) - 1; // (end offset = size)
+    }
+    
+    data = data.subList(startIdx, endIdx);
+    
   }
   
   /**
