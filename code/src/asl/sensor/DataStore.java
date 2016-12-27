@@ -110,6 +110,20 @@ public class DataStore {
   }
   
   /**
+   * Trims all data blocks to be within a certain time range.
+   * Used for getting a sub-range specified by sliding-bar window.
+   * @param start Start time, relative to epoch (nanoseconds)
+   * @param end End time, relative to epoch (nanoseconds)
+   */
+  public void trimAll(long start, long end) {
+    for (DataBlock data : dataBlockArray) {
+      if (data != null) {
+        data.trim(start, end);
+      }
+    }
+  }
+  
+  /**
    * Returns the set of structures used to hold the loaded miniSeed data sets
    * @return An array of DataBlocks (time series and metadata)
    */

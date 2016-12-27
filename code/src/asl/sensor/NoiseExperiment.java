@@ -86,9 +86,6 @@ public class NoiseExperiment extends Experiment {
       if ( data.getInterval() != interval ) {
         throw new RuntimeException("Interval mismatch on datasets.");
       }
-      if( data.getData().size() != length ) {
-        throw new RuntimeException("Length mismatch on datasets.");
-      }
     }
     
     for (int i = 0; i < dataIn.length; ++i) {
