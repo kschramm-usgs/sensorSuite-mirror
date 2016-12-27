@@ -58,8 +58,8 @@ public class DataStore {
     long end = start + xy.getData().size()*interval;
     
     // get latest start time and earliest end time, trim data to that length
-    long maxStart = Long.max(start, startTime);
-    long minEnd = Long.min(end, endTime);
+    long maxStart = Math.max(start, startTime);
+    long minEnd = Math.min(end, endTime);
     
     dataBlockArray[idx] = xy;
     
