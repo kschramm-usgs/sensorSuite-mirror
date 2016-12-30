@@ -69,10 +69,13 @@ public class DataBlock {
       long diff = endTime - end;
       // diff/interval is number of points from ending index, need to subtract
       // (quick reminder that upper index of sublist method is exclusive)
-      endIdx = endIdx - (int) (diff / interval) - 1; // (end offset = size)
+      endIdx = endIdx - (int) (diff / interval); // (end offset = size)
     }
-    
-    data = data.subList(startIdx, endIdx);
+    if ( startIdx == 0 && endIdx >= data.size() ){
+      return;
+    }
+    data = new ArrayList<Number>( data.subList(startIdx, endIdx) );
+    startTime = start;
     
   }
   

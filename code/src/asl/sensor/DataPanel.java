@@ -19,7 +19,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.JWindow;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -175,6 +174,8 @@ implements ActionListener, ChangeListener {
    */
   public void setVerticalBars() {
     
+    ds.trimToCommonTime();
+    
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( null == ds.getBlock(i) ) {
         leftSlider.setValue(0);
@@ -187,17 +188,11 @@ implements ActionListener, ChangeListener {
       
       XYPlot xyp = (XYPlot) chartPanels[i].getChart().getPlot();
       xyp.clearDomainMarkers();
-      long start = ds.getBlock(i).getStartTime();
-      long interval = ds.getBlock(i).getInterval();
-      long len = ds.getBlock(i).size() * interval;
-      // note: margin controls are set in change listener
       
-      long startMarkerLocation = start + (leftValue * len)/1000;
-      long endMarkerLocation = start + (rightValue * len)/1000;
+      DataBlock db = ds.getBlock(i);
       
-      System.out.println(leftValue+","+rightValue);
-      System.out.println( start+","+(start+len)+" ["+len+"]" );
-      System.out.println(startMarkerLocation+","+endMarkerLocation);
+      long startMarkerLocation = getMarkerLocation(db, leftValue);
+      long endMarkerLocation = getMarkerLocation(db, rightValue);   
       
       Marker startMarker = new ValueMarker(startMarkerLocation);
       startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
@@ -211,6 +206,18 @@ implements ActionListener, ChangeListener {
     }
     
     
+  }
+  
+  /**
+   * Gets the value of start or end time from slider value and DataBlock
+   * @param db DataBlock corresponding to one of the plots
+   * @param sliderValue Value of starting or ending time slider [0-1000]
+   * @return Long that represents start or end time matching slider's value
+   */
+  public static long getMarkerLocation(DataBlock db, int sliderValue) {
+    long start = db.getStartTime();
+    long len = db.getInterval() * db.size();
+    return start + (sliderValue * len) / 1000;
   }
   
   /**
@@ -235,14 +242,21 @@ implements ActionListener, ChangeListener {
   
   
   /**
-   * Returns the underlying DataStore's image, to be fed into experiments
+   * Returns the selected region of underlying DataStore, to be fed into experiments
    * for processing (the results of which will be plotted)
-   * @return An array of DataBlocks (time series and metadata), indexed by plot
-   *         order.
+   * @return A DataStore object (contains arrays of DataBlocks & Responses)
    */
   public DataStore getData() {
+    if ( ! ds.isPlottable() ){
+      throw new RuntimeException("Not all necessary data loaded in...");
+    }
     // TODO: modify this to create a new dataStore with trimmed data
-    return ds;
+    int leftValue = leftSlider.getValue();
+    int rightValue = rightSlider.getValue();
+    DataBlock db = ds.getBlock(0); // dataBlocks should have same time range
+    long start = getMarkerLocation(db, leftValue);
+    long end = getMarkerLocation(db, rightValue);
+    return new DataStore(ds, start, end);
   }
 
   /**

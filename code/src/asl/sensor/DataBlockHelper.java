@@ -5,11 +5,11 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -61,12 +61,13 @@ public class DataBlockHelper {
     DataInputStream dis;
     // XYSeries xys = null;
     DataBlock db = null;
-    List<Number> data = new ArrayList<Number>();
-    Map<Long, Number> map = new HashMap<Long, Number>();
+    Map<Long, Number> timeMap = new HashMap<Long, Number>();
     
     try {
       dis = new DataInputStream(  new FileInputStream(filename) );
 
+      boolean startTimeListed = false;
+      
       while ( true ) {
         
         try {
@@ -80,34 +81,36 @@ public class DataBlockHelper {
               fileID.append(dh.getStationIdentifier() + "_");
               fileID.append(dh.getLocationIdentifier() + "_");
               fileID.append(dh.getChannelIdentifier());
-              db = new DataBlock(data, interval, fileID.toString(), -1);
+              db = new DataBlock(null, interval, fileID.toString(), -1);
             }
             
             
             byte af = dh.getActivityFlags();
             byte correctionFlag = 0b00000010; // is there a time correction?
             int correction = 0;
-            if ( (af & correctionFlag) == 0 ) {
+            if ( (af & correctionFlag) != 0 ) {
               correction = dh.getTimeCorrection();
             }
             
             Btime bt = dh.getStartBtime();
             
             // convert Btime to microseconds
-            long start = 0;
+            long start = 0L;
             start += bt.jday * 864000000;
             start += bt.hour * 36000000;
             start += bt.min * 600000;
             start += bt.sec * 10000;
-            start += bt.tenthMilli;
+            start += (bt.tenthMilli / 10) * 10; 
+            // divided by 10 there to filter out sub-millisecond timing errors
+            if (bt.tenthMilli % 10 > 5) {
+              // rounding to nearest milli
+              start += 10; // 1 ms = 10 * (.1 ms)
+            }
             
             start += correction;
-            // 1/10 of a milli = 100 microseconds
+            // .1 ms = 100 microseconds
             start *= 100;
             
-            if(db.getStartTime() < 0) {
-              db.setStartTime(start);
-            }
             
             int fact = dh.getSampleRateFactor();
             int mult = dh.getSampleRateMultiplier();
@@ -130,58 +133,81 @@ public class DataBlockHelper {
             // otherwise the decompressed data gets converted (cloned) as
             // the other type instead
             int dataType = decomp.getType();
+            long timeOfData = start;
             
             switch (dataType) {
             case B1000Types.INTEGER:
               int[] decomArrayInt = decomp.getAsInt();
               for (int dataPoint : decomArrayInt ) {
-                data.add(dataPoint);
+                timeMap.put(timeOfData,dataPoint);
+                timeOfData += interval;
               }
               break;
             case B1000Types.FLOAT:
               float[] decomArrayFlt = decomp.getAsFloat();
               for (float dataPoint : decomArrayFlt ) {
-                data.add(dataPoint);
+                timeMap.put(timeOfData,dataPoint);
+                timeOfData += interval;
               }
               break;
             case B1000Types.SHORT:
               short[] decomArrayShr = decomp.getAsShort();
               for (short dataPoint : decomArrayShr ) {
-                data.add(dataPoint);
+                timeMap.put(timeOfData,dataPoint);
+                timeOfData += interval;
               }
               break;
             default:
               double[] decomArrayDbl = decomp.getAsDouble();
               for (double dataPoint : decomArrayDbl ) {
-                data.add(dataPoint);
+                timeMap.put(timeOfData,dataPoint);
+                timeOfData += interval;
               }
               break;
             }
+            
           }
         } catch(EOFException e) {
           break;
         }
         
+      } // end infinite while loop (read until EOF)
+      
+      // now we have all the data in a convenient map timestamp -> value
+      // which we can then convert into an easy array
+      Set<Long> times = timeMap.keySet();
+      Long[] timeList = times.toArray(new Long[times.size()]);
+      // the rest of the code assumes a sorted list, so we sort by timestamp
+      Arrays.sort(timeList);
+      // lowest time that data exists for is here
+      long startTime = timeList[0];
+      db.setStartTime(startTime);
+      Number[] sampleList = new Number[timeList.length];
+      for (int i = 0; i < timeList.length; ++i ) {
+        // TODO: add discontinuity detection here?
+        // (is point i+1's time difference from point i greater than interval?)
+        sampleList[i] = timeMap.get(timeList[i]);
       }
       
+      
+      db.setData( Arrays.asList(sampleList) );
+      
     } catch (FileNotFoundException e) {
-      // TODO Auto-generated catch block
+      // Auto-generated catch block
       e.printStackTrace();
     } catch (IOException e) {
-      // TODO Auto-generated catch block
+      // Auto-generated catch block
       e.printStackTrace();
     } catch (SeedFormatException e) {
-      // TODO Auto-generated catch block
+      // Auto-generated catch block
       e.printStackTrace();
     } catch (UnsupportedCompressionType e) {
-      // TODO Auto-generated catch block
+      // Auto-generated catch block
       e.printStackTrace();
     } catch (CodecException e) {
-      // TODO Auto-generated catch block
+      // Auto-generated catch block
       e.printStackTrace();
     }
-    
-    db.setData(data);
     
     return db;
   }

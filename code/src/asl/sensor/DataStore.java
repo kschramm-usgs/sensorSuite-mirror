@@ -31,7 +31,7 @@ public class DataStore {
    * Instantiate the collections, including empty datasets to be sent to
    * charts for plotting (see DataPanel)
    */
-  public DataStore(){
+  public DataStore() {
    dataBlockArray = new DataBlock[FILE_COUNT];
    responses = new InstrumentResponse[FILE_COUNT];
    outToPlots = new XYSeries[FILE_COUNT];
@@ -43,6 +43,16 @@ public class DataStore {
      responseIsSet[i] = false;
    }
   }
+  
+  public DataStore(DataStore ds, long start, long end) {
+    dataBlockArray = new DataBlock[FILE_COUNT];
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
+    }
+    this.responses = ds.getResponses();
+    this.trimAll(start, end);
+  }
+  
   
   /**
    * Takes a loaded miniSEED data series and converts it to a plottable format
@@ -134,5 +144,40 @@ public class DataStore {
    */
   public XYSeries getPlotSeries(int idx) {
     return outToPlots[idx];
+  }
+
+  /**
+   * Trims this object's data blocks to hold only points in their common range
+   * WARNING: assumes each plot has its data taken at the same point in time
+   */
+  public void trimToCommonTime() {
+    // trims the data to only plot the overlapping time of each input set
+    
+    long lastStartTime = Long.MIN_VALUE;
+    long firstEndTime = Long.MAX_VALUE;
+    
+    // first pass to get the limits of the time data
+    for (DataBlock data : dataBlockArray) {
+      if (data == null) {
+        continue;
+      }
+      long start = data.getStartTime();
+      if (start > lastStartTime) {
+        lastStartTime = start;
+      }
+      long end = start + data.getInterval() * data.size();
+      if (end < firstEndTime) {
+        firstEndTime = end;
+      }
+    }
+    
+    // second pass to trim the data to the limits given
+    for (DataBlock data : dataBlockArray) {
+      if (data == null) {
+        continue;
+      }
+      data.trim(lastStartTime, firstEndTime);
+    }
+    
   }
 }
