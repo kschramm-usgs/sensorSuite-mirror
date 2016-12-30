@@ -7,7 +7,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
@@ -18,6 +20,7 @@ import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
 import edu.iris.dmc.seedcodec.UnsupportedCompressionType;
+import edu.sc.seis.seisFile.mseed.Btime;
 import edu.sc.seis.seisFile.mseed.DataHeader;
 import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
@@ -59,6 +62,7 @@ public class DataBlockHelper {
     // XYSeries xys = null;
     DataBlock db = null;
     List<Number> data = new ArrayList<Number>();
+    Map<Long, Number> map = new HashMap<Long, Number>();
     
     try {
       dis = new DataInputStream(  new FileInputStream(filename) );
@@ -86,10 +90,20 @@ public class DataBlockHelper {
             if ( (af & correctionFlag) == 0 ) {
               correction = dh.getTimeCorrection();
             }
-
-            long start = dh.getStartBtime()
-                           .convertToCalendar()
-                           .getTimeInMillis() + correction;
+            
+            Btime bt = dh.getStartBtime();
+            
+            // convert Btime to microseconds
+            long start = 0;
+            start += bt.jday * 864000000;
+            start += bt.hour * 36000000;
+            start += bt.min * 600000;
+            start += bt.sec * 10000;
+            start += bt.tenthMilli;
+            
+            start += correction;
+            // 1/10 of a milli = 100 microseconds
+            start *= 100;
             
             if(db.getStartTime() < 0) {
               db.setStartTime(start);

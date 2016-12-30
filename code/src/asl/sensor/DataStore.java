@@ -53,24 +53,7 @@ public class DataStore {
   public XYSeries setData(int idx, String filepath) {
     DataBlock xy = DataBlockHelper.getXYSeries(filepath);
     
-    long start = xy.getStartTime();
-    long interval = xy.getInterval();
-    long end = start + xy.getData().size()*interval;
-    
-    // get latest start time and earliest end time, trim data to that length
-    long maxStart = Math.max(start, startTime);
-    long minEnd = Math.min(end, endTime);
-    
     dataBlockArray[idx] = xy;
-    
-    for (DataBlock db : dataBlockArray) {
-      if (db != null) {
-        db.trim(maxStart, minEnd);
-      }
-    }
-    
-    startTime = maxStart;
-    endTime = minEnd;
     
     outToPlots[idx] = xy.toXYSeries();
     
@@ -79,6 +62,11 @@ public class DataStore {
     return outToPlots[idx];
   }
   
+  /**
+   * Sets the response of a sensor's dataseries matched by index
+   * @param idx Index of plot for which response file matches
+   * @param filepath Full address of file to be loaded in
+   */
   public void setResponse(int idx, String filepath) {
     try {
       responses[idx] = new InstrumentResponse(filepath);
@@ -129,6 +117,13 @@ public class DataStore {
    */
   public DataBlock[] getData() {
     return dataBlockArray;
+  }
+  
+  public DataBlock getBlock(int idx) {
+    if (idx < FILE_COUNT) {
+      return dataBlockArray[idx];
+    }
+    else return null;
   }
   
   /**

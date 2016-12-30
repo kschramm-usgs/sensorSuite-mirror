@@ -91,7 +91,7 @@ public class DataBlock {
     for (int i = 0; i < data.size(); i+=TRUNCATED_INTERVAL) {
       Number point = data.get(i);
       out.add(thisTime, point);
-      thisTime += getInterval();
+      thisTime += TRUNCATED_INTERVAL*getInterval();
     }
     
     return out;
@@ -164,6 +164,15 @@ public class DataBlock {
   public void resample(List<Number> data, long interval) {
     this.data = data;
     this.interval = interval;
+  }
+
+  /**
+   * Alias to function to get size of list in this data block.
+   * Equivalent to calling getData().size()
+   * @return The size of the list in this structure
+   */
+  public int size() {
+    return data.size();
   }
   
 }

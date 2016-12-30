@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -17,14 +18,20 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.JWindow;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -35,7 +42,9 @@ import org.jfree.data.xy.XYSeriesCollection;
  * @author akearns
  *
  */
-public class DataPanel extends JPanel implements ActionListener {
+public class DataPanel 
+extends JPanel 
+implements ActionListener, ChangeListener {
 
   /**
    * 
@@ -53,6 +62,12 @@ public class DataPanel extends JPanel implements ActionListener {
   private JButton save;
   private JFileChooser fc;
   private JPanel allCharts; // parent of the chartpanels, used for image saving
+  private JPanel sliderPanel;
+  private JSlider leftSlider;
+  private JSlider rightSlider;
+  private int rightSliderValue;
+  private int leftSliderValue;
+  private int margin = 100; // min space of the two sliders
   
   
   /**
@@ -98,6 +113,20 @@ public class DataPanel extends JPanel implements ActionListener {
     
     this.add(allCharts);
     
+    leftSliderValue = 0;
+    rightSliderValue = 1000;
+    
+    sliderPanel = new JPanel();
+    sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
+    sliderPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
+    leftSlider = new JSlider(0, 1000, leftSliderValue);
+    leftSlider.addChangeListener(this);
+    sliderPanel.add(leftSlider);
+    rightSlider = new JSlider(0, 1000, rightSliderValue);
+    rightSlider.addChangeListener(this);
+    sliderPanel.add(rightSlider);
+    this.add(sliderPanel);
+    
     // now we can add the space between the last plot and the save button
     this.add( Box.createVerticalStrut(5) );
     
@@ -134,6 +163,54 @@ public class DataPanel extends JPanel implements ActionListener {
     chartPanels[idx].setChart(chart);
     chartPanels[idx].setMouseZoomable(true);
     
+    leftSlider.setValue(0);
+    rightSlider.setValue(1000);
+    setVerticalBars();
+    
+  }
+  
+  /**
+   * Displays the range set by the sliders using
+   * vertical bars at the min and max values
+   */
+  public void setVerticalBars() {
+    
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      if ( null == ds.getBlock(i) ) {
+        leftSlider.setValue(0);
+        rightSlider.setValue(1000);
+        return;
+      }
+      
+      int leftValue = leftSlider.getValue();
+      int rightValue = rightSlider.getValue();
+      
+      XYPlot xyp = (XYPlot) chartPanels[i].getChart().getPlot();
+      xyp.clearDomainMarkers();
+      long start = ds.getBlock(i).getStartTime();
+      long interval = ds.getBlock(i).getInterval();
+      long len = ds.getBlock(i).size() * interval;
+      // note: margin controls are set in change listener
+      
+      long startMarkerLocation = start + (leftValue * len)/1000;
+      long endMarkerLocation = start + (rightValue * len)/1000;
+      
+      System.out.println(leftValue+","+rightValue);
+      System.out.println( start+","+(start+len)+" ["+len+"]" );
+      System.out.println(startMarkerLocation+","+endMarkerLocation);
+      
+      Marker startMarker = new ValueMarker(startMarkerLocation);
+      startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+      Marker endMarker = new ValueMarker(endMarkerLocation);
+      endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+      
+      xyp.addDomainMarker(startMarker);
+      xyp.addDomainMarker(endMarker);
+      
+      chartPanels[i].repaint();
+    }
+    
+    
   }
   
   /**
@@ -148,6 +225,10 @@ public class DataPanel extends JPanel implements ActionListener {
     
   }
   
+  /**
+   * Checks if all the data has been loaded
+   * @return True if all data is set, including responses
+   */
   public boolean dataIsSet() {
     return ds.isPlottable();
   }
@@ -159,10 +240,9 @@ public class DataPanel extends JPanel implements ActionListener {
    * @return An array of DataBlocks (time series and metadata), indexed by plot
    *         order.
    */
-  public DataStore getData() { 
-    
+  public DataStore getData() {
+    // TODO: modify this to create a new dataStore with trimmed data
     return ds;
-
   }
 
   /**
@@ -196,10 +276,21 @@ public class DataPanel extends JPanel implements ActionListener {
     }
   }
   
+  /**
+   * Return this panel's charts as a single buffered image
+   * @return Buffered image of the plots, writeable to file
+   */
   public BufferedImage getAsImage() {
     return getAsImage( allCharts.getWidth(), allCharts.getHeight() );
   }
   
+  /**
+   * Return this panel's charts as a single buffered image 
+   * with specified dimensions
+   * @param width Width of returned image
+   * @param height Height of returned image
+   * @return Buffered image of the plots, writeable to file
+   */
   public BufferedImage getAsImage(int width, int height) {
     
     // int shownHeight = allCharts.getHeight();
@@ -253,6 +344,44 @@ public class DataPanel extends JPanel implements ActionListener {
     g.dispose();
     
     return bi;
+  }
+
+  @Override
+  public void stateChanged(ChangeEvent e) {
+    // TODO Auto-generated method stub
+    
+    int leftSliderValue = leftSlider.getValue();
+    int rightSliderValue = rightSlider.getValue();
+    
+    // probably can refactor this
+    // the conditionals are effectively the same
+    
+    if ( e.getSource() == leftSlider ) {
+      if (leftSliderValue > rightSliderValue || 
+          leftSliderValue + margin > rightSliderValue) {
+        leftSliderValue = rightSliderValue - margin;
+        if (leftSliderValue < 0) {
+          leftSliderValue = 0;
+          rightSliderValue = margin;
+        }
+      }
+    } else if ( e.getSource() == rightSlider ) {
+      if (rightSliderValue < leftSliderValue ||
+          rightSliderValue - margin < leftSliderValue) {
+        rightSliderValue = leftSliderValue + margin;
+        if (rightSliderValue > 1000) {
+          rightSliderValue = 1000;
+          leftSliderValue = 1000-margin;
+        }
+      }
+    }
+    
+    leftSlider.setValue(leftSliderValue);
+    rightSlider.setValue(rightSliderValue);
+    
+    setVerticalBars();
+    
+    
   }
   
   

@@ -81,7 +81,7 @@ public class NoiseExperiment extends Experiment {
     double[] freqs = new double[1]; // initialize to prevent later errors
     
     long interval = dataIn[0].getInterval();
-    int length = dataIn[0].getData().size();
+    // int length = dataIn[0].size();
     for (DataBlock data : dataIn) {
       if ( data.getInterval() != interval ) {
         throw new RuntimeException("Interval mismatch on datasets.");
@@ -91,7 +91,7 @@ public class NoiseExperiment extends Experiment {
     for (int i = 0; i < dataIn.length; ++i) {
       // don't calculate if all the data isn't in yet
       if( dataIn[i] == null ||  
-          dataIn[i].getData().size() == 0 ||
+          dataIn[i].size() == 0 ||
           responses[i] == null ) {
         return new XYSeriesCollection();
         // we can't plot without all the data (certainly need responses loaded)
@@ -306,7 +306,7 @@ public class NoiseExperiment extends Experiment {
       powSpectDens[i] = Complex.ZERO;
     }
     
-    while ( rangeEnd <= data1.getData().size() ) {
+    while ( rangeEnd <= data1.size() ) {
       
       Complex[] fftResult1 = new Complex[singleSide]; // first half of FFT reslt
       Complex[] fftResult2 = null;
