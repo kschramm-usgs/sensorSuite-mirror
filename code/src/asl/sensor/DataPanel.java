@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -90,14 +91,11 @@ implements ActionListener, ChangeListener {
       
       JFreeChart chart = ChartFactory.createXYLineChart(
           "",
-          "Time",
-          "Counts",
+          "",
+          "",
           new XYSeriesCollection( ds.getPlotSeries(i) ),
           PlotOrientation.VERTICAL,
           false, false, false);
-      
-      DateAxis da = new DateAxis();
-      chart.getXYPlot().setDomainAxis(da);
       
       chartPanels[i] = new ChartPanel(chart);
       Dimension dim = chartPanels[i].getPreferredSize();
@@ -167,6 +165,10 @@ implements ActionListener, ChangeListener {
     DateAxis da = new DateAxis();
     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
     sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+    da.setLabel("UTC Time");
+    Font bold = da.getLabelFont();
+    bold = bold.deriveFont(Font.BOLD);
+    da.setLabelFont(bold);
     da.setDateFormatOverride(sdf);
     xyp.setDomainAxis(da);
     xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
