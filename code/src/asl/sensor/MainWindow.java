@@ -29,9 +29,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 
-// TODO: include a button for saving plots to PDF somehow
-// (double-check on the way that the PDF should be laid out
-
 /**
  * Main window of the sensor test program and the program's launcher
  * Handles GUI for getting user-specified files and showing data plots
@@ -262,7 +259,6 @@ public class MainWindow extends JPanel implements ActionListener {
    */
   @Override
   public void actionPerformed(ActionEvent e) {
-    // TODO: change control flow 
 
     if ( e.getSource() == clear ) {
       dataBox.clearData();
@@ -314,10 +310,11 @@ public class MainWindow extends JPanel implements ActionListener {
 
     if ( e.getSource() == generate ) {
       this.resetTabPlots();
+      return;
     } else if ( e.getSource() == savePDF ) {
 
       String ext = ".png";
-      fc.setCurrentDirectory(null);
+      fc.setCurrentDirectory( new File(saveDirectory) );
       fc.addChoosableFileFilter(
           new FileNameExtensionFilter("PNG image (.png)",ext) );
       fc.setFileFilter(fc.getChoosableFileFilters()[1]);
@@ -328,17 +325,17 @@ public class MainWindow extends JPanel implements ActionListener {
       int returnVal = fc.showSaveDialog(savePDF);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         File selFile = fc.getSelectedFile();
+        saveDirectory = selFile.getParent();
         if( !selFile.getName().endsWith( ext.toLowerCase() ) ) {
           selFile = new File( selFile.toString() + ext);
         }
         try {
           plotsToPNG(selFile);
         } catch (IOException e1) {
-          // TODO Auto-generated catch block
           e1.printStackTrace();
         }
       }
-
+      return;
     }
 
 
@@ -374,7 +371,7 @@ public class MainWindow extends JPanel implements ActionListener {
         outPlot.getHeight() );
     combined.dispose();
 
-    // for now, it's a png. TODO: write to PDF?
+    // for now, it's a png. TODO: change this module write to PDF?
 
     ImageIO.write(toFile,"png",file);
 
