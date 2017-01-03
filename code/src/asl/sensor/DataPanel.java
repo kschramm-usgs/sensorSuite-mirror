@@ -94,10 +94,11 @@ implements ActionListener, ChangeListener {
           false, false, false);
       
       chartPanels[i] = new ChartPanel(chart);
-      //chartPanels[i].setMaximumDrawHeight(50);
       Dimension dim = chartPanels[i].getPreferredSize();
       chartPanels[i].setPreferredSize(
-          new Dimension( (int) dim.getWidth(), (int) dim.getHeight()/2));
+          new Dimension( (int) dim.getWidth(), (int) dim.getHeight()/2) );
+      chartPanels[i].setMaximumSize(
+          new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
       chartPanels[i].setMouseZoomable(true);
       
       allCharts.add(chartPanels[i]);

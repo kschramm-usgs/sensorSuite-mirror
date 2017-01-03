@@ -3,6 +3,8 @@ package asl.sensor;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -79,7 +81,11 @@ public class MainWindow extends JPanel implements ActionListener {
 
     super();
     
-    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
+    this.setLayout( new GridBagLayout() );
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.BOTH;
+    c.gridx = 0; c.gridy = 0;
+    c.weightx = 1.0; c.weighty = 1.0;
 
     dataBox = new DataPanel();
 
@@ -96,7 +102,10 @@ public class MainWindow extends JPanel implements ActionListener {
       tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
       tabbedPane.addTab( exp.getName(), tab );
     }
+    
+    this.add(tabbedPane, c);
 
+    // panel for UI elements to load data, generate full plot, etc.
     JPanel rightPanel = new JPanel();
     rightPanel.setLayout( new BoxLayout(rightPanel, BoxLayout.Y_AXIS) );
     
@@ -123,12 +132,11 @@ public class MainWindow extends JPanel implements ActionListener {
       initFile(respLoaders[i], respFileNames[i], combinedPanel);
 
       loadingPanel.add(combinedPanel);
-      
     }
     
 
     rightPanel.add(loadingPanel);
-    rightPanel.add( Box.createGlue() );
+    rightPanel.add( Box.createVerticalGlue() );
     
     generate = new JButton("Generate plots");
     generate.setEnabled(false);
@@ -139,20 +147,32 @@ public class MainWindow extends JPanel implements ActionListener {
     savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
     rightPanel.add(savePDF);
-
+    
+    // prevent expansion of right-side panel on applet resize
+    Dimension dim = rightPanel.getPreferredSize();
+    dim = new Dimension( (int) dim.getWidth(), Integer.MAX_VALUE );
+    rightPanel.setMaximumSize(dim);
+    
     //rightPanel.setBorder( new EmptyBorder(5, 5, 5, 5) );
 
-    this.add(tabbedPane, BorderLayout.NORTH);
-
+    /*
     JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     splitPane.setLeftComponent(dataBox);
     splitPane.setRightComponent(rightPanel);
     splitPane.setResizeWeight(1.0);
+    */
+    
+    dataBox.setBorder( new EmptyBorder(5, 5, 5, 5) );
+    
+    JPanel data = new JPanel();
+    data.setLayout(new BoxLayout(data, BoxLayout.X_AXIS));
+    data.add(dataBox);
+    data.add(rightPanel);
+    c.gridy = 1;
+    
+    this.add(data, c);
+    data.setAlignmentX(SwingConstants.CENTER);
 
-    splitPane.setAlignmentX(SwingConstants.CENTER);
-    
-    this.add(splitPane, BorderLayout.SOUTH);
-    
   }
 
   /**
@@ -188,11 +208,11 @@ public class MainWindow extends JPanel implements ActionListener {
     parent.setLayout( bl );
 
     parent.add(button);
-    button.setAlignmentX(SwingConstants.CENTER);
     parent.add(jsp);
+    button.setAlignmentX(SwingConstants.CENTER);
     jsp.setAlignmentX(SwingConstants.CENTER);
     // prevent vertical expansion of text box
-    //parent.add( Box.createHorizontalGlue() );
+    parent.add( Box.createVerticalGlue() );
   }
 
   /**
