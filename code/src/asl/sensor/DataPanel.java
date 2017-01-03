@@ -10,6 +10,8 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
@@ -28,6 +30,7 @@ import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
@@ -93,6 +96,9 @@ implements ActionListener, ChangeListener {
           PlotOrientation.VERTICAL,
           false, false, false);
       
+      DateAxis da = new DateAxis();
+      chart.getXYPlot().setDomainAxis(da);
+      
       chartPanels[i] = new ChartPanel(chart);
       Dimension dim = chartPanels[i].getPreferredSize();
       chartPanels[i].setPreferredSize(
@@ -152,12 +158,17 @@ implements ActionListener, ChangeListener {
     JFreeChart chart = ChartFactory.createXYLineChart(
         ts.getKey().toString(),
         "Time",
-        "Seismic reading",
+        "Counts",
         new XYSeriesCollection(ts),
         PlotOrientation.VERTICAL,
         false, false, false);
     
     XYPlot xyp = (XYPlot) chart.getPlot();
+    DateAxis da = new DateAxis();
+    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+    sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+    da.setDateFormatOverride(sdf);
+    xyp.setDomainAxis(da);
     xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
     
     chartPanels[idx].setChart(chart);
@@ -195,9 +206,9 @@ implements ActionListener, ChangeListener {
       long startMarkerLocation = getMarkerLocation(db, leftValue);
       long endMarkerLocation = getMarkerLocation(db, rightValue);   
       
-      Marker startMarker = new ValueMarker(startMarkerLocation);
+      Marker startMarker = new ValueMarker(startMarkerLocation/1000);
       startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-      Marker endMarker = new ValueMarker(endMarkerLocation);
+      Marker endMarker = new ValueMarker(endMarkerLocation/1000);
       endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
       
       xyp.addDomainMarker(startMarker);
@@ -217,7 +228,7 @@ implements ActionListener, ChangeListener {
    */
   public static long getMarkerLocation(DataBlock db, int sliderValue) {
     long start = db.getStartTime();
-    long len = db.getInterval() * db.size();
+    long len = (db.getInterval()) * db.size();
     return start + (sliderValue * len) / 1000;
   }
   
