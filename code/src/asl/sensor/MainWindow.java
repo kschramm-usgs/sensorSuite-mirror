@@ -1,6 +1,5 @@
 package asl.sensor;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
@@ -21,7 +20,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
@@ -167,13 +165,15 @@ public class MainWindow extends JPanel implements ActionListener {
     splitPane.setResizeWeight(1.0);
     */
     
-    dataBox.setBorder( new EmptyBorder(5, 5, 5, 5) );
+    // add space between the plots and the file-operation panel
+    dataBox.setBorder( new EmptyBorder(0, 0, 0, 5) );
     
     JPanel data = new JPanel();
     data.setLayout(new BoxLayout(data, BoxLayout.X_AXIS));
     data.add(dataBox);
     data.add(rightPanel);
     c.gridy = 1;
+    data.setBorder( new EmptyBorder(5, 5, 5, 5) );
     
     this.add(data, c);
     data.setAlignmentX(SwingConstants.CENTER);
