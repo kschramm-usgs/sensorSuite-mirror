@@ -116,10 +116,8 @@ public class MainWindow extends JPanel implements ActionListener {
     c.weightx = 0.0;
     c.weighty = 0.0;
     c.fill = GridBagConstraints.NONE;
-    String freqTitle = "Set plot generation to use units of Hz when available";
-    freqTitle += " (requires regeneration)";
+    String freqTitle = "Plot units of Hz when available (req. regen.)";
     freqSpace = new Checkbox(freqTitle);
-    freqSpace.setMaximumSize( freqSpace.getMinimumSize() );
     this.add(freqSpace, c);
     
     // reset for other components
