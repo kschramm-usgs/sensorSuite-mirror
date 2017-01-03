@@ -200,16 +200,16 @@ public class NoiseExperiment extends Experiment {
         }
         if (Math.abs(plot2) != Double.POSITIVE_INFINITY) {
           if (freqSpace) {
-            noiseSeriesArr[1].add(freqs[i], plot1);
+            noiseSeriesArr[1].add(freqs[i], plot2);
           } else {
-            noiseSeriesArr[1].add(1/freqs[i], plot1);
+            noiseSeriesArr[1].add(1/freqs[i], plot2);
           }
         }
         if (Math.abs(plot3) != Double.POSITIVE_INFINITY) {
           if (freqSpace) {
-            noiseSeriesArr[2].add(freqs[i], plot1);
+            noiseSeriesArr[2].add(freqs[i], plot3);
           } else {
-            noiseSeriesArr[2].add(1/freqs[i], plot1);
+            noiseSeriesArr[2].add(1/freqs[i], plot3);
           }
         }
     }
