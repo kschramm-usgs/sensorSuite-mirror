@@ -57,6 +57,7 @@ public class MainWindow extends JPanel implements ActionListener {
 
   private JButton generate;
   private JButton savePDF;
+  private JButton clear;
   
   // used to store current directory locations
   private String seedDirectory = "data";
@@ -140,6 +141,11 @@ public class MainWindow extends JPanel implements ActionListener {
 
     rightPanel.add(loadingPanel);
     rightPanel.add( Box.createVerticalGlue() );
+    
+    clear = new JButton("Clear data");
+    clear.setEnabled(true);
+    clear.addActionListener(this);
+    rightPanel.add(clear);
     
     generate = new JButton("Generate plots");
     generate.setEnabled(false);
@@ -258,6 +264,18 @@ public class MainWindow extends JPanel implements ActionListener {
   public void actionPerformed(ActionEvent e) {
     // TODO: change control flow 
 
+    if ( e.getSource() == clear ) {
+      dataBox.clearData();
+      for (JTextField fn : seedFileNames) {
+        fn.setText("");
+      }
+      for (JTextField fn : respFileNames) {
+        fn.setText("");
+      }
+      generate.setEnabled(false);
+      return;
+    }
+    
     for(int i = 0; i < seedLoaders.length; ++i) {
       JButton seedButton = seedLoaders[i];
       JButton respButton = respLoaders[i];
@@ -273,6 +291,7 @@ public class MainWindow extends JPanel implements ActionListener {
           seedFileNames[i].setText( file.getName() );
 
         }
+        break;
       } else if ( e.getSource() == respButton ) {
         fc.setCurrentDirectory( new File(respDirectory) );
         fc.resetChoosableFileFilters();
@@ -284,12 +303,13 @@ public class MainWindow extends JPanel implements ActionListener {
           dataBox.setResponse( i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
         }
+        break;
       }
 
       if( dataBox.dataIsSet() ) {
         generate.setEnabled(true);
       }
-
+      
     } // end for loop 
 
     if ( e.getSource() == generate ) {

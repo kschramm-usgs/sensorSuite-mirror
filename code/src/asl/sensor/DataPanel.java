@@ -93,7 +93,7 @@ implements ActionListener, ChangeListener {
           "",
           "",
           "",
-          new XYSeriesCollection( ds.getPlotSeries(i) ),
+          new XYSeriesCollection(),
           PlotOrientation.VERTICAL,
           false, false, false);
       
@@ -163,7 +163,7 @@ implements ActionListener, ChangeListener {
     
     XYPlot xyp = (XYPlot) chart.getPlot();
     DateAxis da = new DateAxis();
-    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
     sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
     da.setLabel("UTC Time");
     Font bold = da.getLabelFont();
@@ -410,6 +410,23 @@ implements ActionListener, ChangeListener {
     setVerticalBars();
     
     
+  }
+
+  public void clearData() {
+    ds = new DataStore();
+    
+    for (ChartPanel cp : chartPanels) {
+      JFreeChart chart = ChartFactory.createXYLineChart(
+          "",
+          "",
+          "",
+          new XYSeriesCollection(),
+          PlotOrientation.VERTICAL,
+          false, false, false);
+      
+      cp.setChart(chart);
+      cp.setMouseZoomable(true);
+    }
   }
   
   
