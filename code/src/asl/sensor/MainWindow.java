@@ -91,7 +91,8 @@ public class MainWindow extends JPanel implements ActionListener {
     c.fill = GridBagConstraints.BOTH;
     c.gridx = 0; c.gridy = 0;
     c.weightx = 1.0; c.weighty = 1.0;
-
+    c.gridwidth = 1;
+    c.anchor = GridBagConstraints.CENTER;
     dataBox = new DataPanel();
 
     fc = new JFileChooser();
@@ -109,6 +110,22 @@ public class MainWindow extends JPanel implements ActionListener {
     }
     
     this.add(tabbedPane, c);
+    
+    // prevent the frequency checkbox from 
+    c.gridy+=1;
+    c.weightx = 0.0;
+    c.weighty = 0.0;
+    c.fill = GridBagConstraints.NONE;
+    String freqTitle = "Set plot generation to use units of Hz when available";
+    freqTitle += " (requires regeneration)";
+    freqSpace = new Checkbox(freqTitle);
+    freqSpace.setMaximumSize( freqSpace.getMinimumSize() );
+    this.add(freqSpace, c);
+    
+    // reset for other components
+    c.weightx = 1.0;
+    c.weighty = 1.0;
+    c.fill = GridBagConstraints.BOTH;
 
     // panel for UI elements to load data, generate full plot, etc.
     JPanel rightPanel = new JPanel();
@@ -142,10 +159,6 @@ public class MainWindow extends JPanel implements ActionListener {
 
     rightPanel.add(loadingPanel);
     rightPanel.add( Box.createVerticalGlue() );
-    
-    freqSpace = new Checkbox("Results in Hz");
-    
-    rightPanel.add(freqSpace);
     
     clear = new JButton("Clear data");
     clear.setEnabled(true);
@@ -183,7 +196,7 @@ public class MainWindow extends JPanel implements ActionListener {
     data.setLayout(new BoxLayout(data, BoxLayout.X_AXIS));
     data.add(dataBox);
     data.add(rightPanel);
-    c.gridy = 1;
+    c.gridy += 1;
     data.setBorder( new EmptyBorder(5, 5, 5, 5) );
     
     this.add(data, c);
