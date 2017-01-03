@@ -59,6 +59,11 @@ public class MainWindow extends JPanel implements ActionListener {
 
   private JButton generate;
   private JButton savePDF;
+  
+  // used to store current directory locations
+  private String seedDirectory = "data";
+  private String respDirectory = "responses";
+  private String saveDirectory = "";
 
 
   private void resetTabPlots() {
@@ -257,25 +262,25 @@ public class MainWindow extends JPanel implements ActionListener {
       JButton seedButton = seedLoaders[i];
       JButton respButton = respLoaders[i];
       if ( e.getSource() == seedButton ) {
-        fc.setCurrentDirectory( new File("data") );
+        fc.setCurrentDirectory( new File(seedDirectory) );
         fc.resetChoosableFileFilters();
         fc.setDialogTitle("Load SEED file...");
         int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
-
+          seedDirectory = file.getParent();
           dataBox.setData( i, file.getAbsolutePath() );
           seedFileNames[i].setText( file.getName() );
 
         }
       } else if ( e.getSource() == respButton ) {
-        fc.setCurrentDirectory( new File("responses") );
+        fc.setCurrentDirectory( new File(respDirectory) );
         fc.resetChoosableFileFilters();
         fc.setDialogTitle("Load response file...");
         int returnVal = fc.showOpenDialog(seedButton);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
-
+          respDirectory = file.getParent();
           dataBox.setResponse( i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
         }
