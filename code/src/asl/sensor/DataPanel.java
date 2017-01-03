@@ -88,7 +88,7 @@ implements ActionListener, ChangeListener {
       JFreeChart chart = ChartFactory.createXYLineChart(
           "",
           "Time",
-          "Seismic reading",
+          "Counts",
           new XYSeriesCollection( ds.getPlotSeries(i) ),
           PlotOrientation.VERTICAL,
           false, false, false);

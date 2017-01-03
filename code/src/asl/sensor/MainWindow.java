@@ -77,7 +77,9 @@ public class MainWindow extends JPanel implements ActionListener {
    */
   public MainWindow() {
 
-    super( new BorderLayout() );
+    super();
+    
+    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
 
     dataBox = new DataPanel();
 
@@ -95,13 +97,10 @@ public class MainWindow extends JPanel implements ActionListener {
       tabbedPane.addTab( exp.getName(), tab );
     }
 
-    tabbedPane.setBorder( new EmptyBorder(5, 0, 0, 0) );
-
-    JPanel leftPanel = new JPanel();
-    leftPanel.setLayout( new BoxLayout(leftPanel, BoxLayout.Y_AXIS) );
+    JPanel rightPanel = new JPanel();
+    rightPanel.setLayout( new BoxLayout(rightPanel, BoxLayout.Y_AXIS) );
     
     JPanel loadingPanel = new JPanel();
-    loadingPanel.setPreferredSize(new Dimension(100, 0));
     loadingPanel.setLayout( new BoxLayout(loadingPanel, BoxLayout.Y_AXIS) );
 
     for (int i = 0; i < seedLoaders.length; i++){
@@ -128,36 +127,32 @@ public class MainWindow extends JPanel implements ActionListener {
     }
     
 
-    leftPanel.add(loadingPanel);
-    leftPanel.add( Box.createGlue() );
+    rightPanel.add(loadingPanel);
+    rightPanel.add( Box.createGlue() );
     
     generate = new JButton("Generate plots");
     generate.setEnabled(false);
     generate.addActionListener(this);
-    leftPanel.add(generate);
+    rightPanel.add(generate);
 
     savePDF = new JButton("Save display (PNG)");
     savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
-    leftPanel.add(savePDF);
+    rightPanel.add(savePDF);
 
-    leftPanel.setBorder( new EmptyBorder(5, 5, 5, 5) );
+    //rightPanel.setBorder( new EmptyBorder(5, 5, 5, 5) );
 
-
-    //holds everything except the side panel used for file IO stuff
-    JPanel temp = new JPanel();
-    temp.setLayout( new BoxLayout(temp, BoxLayout.Y_AXIS) );
-    temp.add(tabbedPane);
-    // temp.add(save);
-    temp.add(dataBox);
-    temp.setBorder( new EmptyBorder(5, 5, 5, 5) );
+    this.add(tabbedPane, BorderLayout.NORTH);
 
     JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-    splitPane.setLeftComponent(temp);
-    splitPane.setRightComponent(leftPanel);
+    splitPane.setLeftComponent(dataBox);
+    splitPane.setRightComponent(rightPanel);
     splitPane.setResizeWeight(1.0);
-    this.add(splitPane);
 
+    splitPane.setAlignmentX(SwingConstants.CENTER);
+    
+    this.add(splitPane, BorderLayout.SOUTH);
+    
   }
 
   /**
@@ -167,7 +162,6 @@ public class MainWindow extends JPanel implements ActionListener {
    * @param parent The (side) panel that holds the button
    */
   private static void initFile(JButton button, JTextField text, JPanel parent){
-    button.setAlignmentX(SwingConstants.CENTER);
 
     text.setText("NO FILE LOADED");
     text.setAlignmentX(SwingConstants.CENTER);
@@ -194,9 +188,11 @@ public class MainWindow extends JPanel implements ActionListener {
     parent.setLayout( bl );
 
     parent.add(button);
+    button.setAlignmentX(SwingConstants.CENTER);
     parent.add(jsp);
+    jsp.setAlignmentX(SwingConstants.CENTER);
     // prevent vertical expansion of text box
-    parent.add( Box.createGlue() );
+    //parent.add( Box.createHorizontalGlue() );
   }
 
   /**
