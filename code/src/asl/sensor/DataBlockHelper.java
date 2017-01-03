@@ -354,7 +354,7 @@ public class DataBlockHelper {
 
     for (int ind = 0; ind < timeseries.size(); ind++)
     {
-      timeseriesdouble.set(ind, (double) timeDomn[ind].getReal() );
+      timeseriesdouble.set(ind, timeDomn[ind].getReal() );
     }
 
     return timeseriesdouble;
