@@ -11,7 +11,7 @@ public class GainExperiment extends Experiment {
   }
 
   @Override
-  XYSeriesCollection backend(DataStore ds) {
+  XYSeriesCollection backend(DataStore ds, boolean freqSpace) {
     // TODO Auto-generated method stub
     return null;
   }

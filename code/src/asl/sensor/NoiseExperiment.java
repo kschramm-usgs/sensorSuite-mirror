@@ -38,8 +38,10 @@ public class NoiseExperiment extends Experiment {
   public NoiseExperiment() {
     super();
     xAxisTitle = "Period (s)";
+    freqAxisTitle = "Frequency (Hz)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
-    xAxis = new LogarithmicAxis(xAxisTitle); 
+    xAxis = new LogarithmicAxis(xAxisTitle);
+    freqAxis = new LogarithmicAxis(freqAxisTitle);
     yAxis = new NumberAxis(yAxisTitle);
     yAxis.setAutoRangeIncludesZero(false);
     yAxis.setAutoRange(true);
@@ -52,6 +54,7 @@ public class NoiseExperiment extends Experiment {
   public String[] getBoldSeriesNames() {
     return new String[]{"NLNM"};
   }
+
   /**
    * Generates power spectral density of each inputted file, and calculates
    * self-noise based on that result.
@@ -66,7 +69,7 @@ public class NoiseExperiment extends Experiment {
    * remaining terms for the formula for the self-noise results.
    */
   @Override
-  XYSeriesCollection backend(DataStore ds) {
+  XYSeriesCollection backend(DataStore ds, boolean freqSpace) {
     
     DataBlock[] dataIn = ds.getData();
     InstrumentResponse[] responses = ds.getResponses();
@@ -124,8 +127,12 @@ public class NoiseExperiment extends Experiment {
         // TODO: is this right
         //Complex temp = resultPSD[j];
         Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],4));
-         
-        powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
+        
+        if (freqSpace) {
+          powerSeries.add( freqs[j], 10*Math.log10( temp.abs() ) );
+        } else {
+          powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
+        }
       }
      
       plottable.addSeries(powerSeries);
@@ -185,13 +192,25 @@ public class NoiseExperiment extends Experiment {
         double plot2 = 10*Math.log10( n22.abs() );
         double plot3 = 10*Math.log10( n33.abs() );
         if (Math.abs(plot1) != Double.POSITIVE_INFINITY) {
-          noiseSeriesArr[0].add(1/freqs[i], plot1);
+          if (freqSpace) {
+            noiseSeriesArr[0].add(freqs[i], plot1);
+          } else {
+            noiseSeriesArr[0].add(1/freqs[i], plot1);
+          }
         }
         if (Math.abs(plot2) != Double.POSITIVE_INFINITY) {
-          noiseSeriesArr[1].add(1/freqs[i], plot2);
+          if (freqSpace) {
+            noiseSeriesArr[1].add(freqs[i], plot1);
+          } else {
+            noiseSeriesArr[1].add(1/freqs[i], plot1);
+          }
         }
         if (Math.abs(plot3) != Double.POSITIVE_INFINITY) {
-          noiseSeriesArr[2].add(1/freqs[i], plot3);
+          if (freqSpace) {
+            noiseSeriesArr[2].add(freqs[i], plot1);
+          } else {
+            noiseSeriesArr[2].add(1/freqs[i], plot1);
+          }
         }
     }
     
@@ -199,7 +218,7 @@ public class NoiseExperiment extends Experiment {
       plottable.addSeries(noiseSeries);
     }
     
-    plottable.addSeries( getLowNoiseModel() );
+    plottable.addSeries( getLowNoiseModel(freqSpace) );
     
     return plottable;
   }
@@ -536,7 +555,7 @@ public class NoiseExperiment extends Experiment {
    * NLNM data points for given input frequencies.
    * @return Plottable data series representing the NLNM
    */
-  public static XYSeries getLowNoiseModel() {
+  public static XYSeries getLowNoiseModel(boolean freqSpace) {
     // TODO: define NLNM as an array or something in a different class
     XYSeries xys = new XYSeries("NLNM");
     try {
@@ -546,13 +565,16 @@ public class NoiseExperiment extends Experiment {
       String str = fr.readLine();
       while (str != null) {
         String[] values = str.split("\\s+");
-        double x = Double.parseDouble(values[0]);
+        double x = Double.parseDouble(values[0]); // period, in seconds
         if (x > 1.0E3) {
           break;
         }
         double y = Double.parseDouble(values[3]);
-        
-        xys.add(x,y);
+        if (freqSpace) {
+          xys.add(1/x, y);
+        } else {
+          xys.add(x,y);
+        }
         
         str = fr.readLine();
       }

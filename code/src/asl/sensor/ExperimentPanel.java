@@ -57,13 +57,21 @@ public class ExperimentPanel extends JPanel implements ActionListener {
    * @param expR The experiment to be performed
    * @return A chart displaying the data from the performed experiment
    */
-  public static JFreeChart populateChart(ExperimentEnum expT, Experiment expR) {
+  public static JFreeChart populateChart(ExperimentEnum expT, Experiment expR,
+      boolean freqSpace) {
     
     XYSeriesCollection data = expR.getData();
     
+    String xTitle;
+    if (freqSpace) {
+      xTitle = expR.getXTitle();
+    } else {
+      xTitle = expR.getFreqTitle();
+    }
+    
     JFreeChart chart = ChartFactory.createXYLineChart(
         expT.getName(),
-        expR.getXTitle(),
+        xTitle,
         expR.getYTitle(),
         data,
         PlotOrientation.VERTICAL,
@@ -83,7 +91,12 @@ public class ExperimentPanel extends JPanel implements ActionListener {
       xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
     }
     
-    xyPlot.setDomainAxis(expR.getXAxis());
+    if (freqSpace) {
+      xyPlot.setDomainAxis(expR.getFreqAxis());
+    } else {
+      xyPlot.setDomainAxis(expR.getXAxis());
+
+    }
     xyPlot.setRangeAxis(expR.getYAxis());
     
     return chart;
@@ -125,11 +138,11 @@ public class ExperimentPanel extends JPanel implements ActionListener {
    * @param tsc The new data, in DataBlock format 
    *            (List, startTime, name, interval [inverse of sample rate])
    */
-  public void updateData(DataStore ds) {
+  public void updateData(DataStore ds, boolean freqSpace) {
     
-    expResult.setData(ds);
+    expResult.setData(ds, freqSpace);
     
-    chart = populateChart(expType, expResult);
+    chart = populateChart(expType, expResult, freqSpace);
     
     chartPanel.setChart(chart);
     chartPanel.setMouseZoomable(false);

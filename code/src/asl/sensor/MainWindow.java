@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.awt.Checkbox;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
@@ -13,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.imageio.ImageIO;
+import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -56,6 +58,8 @@ public class MainWindow extends JPanel implements ActionListener {
   private JButton savePDF;
   private JButton clear;
   
+  private Checkbox freqSpace;
+  
   // used to store current directory locations
   private String seedDirectory = "data";
   private String respDirectory = "responses";
@@ -66,7 +70,7 @@ public class MainWindow extends JPanel implements ActionListener {
     DataStore ds = dataBox.getData();
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      ep.updateData(ds);
+      ep.updateData(ds, freqSpace.getState());
       // updating the chartpanel auto-updates display
     }
     savePDF.setEnabled(true);
@@ -91,7 +95,7 @@ public class MainWindow extends JPanel implements ActionListener {
     dataBox = new DataPanel();
 
     fc = new JFileChooser();
-
+    
     // each pane will correspond to a plot which gets a test from
     // a test factory; this will return the test corresponding to the plot type
     // which is determined based on an enum of tests
@@ -138,6 +142,10 @@ public class MainWindow extends JPanel implements ActionListener {
 
     rightPanel.add(loadingPanel);
     rightPanel.add( Box.createVerticalGlue() );
+    
+    freqSpace = new Checkbox("Results in Hz");
+    
+    rightPanel.add(freqSpace);
     
     clear = new JButton("Clear data");
     clear.setEnabled(true);
@@ -285,9 +293,7 @@ public class MainWindow extends JPanel implements ActionListener {
           seedDirectory = file.getParent();
           dataBox.setData( i, file.getAbsolutePath() );
           seedFileNames[i].setText( file.getName() );
-
         }
-        break;
       } else if ( e.getSource() == respButton ) {
         fc.setCurrentDirectory( new File(respDirectory) );
         fc.resetChoosableFileFilters();
@@ -299,7 +305,6 @@ public class MainWindow extends JPanel implements ActionListener {
           dataBox.setResponse( i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
         }
-        break;
       }
 
       if( dataBox.dataIsSet() ) {
