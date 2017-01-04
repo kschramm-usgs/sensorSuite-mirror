@@ -1,6 +1,6 @@
 package asl.sensor.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -29,6 +29,8 @@ public class DataStoreTest {
     
     DataBlock db = ds.getBlock(0);
     
+    int oldSize = db.size();
+    
     // tested in DataPanelTest
     long loc1 = DataPanel.getMarkerLocation(db, left);
     long loc2 = DataPanel.getMarkerLocation(db, right);
@@ -43,6 +45,7 @@ public class DataStoreTest {
     
     assertEquals( ds.getBlock(1).getStartTime(), loc1);
     assertEquals( db.size(), ds.getBlock(1).size() );
+    assertNotEquals( db.size(), oldSize );
     
   }
   
