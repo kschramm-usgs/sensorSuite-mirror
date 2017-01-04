@@ -195,7 +195,6 @@ public class MainWindow extends JPanel implements ActionListener {
     clear.setEnabled(true);
     clear.addActionListener(this);
     rightPanel.add(clear, rpc);
-    rpc.gridy += 1;
     
     // add space between the plots and the file-operation panel
     dataBox.setBorder( new EmptyBorder(0, 0, 0, 5) );
