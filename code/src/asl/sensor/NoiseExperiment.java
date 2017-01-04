@@ -159,9 +159,10 @@ public class NoiseExperiment extends Experiment {
         if (1/freqs[i] > 1.0E3){
           continue;
         }
-        Complex f1 = freqRespd[0][i];
-        Complex f2 = freqRespd[1][i];
-        Complex f3 = freqRespd[2][i];
+        
+        // Complex f1 = freqRespd[0][i];
+        // Complex f2 = freqRespd[1][i];
+        // Complex f3 = freqRespd[2][i];
         
         Complex p11 = spectra[0][i];
         Complex p22 = spectra[1][i];

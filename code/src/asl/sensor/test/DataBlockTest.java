@@ -25,7 +25,6 @@ public class DataBlockTest {
     
     DataBlock db = DataBlockHelper.getXYSeries(filename1);
 
-    long interval = db.getInterval();
     int sizeOld = db.size();
     
     

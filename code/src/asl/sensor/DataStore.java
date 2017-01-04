@@ -129,11 +129,16 @@ public class DataStore {
     return dataBlockArray;
   }
   
+  /**
+   * Return a single data block according to the passed index 
+   * @param idx Index of datablock, corresponding to data panel plot index
+   * @return Timeseries data for corresponing plot
+   */
   public DataBlock getBlock(int idx) {
     if (idx < FILE_COUNT) {
       return dataBlockArray[idx];
     }
-    else return null;
+    throw new IndexOutOfBoundsException();
   }
   
   /**

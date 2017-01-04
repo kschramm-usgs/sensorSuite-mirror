@@ -50,10 +50,14 @@ extends JPanel
 implements ActionListener, ChangeListener {
 
   /**
-   * 
+   * auto-generated serialization UID
    */
   private static final long serialVersionUID = -7302813951637543526L;
   
+  /**
+   * Default height of image produced by the save-as-image function
+   * (each chart is 240 pixels tall)
+   */
   public static final int IMAGE_HEIGHT = 240*DataStore.FILE_COUNT;
   
   DataStore ds;
@@ -256,8 +260,8 @@ implements ActionListener, ChangeListener {
   
   
   /**
-   * Returns the selected region of underlying DataStore, to be fed into experiments
-   * for processing (the results of which will be plotted)
+   * Returns the selected region of underlying DataStore, to be fed 
+   * into experiments for processing (the results of which will be plotted)
    * @return A DataStore object (contains arrays of DataBlocks & Responses)
    */
   public DataStore getData() {
@@ -375,6 +379,9 @@ implements ActionListener, ChangeListener {
   }
 
   @Override
+  /**
+   * Handles changes in value by the sliders below the charts
+   */
   public void stateChanged(ChangeEvent e) {
     // TODO Auto-generated method stub
     
@@ -409,9 +416,11 @@ implements ActionListener, ChangeListener {
     
     setVerticalBars();
     
-    
   }
 
+  /**
+   * Resets the data and blanks out the current chart
+   */
   public void clearData() {
     ds = new DataStore();
     

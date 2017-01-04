@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -35,15 +34,12 @@ import org.jfree.data.xy.XYSeriesCollection;
 public class ExperimentPanel extends JPanel implements ActionListener {
  
   private static final long serialVersionUID = -5591522915365766604L;
-  // likely need a JFreeChart object of some kind here
 
   private JButton save;
   private JFreeChart chart; // replace with plot object
   private ChartPanel chartPanel;
   
   private JFileChooser fc; // save image when image save button clicked
-  
-//  private TimeSeriesCollection datasets;
   
   private ExperimentEnum expType; 
           // used to define experiment of each plot object
@@ -149,11 +145,14 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
     // setting the new chart is enough to update the plots
   }
-  
-  public JFreeChart getChart() {
-    return chart;
-  }
 
+  /**
+   * Return image of this chart with specified dimensions
+   * Used to compile PNG image of all currently-displayed charts
+   * @param width Width of output image in pixels
+   * @param height Height of output image in pixels
+   * @return buffered image of this panel's chart
+   */
   public BufferedImage getAsImage(int width, int height) {
     
     ChartPanel outPanel = new ChartPanel(chart);

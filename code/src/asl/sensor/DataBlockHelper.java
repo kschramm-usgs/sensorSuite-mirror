@@ -65,8 +65,6 @@ public class DataBlockHelper {
     
     try {
       dis = new DataInputStream(  new FileInputStream(filename) );
-
-      boolean startTimeListed = false;
       
       while ( true ) {
         

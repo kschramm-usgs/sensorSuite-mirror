@@ -14,7 +14,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.imageio.ImageIO;
-import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -361,6 +360,7 @@ public class MainWindow extends JPanel implements ActionListener {
 
   /**
    * Handles function to create a PNG image with all currently-displayed plots
+   * (active experiment and read-in time series data)
    * @param file File (PNG) that image will be saved to
    * @throws IOException
    */
