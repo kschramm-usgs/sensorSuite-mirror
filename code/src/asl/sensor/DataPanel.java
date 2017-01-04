@@ -134,7 +134,7 @@ implements ActionListener, ChangeListener {
     // now we can add the space between the last plot and the save button
     this.add( Box.createVerticalStrut(5) );
     
-    save = new JButton("Save");
+    save = new JButton("Save Timeseries Data");
     this.add(save);
     save.setAlignmentX(Component.CENTER_ALIGNMENT);
     save.addActionListener(this);

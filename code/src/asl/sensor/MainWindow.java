@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+// TODO: move file operations to the datapanel object?
 
 /**
  * Main window of the sensor test program and the program's launcher
@@ -111,7 +112,7 @@ public class MainWindow extends JPanel implements ActionListener {
     
     this.add(tabbedPane, c);
     
-    // prevent the frequency checkbox from 
+    // prevent the frequency checkbox from affecting panel resizing
     c.gridy+=1;
     c.weightx = 0.0;
     c.weighty = 0.0;
@@ -127,10 +128,20 @@ public class MainWindow extends JPanel implements ActionListener {
 
     // panel for UI elements to load data, generate full plot, etc.
     JPanel rightPanel = new JPanel();
-    rightPanel.setLayout( new BoxLayout(rightPanel, BoxLayout.Y_AXIS) );
     
-    JPanel loadingPanel = new JPanel();
-    loadingPanel.setLayout( new BoxLayout(loadingPanel, BoxLayout.Y_AXIS) );
+    rightPanel.setLayout( new GridBagLayout() );
+    GridBagConstraints rpc = new GridBagConstraints();
+    rpc.gridwidth = 1;
+    rpc.gridy = 0;
+    
+    rpc.weighty = 1.0;
+    rpc.fill = GridBagConstraints.BOTH;
+    rightPanel.add( Box.createVerticalGlue(), rpc);
+    
+    rpc.gridy += 1;
+    
+    rpc.weighty = 0.0;
+    rpc.fill = GridBagConstraints.NONE;
 
     for (int i = 0; i < seedLoaders.length; i++){
       seedLoaders[i] = new JButton("Load SEED File " + (i+1) );
@@ -144,48 +155,47 @@ public class MainWindow extends JPanel implements ActionListener {
       seedFileNames[i].setEditable(false);
       respFileNames[i].setEditable(false);
 
-      // used to hold the buttons and filenames associated with plot i
-      JPanel combinedPanel = new JPanel();
-      combinedPanel.setLayout( new BoxLayout(combinedPanel, BoxLayout.Y_AXIS) );
-      
-      initFile(seedLoaders[i], seedFileNames[i], combinedPanel);
-      initFile(respLoaders[i], respFileNames[i], combinedPanel);
+      initFile(seedLoaders[i], seedFileNames[i], rightPanel, rpc);
+      initFile(respLoaders[i], respFileNames[i], rightPanel, rpc);
 
-      loadingPanel.add(combinedPanel);
+      rpc.gridy += 1;
+      
+      rpc.weighty = 1.0;
+      rpc.fill = GridBagConstraints.BOTH;
+      rightPanel.add( Box.createVerticalGlue(), rpc);
+      rpc.gridy += 1;
+      
+      rpc.weighty = 0.0;
+      rpc.fill = GridBagConstraints.NONE;
     }
     
 
-    rightPanel.add(loadingPanel);
-    rightPanel.add( Box.createVerticalGlue() );
+    rpc.weighty = 1.0;
+    rpc.fill = GridBagConstraints.BOTH;
+    rightPanel.add( Box.createVerticalGlue(), rpc );
+    rpc.gridy += 1;
     
-    clear = new JButton("Clear data");
-    clear.setEnabled(true);
-    clear.addActionListener(this);
-    rightPanel.add(clear);
+    rpc.weighty = 0.0;
+    rpc.fill = GridBagConstraints.HORIZONTAL;
+    rpc.ipady = 10;
     
     generate = new JButton("Generate plots");
     generate.setEnabled(false);
     generate.addActionListener(this);
-    rightPanel.add(generate);
+    rightPanel.add(generate, rpc);
+    rpc.gridy += 1;
 
     savePDF = new JButton("Save display (PNG)");
     savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
-    rightPanel.add(savePDF);
+    rightPanel.add(savePDF, rpc);
+    rpc.gridy += 1;
     
-    // prevent expansion of right-side panel on applet resize
-    Dimension dim = rightPanel.getPreferredSize();
-    dim = new Dimension( (int) dim.getWidth(), Integer.MAX_VALUE );
-    rightPanel.setMaximumSize(dim);
-    
-    //rightPanel.setBorder( new EmptyBorder(5, 5, 5, 5) );
-
-    /*
-    JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-    splitPane.setLeftComponent(dataBox);
-    splitPane.setRightComponent(rightPanel);
-    splitPane.setResizeWeight(1.0);
-    */
+    clear = new JButton("Clear data");
+    clear.setEnabled(true);
+    clear.addActionListener(this);
+    rightPanel.add(clear, rpc);
+    rpc.gridy += 1;
     
     // add space between the plots and the file-operation panel
     dataBox.setBorder( new EmptyBorder(0, 0, 0, 5) );
@@ -208,14 +218,12 @@ public class MainWindow extends JPanel implements ActionListener {
    * @param text Filename (defaults to NO FILE LOADED when created)
    * @param parent The (side) panel that holds the button
    */
-  private static void initFile(JButton button, JTextField text, JPanel parent){
+  private static void initFile(
+      JButton button, JTextField text, JPanel parent, GridBagConstraints gbc){
 
     text.setText("NO FILE LOADED");
     text.setAlignmentX(SwingConstants.CENTER);
     text.setHorizontalAlignment(JTextField.CENTER);
-
-    text.setMaximumSize( new Dimension( 
-        Integer.MAX_VALUE, text.getHeight()*2 ) );
 
     JScrollPane jsp = new JScrollPane();
 
@@ -224,22 +232,17 @@ public class MainWindow extends JPanel implements ActionListener {
     jsp.setHorizontalScrollBarPolicy(
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
     
-
     jsp.setViewportView(text);
 
-    // restrict resizable panel to be the size of the text
-    jsp.setMaximumSize( new Dimension( 
-        Integer.MAX_VALUE, text.getHeight()*2 ) );
+    gbc.weighty = 0.0;
+    gbc.fill = GridBagConstraints.NONE;
+    parent.add(button, gbc);
+    gbc.gridy += 1;
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    parent.add(jsp, gbc);
+    gbc.gridy += 1;
     
-    BoxLayout bl = new BoxLayout(parent, BoxLayout.Y_AXIS);
-    parent.setLayout( bl );
-
-    parent.add(button);
-    parent.add(jsp);
-    button.setAlignmentX(SwingConstants.CENTER);
-    jsp.setAlignmentX(SwingConstants.CENTER);
-    // prevent vertical expansion of text box
-    parent.add( Box.createVerticalGlue() );
+    gbc.fill = GridBagConstraints.NONE;
   }
 
   /**
@@ -282,10 +285,10 @@ public class MainWindow extends JPanel implements ActionListener {
     if ( e.getSource() == clear ) {
       dataBox.clearData();
       for (JTextField fn : seedFileNames) {
-        fn.setText("");
+        fn.setText("NO FILE LOADED");
       }
       for (JTextField fn : respFileNames) {
-        fn.setText("");
+        fn.setText("NO FILE LOADED");
       }
       generate.setEnabled(false);
       return;
