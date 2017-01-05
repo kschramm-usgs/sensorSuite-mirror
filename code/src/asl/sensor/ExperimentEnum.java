@@ -11,8 +11,8 @@ public enum ExperimentEnum {
   // experiment and a corresponding constructor call in experimentfactory
   
   NOISE ("Self-noise"),
-  ORTHO ("Orthogonality"),
-  RGAIN ("Relative gain");
+  RGAIN ("Relative gain"),
+  ORTHO ("Orthogonality");
 
   private String name;
   

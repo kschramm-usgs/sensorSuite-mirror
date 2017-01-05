@@ -68,9 +68,20 @@ public class MainWindow extends JPanel implements ActionListener {
 
   private void resetTabPlots() {
     DataStore ds = dataBox.getData();
+    InstrumentResponse[] irs = ds.getResponses();
+    
+    FFTResult[] powerSpectra = new FFTResult[DataStore.FILE_COUNT];
+    
+    for (int i = 0; i < powerSpectra.length; ++i) {
+      DataBlock data = ds.getBlock(i);
+      InstrumentResponse ir = irs[i];
+      
+      powerSpectra[i] = FFTResult.crossPower(data, data, ir, ir);
+    }
+    
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      ep.updateData(ds, freqSpace.getState());
+      ep.updateData(ds, powerSpectra, freqSpace.getState());
       // updating the chartpanel auto-updates display
     }
     savePDF.setEnabled(true);
@@ -104,7 +115,7 @@ public class MainWindow extends JPanel implements ActionListener {
     tabbedPane = new JTabbedPane();
 
     for( ExperimentEnum exp : ExperimentEnum.values() ){
-      JPanel tab = new ExperimentPanel(exp);
+      JPanel tab = ExperimentPanelFactory.createPanel(exp);
       tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
       tabbedPane.addTab( exp.getName(), tab );
     }
@@ -130,6 +141,7 @@ public class MainWindow extends JPanel implements ActionListener {
     
     rightPanel.setLayout( new GridBagLayout() );
     GridBagConstraints rpc = new GridBagConstraints();
+    rpc.weightx = 0.0;
     rpc.gridwidth = 1;
     rpc.gridy = 0;
     
@@ -160,7 +172,7 @@ public class MainWindow extends JPanel implements ActionListener {
       rpc.gridy += 1;
       
       rpc.weighty = 1.0;
-      rpc.fill = GridBagConstraints.BOTH;
+      rpc.fill = GridBagConstraints.VERTICAL;
       rightPanel.add( Box.createVerticalGlue(), rpc);
       rpc.gridy += 1;
       
@@ -170,7 +182,7 @@ public class MainWindow extends JPanel implements ActionListener {
     
 
     rpc.weighty = 1.0;
-    rpc.fill = GridBagConstraints.BOTH;
+    rpc.fill = GridBagConstraints.VERTICAL;
     rightPanel.add( Box.createVerticalGlue(), rpc );
     rpc.gridy += 1;
     
@@ -199,12 +211,23 @@ public class MainWindow extends JPanel implements ActionListener {
     dataBox.setBorder( new EmptyBorder(0, 0, 0, 5) );
     
     JPanel data = new JPanel();
-    data.setLayout(new BoxLayout(data, BoxLayout.X_AXIS));
-    data.add(dataBox);
-    data.add(rightPanel);
-    c.gridy += 1;
+    data.setLayout( new GridBagLayout() );
+    
+    GridBagConstraints dgbc = new GridBagConstraints();
+    dgbc.weightx = 1.0; dgbc.weighty = 1.0;
+    dgbc.gridheight = 1;
+    dgbc.gridy = 0; dgbc.gridx = 0;
+    dgbc.fill = GridBagConstraints.BOTH;
+    
+    data.add(dataBox, dgbc);
+    
+    dgbc.weightx = 0.0;
+    dgbc.gridx += 1;
+    
+    data.add(rightPanel, dgbc);
     data.setBorder( new EmptyBorder(5, 5, 5, 5) );
     
+    c.gridy += 1;
     this.add(data, c);
     data.setAlignmentX(SwingConstants.CENTER);
 
@@ -305,6 +328,14 @@ public class MainWindow extends JPanel implements ActionListener {
           seedDirectory = file.getParent();
           dataBox.setData( i, file.getAbsolutePath() );
           seedFileNames[i].setText( file.getName() );
+          for ( int j = 0; j < tabbedPane.getTabCount(); ++j ) {
+            ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(j);
+            String[] names = new String[seedFileNames.length];
+            for (int k = 0; k < names.length; ++k) {
+              names[k] = seedFileNames[k].getText();
+            }
+            ep.setDataNames(names);
+          }
         }
       } else if ( e.getSource() == respButton ) {
         fc.setCurrentDirectory( new File(respDirectory) );

@@ -1,6 +1,7 @@
 package asl.sensor.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,9 +9,9 @@ import java.util.List;
 
 import org.junit.Test;
 
-import asl.sensor.NoiseExperiment;
+import asl.sensor.FFTResult;
 
-public class NoiseExperimentTest {
+public class FFTResultTest {
 
   @Test
   public void rangeCopyTest() {
@@ -53,7 +54,7 @@ public class NoiseExperimentTest {
     List<Number> numList = Arrays.asList(numbers);
     List<Number> demeaned = new ArrayList<Number>(numList);
     
-    NoiseExperiment.demean(demeaned);
+    FFTResult.demean(demeaned);
     
     for (int i = 0; i < numList.size(); ++i) {
       assertEquals(demeaned.get(i), numList.get(i).doubleValue()-3);
@@ -67,7 +68,7 @@ public class NoiseExperimentTest {
     Number[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9};
     
     List<Number> toDetrend = Arrays.asList(x);
-    NoiseExperiment.detrend(toDetrend);
+    FFTResult.detrend(toDetrend);
     
     for (Number num : toDetrend) {
       assertEquals(num.doubleValue(), 0.0, 0.001);
@@ -90,7 +91,7 @@ public class NoiseExperimentTest {
         -1d, -2d, -3d, -4d, -5d, -6d, -7d, -8d, -9d };
 
     
-    NoiseExperiment.detrend(toDetrend);
+    FFTResult.detrend(toDetrend);
     
     for (int i = 0; i < x.length; i++) {
       assertEquals(
@@ -106,7 +107,7 @@ public class NoiseExperimentTest {
     List<Number> toTaper = Arrays.asList(x);
     Double[] tapered = { 0d, 4.5d, 5d, 4.5d, 0d };
 
-    double power = NoiseExperiment.cosineTaper(toTaper, 0.25);
+    double power = FFTResult.cosineTaper(toTaper, 0.25);
     
     assertEquals(new Double(Math.round(power)), new Double(4));
     

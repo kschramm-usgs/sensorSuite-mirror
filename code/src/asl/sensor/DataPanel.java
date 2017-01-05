@@ -2,7 +2,6 @@ package asl.sensor;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -12,7 +11,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.TimeZone;
 
 import javax.imageio.ImageIO;
@@ -129,9 +127,11 @@ implements ActionListener, ChangeListener {
     sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
     sliderPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
     leftSlider = new JSlider(0, 1000, 0);
+    leftSlider.setEnabled(false);
     leftSlider.addChangeListener(this);
     sliderPanel.add(leftSlider);
     rightSlider = new JSlider(0, 1000, 1000);
+    rightSlider.setEnabled(false);
     rightSlider.addChangeListener(this);
     sliderPanel.add(rightSlider);
     this.add(sliderPanel);
@@ -201,6 +201,8 @@ implements ActionListener, ChangeListener {
     
     if ( this.plotsAreLoaded() ) {
       zoomIn.setEnabled(true);
+      leftSlider.setEnabled(true);
+      rightSlider.setEnabled(true);
     }
     
     leftSlider.setValue(0);
@@ -233,7 +235,7 @@ implements ActionListener, ChangeListener {
       DataBlock db = zooms.getBlock(i);
       
       long startMarkerLocation = getMarkerLocation(db, leftValue);
-      long endMarkerLocation = getMarkerLocation(db, rightValue);   
+      long endMarkerLocation = getMarkerLocation(db, rightValue);
       
       Marker startMarker = new ValueMarker(startMarkerLocation/1000);
       startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
@@ -510,6 +512,9 @@ implements ActionListener, ChangeListener {
     
     zoomIn.setEnabled(false);
     zoomOut.setEnabled(false);
+    
+    leftSlider.setEnabled(false);
+    rightSlider.setEnabled(false);
     
     for (ChartPanel cp : chartPanels) {
       JFreeChart chart = ChartFactory.createXYLineChart(

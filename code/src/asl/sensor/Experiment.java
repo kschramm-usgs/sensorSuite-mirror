@@ -18,13 +18,6 @@ public abstract class Experiment {
   protected NumberAxis xAxis, freqAxis, yAxis;
   
   /**
-   * Default constructor
-   */
-  public Experiment() {
-    
-  }
-  
-  /**
    * Return the plottable data for this experiment
    * @return Plottable data 
    */
@@ -48,8 +41,31 @@ public abstract class Experiment {
    * @param freqSpace True if the x-axis should be frequency units (False if it
    * should be units of time, for the period)
    */
-  public void setData(DataStore ds, boolean freqSpace) {
-    xySeriesData = backend(ds, freqSpace);
+  public void setData(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+    
+    DataBlock[] dataIn = ds.getData();
+    InstrumentResponse[] resps = ds.getResponses();
+    
+    long interval = dataIn[0].getInterval();
+    // int length = dataIn[0].size();
+    for (DataBlock data : dataIn) {
+      if ( data.getInterval() != interval ) {
+        throw new RuntimeException("Interval mismatch on datasets.");
+      }
+    }
+    
+    for (int i = 0; i < dataIn.length; ++i) {
+      // don't calculate if all the data isn't in yet
+      if( dataIn[i] == null ||  
+          dataIn[i].size() == 0 ||
+          resps[i] == null ) {
+        xySeriesData =  new XYSeriesCollection();
+        return;
+        // we can't plot without all the data (certainly need responses loaded)
+      }
+    }
+    
+    xySeriesData = backend(ds, psd, freqSpace);
   }
   
   /**
@@ -107,6 +123,7 @@ public abstract class Experiment {
    * if it should be plotted by period) for domain axis
    * @return Plottable series (pl.) of data for all results generated
    */
-  abstract XYSeriesCollection backend(DataStore ds, boolean freqSpace);
+  abstract XYSeriesCollection backend(
+      DataStore ds, FFTResult[] psd, boolean freqSpace);
   
 }

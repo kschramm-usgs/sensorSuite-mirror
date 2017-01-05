@@ -11,9 +11,18 @@ public class OrthogonalExperiment extends Experiment {
   }
 
   @Override
-  XYSeriesCollection backend(DataStore ds, boolean freqSpace) {
-    // TODO Auto-generated method stub
-    return null;
+  XYSeriesCollection backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+    // START OF COPY
+    DataBlock[] dataIn = ds.getData();
+    // InstrumentResponse[] responses = ds.getResponses();
+    
+    XYSeriesCollection plottable = new XYSeriesCollection();
+    plottable.setAutoWidth(true);
+    
+    ExperimentPanel.addToPlot(dataIn, psd, plottable, freqSpace);
+    
+    return plottable;
+    
   }
 
 }
