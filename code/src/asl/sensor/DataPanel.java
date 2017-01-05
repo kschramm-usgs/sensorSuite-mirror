@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.TimeZone;
 
 import javax.imageio.ImageIO;
@@ -60,20 +61,22 @@ implements ActionListener, ChangeListener {
    */
   public static final int IMAGE_HEIGHT = 240*DataStore.FILE_COUNT;
   
-  DataStore ds;
+  private DataStore ds;
+  private DataStore zooms;
   private ChartPanel[] chartPanels = new ChartPanel[DataStore.FILE_COUNT];
+  private boolean[] set = new boolean[DataStore.FILE_COUNT];
   private Color[] defaultColor = {
           ChartColor.LIGHT_RED, 
           ChartColor.LIGHT_BLUE, 
           ChartColor.LIGHT_GREEN };
   private JButton save;
+  private JButton zoomIn;
+  private JButton zoomOut;
   private JFileChooser fc;
   private JPanel allCharts; // parent of the chartpanels, used for image saving
   private JPanel sliderPanel;
   private JSlider leftSlider;
   private JSlider rightSlider;
-  private int rightSliderValue;
-  private int leftSliderValue;
   private int margin = 100; // min space of the two sliders
   
   
@@ -87,6 +90,7 @@ implements ActionListener, ChangeListener {
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
    
     ds = new DataStore();
+    zooms = ds;
     
     allCharts = new JPanel();
     allCharts.setLayout( new BoxLayout(allCharts, BoxLayout.Y_AXIS) );
@@ -121,16 +125,13 @@ implements ActionListener, ChangeListener {
     
     this.add(allCharts);
     
-    leftSliderValue = 0;
-    rightSliderValue = 1000;
-    
     sliderPanel = new JPanel();
     sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
     sliderPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
-    leftSlider = new JSlider(0, 1000, leftSliderValue);
+    leftSlider = new JSlider(0, 1000, 0);
     leftSlider.addChangeListener(this);
     sliderPanel.add(leftSlider);
-    rightSlider = new JSlider(0, 1000, rightSliderValue);
+    rightSlider = new JSlider(0, 1000, 1000);
     rightSlider.addChangeListener(this);
     sliderPanel.add(rightSlider);
     this.add(sliderPanel);
@@ -138,10 +139,24 @@ implements ActionListener, ChangeListener {
     // now we can add the space between the last plot and the save button
     this.add( Box.createVerticalStrut(5) );
     
-    save = new JButton("Save Timeseries Data");
-    this.add(save);
-    save.setAlignmentX(Component.CENTER_ALIGNMENT);
+    JPanel buttons = new JPanel();
+    buttons.setLayout( new BoxLayout(buttons, BoxLayout.X_AXIS) );
+    
+    zoomIn = new JButton("Zoom on Selection");
+    buttons.add(zoomIn);
+    zoomIn.addActionListener(this);
+    zoomIn.setEnabled(false);
+    
+    save = new JButton("Save Timeseries Plots (PNG)");
+    buttons.add(save);
     save.addActionListener(this);
+    
+    zoomOut = new JButton("Show all data");
+    buttons.add(zoomOut);
+    zoomOut.addActionListener(this);
+    zoomOut.setEnabled(false);
+    
+    this.add(buttons);
     
     fc = new JFileChooser();
     
@@ -156,6 +171,8 @@ implements ActionListener, ChangeListener {
   public void setData(int idx, String filepath) { 
     
     XYSeries ts = ds.setData(idx, filepath);
+    
+    zooms = ds;
     
     JFreeChart chart = ChartFactory.createXYLineChart(
         ts.getKey().toString(),
@@ -180,6 +197,12 @@ implements ActionListener, ChangeListener {
     chartPanels[idx].setChart(chart);
     chartPanels[idx].setMouseZoomable(true);
     
+    set[idx] = true;
+    
+    if ( this.plotsAreLoaded() ) {
+      zoomIn.setEnabled(true);
+    }
+    
     leftSlider.setValue(0);
     rightSlider.setValue(1000);
     setVerticalBars();
@@ -192,7 +215,7 @@ implements ActionListener, ChangeListener {
    */
   public void setVerticalBars() {
     
-    ds.trimToCommonTime();
+    zooms.trimToCommonTime();
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( null == ds.getBlock(i) ) {
@@ -207,7 +230,7 @@ implements ActionListener, ChangeListener {
       XYPlot xyp = (XYPlot) chartPanels[i].getChart().getPlot();
       xyp.clearDomainMarkers();
       
-      DataBlock db = ds.getBlock(i);
+      DataBlock db = zooms.getBlock(i);
       
       long startMarkerLocation = getMarkerLocation(db, leftValue);
       long endMarkerLocation = getMarkerLocation(db, rightValue);   
@@ -247,15 +270,28 @@ implements ActionListener, ChangeListener {
   public void setResponse(int idx, String filepath) {
     
     ds.setResponse(idx, filepath);
-    
+    zooms.setResponse(idx, filepath);
   }
   
   /**
    * Checks if all the data has been loaded
    * @return True if all data is set, including responses
    */
-  public boolean dataIsSet() {
+  public boolean allDataSet() {
     return ds.isPlottable();
+  }
+  
+  /**
+   * Method to check if plots have been set with data
+   * @return True if all plots are set (responses don't need to be loaded)
+   */
+  private boolean plotsAreLoaded() {
+    for (boolean bool : set) {
+      if (!bool) {
+        return false;
+      }
+    }
+    return true;
   }
   
   
@@ -265,26 +301,25 @@ implements ActionListener, ChangeListener {
    * @return A DataStore object (contains arrays of DataBlocks & Responses)
    */
   public DataStore getData() {
-    if ( ! ds.isPlottable() ){
+    if ( ! this.allDataSet() ){
       throw new RuntimeException("Not all necessary data loaded in...");
     }
     // TODO: modify this to create a new dataStore with trimmed data
     int leftValue = leftSlider.getValue();
     int rightValue = rightSlider.getValue();
-    DataBlock db = ds.getBlock(0); // dataBlocks should have same time range
+    DataBlock db = zooms.getBlock(0); // dataBlocks should have same time range
     long start = getMarkerLocation(db, leftValue);
     long end = getMarkerLocation(db, rightValue);
-    return new DataStore(ds, start, end);
+    return new DataStore(zooms, start, end);
   }
 
   /**
-   * Handles saving this panel's plots to file (PNG image)
-   * when the save button is clicked.
+   * Dispatches commands based on save and zoom buttons clicked
    */
   @Override
   public void actionPerformed(ActionEvent e) {
 
-    if( e.getSource() == save ) {
+    if ( e.getSource() == save ) {
       String ext = ".png";
       fc.addChoosableFileFilter(
           new FileNameExtensionFilter("PNG image (.png)",ext) );
@@ -304,8 +339,55 @@ implements ActionListener, ChangeListener {
           // TODO Auto-generated catch block
           e1.printStackTrace();
         }
+        
       }
+      return;
     }
+    
+    if ( e.getSource() == zoomIn ) {
+      
+      // trim the data and store it
+      // assume that all datasets already trimmed to their common range
+      DataBlock db = zooms.getBlock(0);
+      long start = getMarkerLocation(db, leftSlider.getValue() );
+      long end = getMarkerLocation(db, rightSlider.getValue() );
+      zooms = new DataStore(zooms, start, end);
+      // plot the new data
+      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+        this.resetPlot(i);
+      }
+      allCharts.repaint();
+      leftSlider.setValue(0); rightSlider.setValue(1000);
+      setVerticalBars();
+      zoomOut.setEnabled(true);
+      return;
+    }
+    
+    if ( e.getSource() == zoomOut ) {
+      
+      // restore original loaded datastore
+      zooms = ds;
+      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+        this.resetPlot(i);
+      }
+      
+      leftSlider.setValue(0); rightSlider.setValue(1000);
+      setVerticalBars();
+      zoomOut.setEnabled(false);
+      return;
+    }
+  }
+  
+  private void resetPlot(int idx) {
+    XYPlot xyp = chartPanels[idx].getChart().getXYPlot();
+    XYSeriesCollection xys = new XYSeriesCollection();
+    xys.addSeries( zooms.getBlock(idx).toXYSeries() );
+    xyp.setDataset( xys );
+    xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+    if ( xyp.getSeriesCount() > 1 ) {
+      throw new RuntimeException("TOO MUCH DATA");
+    }
+    chartPanels[idx].repaint();
   }
   
   /**
@@ -423,6 +505,11 @@ implements ActionListener, ChangeListener {
    */
   public void clearData() {
     ds = new DataStore();
+    zooms = ds;
+    set = new boolean[DataStore.FILE_COUNT];
+    
+    zoomIn.setEnabled(false);
+    zoomOut.setEnabled(false);
     
     for (ChartPanel cp : chartPanels) {
       JFreeChart chart = ChartFactory.createXYLineChart(

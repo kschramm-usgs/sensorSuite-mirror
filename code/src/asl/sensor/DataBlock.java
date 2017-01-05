@@ -86,7 +86,8 @@ public class DataBlock {
    */
   public XYSeries toXYSeries() {
     
-    final int TRUNCATED_INTERVAL = 100; // used to cheaply decimate plots
+    final int TRUNCATED_INTERVAL = 
+        (int) (interval / DataBlockHelper.ONE_HZ_INTERVAL);
     // (the data loaded in is unchanged, this just speeds up display)
     
     XYSeries out = new XYSeries(name);
@@ -94,7 +95,7 @@ public class DataBlock {
     for (int i = 0; i < data.size(); i+=TRUNCATED_INTERVAL) {
       Number point = data.get(i);
       out.add(thisTime/1000, point);
-      thisTime += TRUNCATED_INTERVAL*getInterval();
+      thisTime += TRUNCATED_INTERVAL*interval;
     }
     
     return out;

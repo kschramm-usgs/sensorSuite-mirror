@@ -24,8 +24,8 @@ public class DataStore {
   long startTime = 0L;
   long endTime = Long.MAX_VALUE;
   
-  boolean[] dataIsSet;
-  boolean[] responseIsSet;
+  boolean[] thisBlockIsSet;
+  boolean[] thisResponseIsSet;
   
   /**
    * Instantiate the collections, including empty datasets to be sent to
@@ -35,24 +35,35 @@ public class DataStore {
    dataBlockArray = new DataBlock[FILE_COUNT];
    responses = new InstrumentResponse[FILE_COUNT];
    outToPlots = new XYSeries[FILE_COUNT];
-   dataIsSet = new boolean[FILE_COUNT];
-   responseIsSet = new boolean[FILE_COUNT];
+   thisBlockIsSet = new boolean[FILE_COUNT];
+   thisResponseIsSet = new boolean[FILE_COUNT];
    for (int i = 0; i < FILE_COUNT; ++i) {
      outToPlots[i] = new XYSeries("(EMPTY) " + i);
-     dataIsSet[i] = false;
-     responseIsSet[i] = false;
+     thisBlockIsSet[i] = false;
+     thisResponseIsSet[i] = false;
    }
   }
   
   public DataStore(DataStore ds, long start, long end) {
     dataBlockArray = new DataBlock[FILE_COUNT];
+    responses = new InstrumentResponse[FILE_COUNT];
     for (int i = 0; i < FILE_COUNT; ++i) {
       dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
+      responses[i] = ds.getResponses()[i];
     }
-    this.responses = ds.getResponses();
+    // TODO: deep copy?
+    thisResponseIsSet = ds.responsesAreSet();
+    thisBlockIsSet = ds.dataIsSet();
     this.trimAll(start, end);
   }
   
+  public boolean[] dataIsSet() {
+    return thisBlockIsSet;
+  }
+  
+  public boolean[] responsesAreSet() {
+    return thisResponseIsSet;
+  }
   
   /**
    * Takes a loaded miniSEED data series and converts it to a plottable format
@@ -67,7 +78,7 @@ public class DataStore {
     
     outToPlots[idx] = xy.toXYSeries();
     
-    dataIsSet[idx] = true;
+    thisBlockIsSet[idx] = true;
     
     return outToPlots[idx];
   }
@@ -80,7 +91,7 @@ public class DataStore {
   public void setResponse(int idx, String filepath) {
     try {
       responses[idx] = new InstrumentResponse(filepath);
-      responseIsSet[idx] = true;
+      thisResponseIsSet[idx] = true;
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -89,7 +100,7 @@ public class DataStore {
   
   public boolean isPlottable() {
     for (int i = 0; i < FILE_COUNT; ++i) {
-      if (!dataIsSet[i] || !responseIsSet[i]) {
+      if (!thisBlockIsSet[i] || !thisResponseIsSet[i]) {
         return false;
       }
     }

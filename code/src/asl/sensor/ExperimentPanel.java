@@ -112,7 +112,7 @@ public class ExperimentPanel extends JPanel implements ActionListener {
     
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     
-    save = new JButton("Save Plot");
+    save = new JButton("Save Plot (PNG)");
     save.addActionListener(this);
     
     // chart = populateChart(expType, expResult);

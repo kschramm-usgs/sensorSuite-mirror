@@ -319,7 +319,7 @@ public class MainWindow extends JPanel implements ActionListener {
         }
       }
 
-      if( dataBox.dataIsSet() ) {
+      if( dataBox.allDataSet() ) {
         generate.setEnabled(true);
       }
       
