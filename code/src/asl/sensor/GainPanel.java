@@ -236,6 +236,7 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
       double sDev = meanAndStdDev[1];
       
       // TODO: separate out title generation to eliminate duplicated code
+      // ALSO TODO: use XYTitleAnnotation?
       TextTitle result = new TextTitle();
       String temp = "ratio: "+ mean + "\t" + "sigma: " + sDev;
       result.setText(temp);
