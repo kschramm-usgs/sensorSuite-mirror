@@ -144,8 +144,8 @@ public class GainExperiment extends Experiment {
     FFTResult plot0 = fftResults.get(idx0);
     
     double[] freqBoundaries = new double[2];
-    freqBoundaries[0] = Double.min(lowFreq, highFreq);
-    freqBoundaries[1] = Double.max(lowFreq, highFreq);
+    freqBoundaries[0] = Math.min(lowFreq, highFreq);
+    freqBoundaries[1] = Math.max(lowFreq, highFreq);
     
     int[] indices = getRange( plot0.getFreqs(), freqBoundaries );
     
