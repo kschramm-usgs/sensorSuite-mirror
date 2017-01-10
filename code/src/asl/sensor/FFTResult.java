@@ -391,7 +391,7 @@ public class FFTResult {
    * NLNM data points for given input frequencies.
    * @return Plottable data series representing the NLNM
    */
-  public static XYSeries getLowNoiseModel(boolean freqSpace) {
+  public static XYSeries getLowNoiseModel(boolean freqSpace, Experiment exp) {
     // TODO: define NLNM as an array or something in a different class
     XYSeries xys = new XYSeries("NLNM");
     try {
@@ -409,7 +409,7 @@ public class FFTResult {
         if (freqSpace) {
           xys.add(1/x, y);
         } else {
-          xys.add(x,y);
+          xys.add(x, y);
         }
         
         str = fr.readLine();

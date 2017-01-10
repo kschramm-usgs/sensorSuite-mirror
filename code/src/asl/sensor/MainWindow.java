@@ -58,8 +58,6 @@ public class MainWindow extends JPanel implements ActionListener {
   private JButton savePDF;
   private JButton clear;
   
-  private Checkbox freqSpace;
-  
   // used to store current directory locations
   private String seedDirectory = "data";
   private String respDirectory = "responses";
@@ -81,7 +79,7 @@ public class MainWindow extends JPanel implements ActionListener {
     
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      ep.updateData(ds, powerSpectra, freqSpace.getState());
+      ep.updateData(ds, powerSpectra);
       // updating the chartpanel auto-updates display
     }
     savePDF.setEnabled(true);
@@ -121,15 +119,6 @@ public class MainWindow extends JPanel implements ActionListener {
     }
     
     this.add(tabbedPane, c);
-    
-    // prevent the frequency checkbox from affecting panel resizing
-    c.gridy+=1;
-    c.weightx = 0.0;
-    c.weighty = 0.0;
-    c.fill = GridBagConstraints.NONE;
-    String freqTitle = "Plot units of Hz when available (req. regen.)";
-    freqSpace = new Checkbox(freqTitle);
-    this.add(freqSpace, c);
     
     // reset for other components
     c.weightx = 1.0;
@@ -206,6 +195,7 @@ public class MainWindow extends JPanel implements ActionListener {
     clear.setEnabled(true);
     clear.addActionListener(this);
     rightPanel.add(clear, rpc);
+    // TODO: clear out the old data in the result plot too 
     
     // add space between the plots and the file-operation panel
     dataBox.setBorder( new EmptyBorder(0, 0, 0, 5) );

@@ -18,4 +18,10 @@ public class OrthogonalPanel extends ExperimentPanel {
     return;
   }
 
+  @Override
+  public void updateData(DataStore ds, FFTResult[] psd) {
+    // TODO Auto-generated method stub
+    
+  }
+
 }

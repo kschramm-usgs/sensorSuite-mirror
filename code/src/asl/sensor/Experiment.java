@@ -1,9 +1,10 @@
 package asl.sensor;
 
-import org.jfree.data.xy.XYSeriesCollection;
-
+import org.apache.commons.math3.complex.Complex;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public abstract class Experiment {
 
@@ -16,6 +17,8 @@ public abstract class Experiment {
   protected XYSeriesCollection xySeriesData;
   protected String xAxisTitle, freqAxisTitle, yAxisTitle;
   protected NumberAxis xAxis, freqAxis, yAxis;
+  protected int[] plottingIndices;
+  protected boolean freqSpace;
   
   /**
    * Return the plottable data for this experiment
@@ -35,6 +38,15 @@ public abstract class Experiment {
   }
   
   /**
+   * Get a list with indices to each block actually getting plotted
+   * (Does nothing unless specifically overridden)
+   * @param plotBlocks List of indices in DataStore to plot the data of
+   */
+  public void setPlottingIndices(int[] plotBlocks) {
+    return;    
+  }
+  
+  /**
    * Driver to do data processing on inputted data (calls a concrete backend
    * method which is different for each type of experiment)
    * @param ds Timeseries data to be processed
@@ -45,6 +57,8 @@ public abstract class Experiment {
     
     DataBlock[] dataIn = ds.getData();
     InstrumentResponse[] resps = ds.getResponses();
+    
+    xySeriesData = new XYSeriesCollection();
     
     long interval = dataIn[0].getInterval();
     // int length = dataIn[0].size();
@@ -59,13 +73,12 @@ public abstract class Experiment {
       if( dataIn[i] == null ||  
           dataIn[i].size() == 0 ||
           resps[i] == null ) {
-        xySeriesData =  new XYSeriesCollection();
         return;
         // we can't plot without all the data (certainly need responses loaded)
       }
     }
     
-    xySeriesData = backend(ds, psd, freqSpace);
+    backend(ds, psd, freqSpace);
   }
   
   /**
@@ -116,6 +129,42 @@ public abstract class Experiment {
     return freqAxis;
   }
   
+  public static void addToPlot(
+      DataBlock[] dataIn, 
+      FFTResult[] psd,
+      boolean freqSpace,
+      int[] plottingIndices,
+      XYSeriesCollection xysc,
+      Experiment exp) {
+    
+    for (int i : plottingIndices) {
+      
+      XYSeries powerSeries = new XYSeries( "PSD " + dataIn[i].getName() );
+
+      Complex[] resultPSD = psd[i].getFFT();
+      double[] freqs = psd[i].getFreqs();
+
+      for (int j = 0; j < freqs.length; ++j) {
+        if (1/freqs[j] > 1.0E3) {
+          continue;
+        }
+
+        // TODO: is this right (seems to be)
+        Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],4));
+
+        if (freqSpace) {
+          powerSeries.add( freqs[j], 10*Math.log10( temp.abs() ) );
+        } else {
+         powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
+        }
+      }
+
+      xysc.addSeries(powerSeries);
+
+    }
+    
+  }
+  
   /**
    * (Overwritten by concrete experiments with specific operations)
    * @param ds Object containing the raw timeseries data to process
@@ -123,7 +172,7 @@ public abstract class Experiment {
    * if it should be plotted by period) for domain axis
    * @return Plottable series (pl.) of data for all results generated
    */
-  abstract XYSeriesCollection backend(
+  abstract void backend(
       DataStore ds, FFTResult[] psd, boolean freqSpace);
   
 }

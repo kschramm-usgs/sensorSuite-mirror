@@ -6,7 +6,6 @@ import org.apache.commons.math3.complex.Complex;
 import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 
 /**
  * Produces the data for a self-noise test. Calculates PSD to get cross-power.
@@ -33,6 +32,11 @@ public class NoiseExperiment extends Experiment {
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);
+    
+    plottingIndices = new int[DataStore.FILE_COUNT];
+    for (int i = 0; i < plottingIndices.length; ++i) {
+      plottingIndices[i] = i;
+    }
   }
   
   @Override
@@ -54,13 +58,12 @@ public class NoiseExperiment extends Experiment {
    * remaining terms for the formula for the self-noise results.
    */
   @Override
-  XYSeriesCollection backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+  void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
     DataBlock[] dataIn = ds.getData();
     InstrumentResponse[] responses = ds.getResponses();
     
-    XYSeriesCollection plottable = new XYSeriesCollection();
-    plottable.setAutoWidth(true);
+    xySeriesData.setAutoWidth(true);
     
     // TODO: make sure (i.e., when reading in data) that series lengths' match
     // rather than throwing the exceptions here
@@ -76,7 +79,7 @@ public class NoiseExperiment extends Experiment {
       freqRespd[i] = ir.applyResponseToInput( freqs );
     }
     
-    ExperimentPanel.addToPlot(dataIn, psd, plottable, freqSpace);
+    addToPlot(dataIn, psd, freqSpace, plottingIndices, xySeriesData, this);
     
     // spectra[i] is crosspower pii, now to get pij terms for i!=j
     FFTResult fft = 
@@ -157,12 +160,11 @@ public class NoiseExperiment extends Experiment {
     }
     
     for (XYSeries noiseSeries : noiseSeriesArr) {
-      plottable.addSeries(noiseSeries);
+      xySeriesData.addSeries(noiseSeries);
     }
     
-    plottable.addSeries( FFTResult.getLowNoiseModel(freqSpace) );
-    
-    return plottable;
+    xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
+
   }
-  
+
 }

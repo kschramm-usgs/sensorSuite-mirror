@@ -15,7 +15,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.apache.commons.math3.complex.Complex;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
@@ -23,7 +22,6 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 /**
@@ -41,22 +39,19 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
    * @param expR The experiment to be performed
    * @return A chart displaying the data from the performed experiment
    */
-  public static JFreeChart populateChart(ExperimentEnum expT, Experiment expR,
-      boolean freqSpace) {
-    
-    XYSeriesCollection data = expR.getData();
+  public JFreeChart populateChart(XYSeriesCollection data, boolean freqSpace) {
     
     String xTitle;
     if (freqSpace) {
-      xTitle = expR.getXTitle();
+      xTitle = expResult.getXTitle();
     } else {
-      xTitle = expR.getFreqTitle();
+      xTitle = expResult.getFreqTitle();
     }
     
     JFreeChart chart = ChartFactory.createXYLineChart(
-        expT.getName(),
+        expType.getName(),
         xTitle,
-        expR.getYTitle(),
+        expResult.getYTitle(),
         data,
         PlotOrientation.VERTICAL,
         true, // include legend
@@ -65,7 +60,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     XYPlot xyPlot = chart.getXYPlot();
     
-    String[] bold = expR.getBoldSeriesNames();
+    String[] bold = expResult.getBoldSeriesNames();
     XYItemRenderer xyir = xyPlot.getRenderer();
     for (String series : bold) {
       int seriesIdx = data.getSeriesIndex(series);
@@ -76,12 +71,12 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     }
     
     if (freqSpace) {
-      xyPlot.setDomainAxis(expR.getFreqAxis());
+      xyPlot.setDomainAxis(expResult.getFreqAxis());
     } else {
-      xyPlot.setDomainAxis(expR.getXAxis());
+      xyPlot.setDomainAxis(expResult.getXAxis());
 
     }
-    xyPlot.setRangeAxis(expR.getYAxis());
+    xyPlot.setRangeAxis(expResult.getYAxis());
     
     return chart;
   }
@@ -107,7 +102,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     chart = ChartFactory.createXYLineChart(expType.getName(), 
         expResult.getXTitle(), expResult.getYTitle(), null);
     chartPanel = new ChartPanel(chart);
-    chartPanel.setMouseZoomable(false);
+    // chartPanel.setMouseZoomable(false);
     
     fc = new JFileChooser();
     
@@ -166,57 +161,23 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     return bi;
   }
   
-  /**
-   * Used to propagate changes in data into the underlying experiment process.
-   * @param tsc The new data, in DataBlock format 
-   *            (List, startTime, name, interval [inverse of sample rate])
-   */
+  public abstract void updateData(DataStore ds, FFTResult[] psd);
+
   public void updateData(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
     expResult.setData(ds, psd, freqSpace);
     
-    chart = populateChart(expType, expResult, freqSpace);
+    chart = populateChart(expResult.getData(), freqSpace);
     
     chartPanel.setChart(chart);
     chartPanel.setMouseZoomable(false);
     
     // setting the new chart is enough to update the plots
   }
-  
-  public static void addToPlot(
-      DataBlock[] dataIn, 
-      FFTResult[] psd, 
-      XYSeriesCollection plottable,
-      boolean freqSpace) {
-    
-    for (int i = 0; i < psd.length; ++i) {
 
-      XYSeries powerSeries = new XYSeries( "PSD " + dataIn[i].getName() );
-
-      Complex[] resultPSD = psd[i].getFFT();
-      double[] freqs = psd[i].getFreqs();
-
-      for (int j = 0; j < freqs.length; ++j) {
-        if (1/freqs[j] > 1.0E3) {
-          continue;
-        }
-
-        // TODO: is this right (seems to be)
-        Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],4));
-
-        if (freqSpace) {
-          powerSeries.add( freqs[j], 10*Math.log10( temp.abs() ) );
-        } else {
-          powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
-        }
-      }
-
-      plottable.addSeries(powerSeries);
-
-    }
-    
+  public void setDataNames(String[] seedFileNames) {
+    // nothing to use the filenames for here
+    return;
   }
-
-  public abstract void setDataNames(String[] seedFileNames);
   
 }
