@@ -1,6 +1,7 @@
 package asl.sensor;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 
 import javax.swing.BoxLayout;
@@ -11,12 +12,14 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.jfree.chart.annotations.XYTitleAnnotation;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RectangleAnchor;
 
 public class GainPanel extends ExperimentPanel implements ChangeListener {
 
@@ -52,8 +55,9 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
     secondSeries = new JComboBox<String>();
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      firstSeries.addItem("FILE " + i + " NOT LOADED");
-      secondSeries.addItem("FILE " + i + " NOT LOADED");
+      String out = "FILE NOT LOADED (" + i + ")";
+      firstSeries.addItem(out);
+      secondSeries.addItem(out);
     }
 
     firstSeries.setSelectedIndex(0);
@@ -82,12 +86,12 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
 
   @Override
   public void setDataNames(String[] seedFileNames) {
-    // TODO Auto-generated method stub
     firstSeries.removeAllItems();
     secondSeries.removeAllItems();
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      firstSeries.addItem(seedFileNames[i]);
-      secondSeries.addItem(seedFileNames[i]);
+      String out = seedFileNames[i] + " (" + i + ")";
+      firstSeries.addItem(out);
+      secondSeries.addItem(out);
     }
     firstSeries.setSelectedIndex(0);
     secondSeries.setSelectedIndex(1);
@@ -116,31 +120,36 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
     }
     
     if (e.getSource() == leftSlider || e.getSource() == rightSlider) {
+      // now we need to redraw the vertical bars
+      
       // if either slider is moved, allow recalc gain and sigma values
       recalcButton.setEnabled(true);
       
-      // set the positions of the vertical bars
-      
-      // get the locations of the sliders and the scale factor
-      int leftPos = leftSlider.getValue();
-      int rightPos = rightSlider.getValue();
-      double scale = (high - low)/1000; // slider range is 0 to 1000
-      
-      // get the values for where the vertical bars should be
+      // get plot (where we put the vertical bars)
       XYPlot xyp = chartPanel.getChart().getXYPlot();
-      double lowFreq = Math.pow(10, low + (scale * leftPos) );
-      double highFreq = Math.pow(10, low + (scale * rightPos) );
       
-      // draw the bars
+      // convert slider locations to (log-scale) frequency
+      int leftPos = leftSlider.getValue();
+      double lowFreq = mapSliderToFrequency(leftPos);
+      int rightPos = rightSlider.getValue();
+      double highFreq = mapSliderToFrequency(rightPos);
+      
+      // remove old bars and draw the new ones
       xyp.clearDomainMarkers();
       Marker startMarker = new ValueMarker(lowFreq);
       startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+      xyp.addDomainMarker(startMarker);
       Marker endMarker = new ValueMarker(highFreq);
       endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-      xyp.addDomainMarker(startMarker);
       xyp.addDomainMarker(endMarker);
     }
   }
+  
+  public double mapSliderToFrequency(int position) {
+    double scale = (high - low)/1000; // slider range is 0 to 1000
+    return Math.pow(10, low + (scale * position) );
+  }
+  
   
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
@@ -203,12 +212,7 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
     leftSlider.setValue(leftValue);
     rightSlider.setValue(rightValue);
     
-    // now to add the box with the extra data
-    TextTitle result = new TextTitle();
-    String temp = "ratio: "+ mean + "\t" + "sigma: " + sDev;
-    result.setText(temp);
-    
-    chartPanel.getChart().addSubtitle(result);
+    setTitle(mean, sDev);
     
   }
   
@@ -217,17 +221,11 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
     super.actionPerformed(e); // saving?
     
     if ( e.getSource() == recalcButton ) {
-      // we need to get the values of the sliders again
-      // TODO: separate out value generation to eliminate duplicated code
-      
+      // we need to get the values of the sliders again, convert to frequency
       int leftPos = leftSlider.getValue();
+      double lowFreq = mapSliderToFrequency(leftPos);
       int rightPos = rightSlider.getValue();
-      double scale = (high - low)/1000; // slider range is 0 to 1000
-      
-      // get the values for where the vertical bars should be
-      // since plot is in seconds (period), need 1/period to get frequency
-      double lowFreq = 1. / Math.pow(10, low + (scale * leftPos) );
-      double highFreq = 1. / Math.pow(10, low + (scale * rightPos) );
+      double highFreq = mapSliderToFrequency(rightPos);
       
       double[] meanAndStdDev = 
           ((GainExperiment) expResult).getStatsFromFreqs(lowFreq, highFreq);
@@ -235,18 +233,24 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
       double mean = meanAndStdDev[0];
       double sDev = meanAndStdDev[1];
       
-      // TODO: separate out title generation to eliminate duplicated code
-      // ALSO TODO: use XYTitleAnnotation?
-      TextTitle result = new TextTitle();
-      String temp = "ratio: "+ mean + "\t" + "sigma: " + sDev;
-      result.setText(temp);
-      chartPanel.getChart().clearSubtitles();
-      chartPanel.getChart().addSubtitle(result);
+      setTitle(mean, sDev);
       
       recalcButton.setEnabled(false);
     }
     
-    // next need to deal with regenerate ratio/sigma button
+  }
+  
+  private void setTitle(double mean, double sDev) {
+    // TODO: use XYTitleAnnotation?
+    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
+    TextTitle result = new TextTitle();
+    String temp = "ratio: "+ mean + "\n" + "sigma: " + sDev;
+    result.setText(temp);
+    result.setBackgroundPaint(Color.white);
+    XYTitleAnnotation xyt = new XYTitleAnnotation(0.98, 0.98, result,
+        RectangleAnchor.TOP_RIGHT);
+    xyp.clearAnnotations();
+    xyp.addAnnotation(xyt);
   }
 
 }
