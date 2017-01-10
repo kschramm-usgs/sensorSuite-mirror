@@ -32,11 +32,6 @@ public class NoiseExperiment extends Experiment {
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);
-    
-    plottingIndices = new int[DataStore.FILE_COUNT];
-    for (int i = 0; i < plottingIndices.length; ++i) {
-      plottingIndices[i] = i;
-    }
   }
   
   @Override
@@ -79,7 +74,7 @@ public class NoiseExperiment extends Experiment {
       freqRespd[i] = ir.applyResponseToInput( freqs );
     }
     
-    addToPlot(dataIn, psd, freqSpace, plottingIndices, xySeriesData, this);
+    addToPlot(dataIn, psd, freqSpace, xySeriesData, this);
     
     // spectra[i] is crosspower pii, now to get pij terms for i!=j
     FFTResult fft = 

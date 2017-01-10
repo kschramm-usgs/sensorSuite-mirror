@@ -1,6 +1,9 @@
 package asl.sensor;
 
 import java.awt.Font;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
 import org.jfree.chart.axis.LogarithmicAxis;
@@ -8,7 +11,11 @@ import org.jfree.chart.axis.NumberAxis;
 
 public class GainExperiment extends Experiment {
 
-  private static int getPeakIndex(Complex[] timeSeries, double[] freqs) {
+  private static int getPeakIndex(FFTResult fft) {
+    
+    Complex[] timeSeries = fft.getFFT();
+    double[] freqs = fft.getFreqs();
+    
     double max = Double.NEGATIVE_INFINITY;
     int index = 0;
     for (int i = 0; i < timeSeries.length; ++i) {
@@ -21,6 +28,7 @@ public class GainExperiment extends Experiment {
     }
     return index;
   }
+  
   private static double mean(FFTResult psd, int lower, int higher) {
     double result = 0;
     int range = higher-lower;
@@ -28,6 +36,9 @@ public class GainExperiment extends Experiment {
     Complex[] data = psd.getFFT();
     
     for (int i = lower; i <= higher; ++i) {
+      if ( data[i].abs() >= Double.POSITIVE_INFINITY ) {
+        continue;
+      }
       result += data[i].abs();
     }
     
@@ -45,16 +56,19 @@ public class GainExperiment extends Experiment {
     for (int i = lower; i <= higher; ++i) {
       double value1 = density1[i].abs();
       double value2 = density2[i].abs();
+      
+      if (value1 >= Double.POSITIVE_INFINITY || 
+          value2 >= Double.POSITIVE_INFINITY) {
+        continue;
+      }
+      
       sigma += Math.pow( (value1 / value2) - meanRatio, 2 );
     }
     
     return Math.sqrt(sigma);
   }
   
-  private FFTResult plot0;
-  private FFTResult plot1;
-  
-  private double[] freqBoundaries = new double[2];
+  private List<FFTResult> fftResults;
   
   private double ratio;
 
@@ -73,26 +87,21 @@ public class GainExperiment extends Experiment {
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);
-    
-    plottingIndices = new int[]{0, 1}; // defaults
   }
   
   @Override
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
+    fftResults = new ArrayList<FFTResult>( Arrays.asList(psd) );
+    
     freqSpace = false;
     
     DataBlock[] dataIn = ds.getData();
     // used to get values related to range, etc.
-    plot0 = psd[ plottingIndices[0] ];
-    plot1 = psd[ plottingIndices[1] ];
-    
-    getCenteredOctave();
-    // sets freqBoundaries as a side effect
     
     xySeriesData.setAutoWidth(true);
     
-    addToPlot(dataIn, psd, freqSpace, plottingIndices, xySeriesData, this);
+    addToPlot(dataIn, psd, freqSpace, xySeriesData, this);
     
     xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
     
@@ -102,28 +111,7 @@ public class GainExperiment extends Experiment {
   public String[] getBoldSeriesNames() {
     return new String[]{"NLNM"};
   }
-  
-  private double[] getCenteredOctave() {
-    
-    // find the octave centered around frequency x, where peak of PSD is
-    // that is, the limits are halfway between (x/2, x) and (x, 2x)
-    // thus at the locations of 3x/4 and 3x/2
-    
-    int peak = getPeakIndex( plot0.getFFT(), plot0.getFreqs() );
-    
-    double[] freqs = plot0.getFreqs();
-    
-    double centerFrq = freqs[peak];
-    
-    freqBoundaries[0] = centerFrq * 3./4.; // 
-    freqBoundaries[1] = centerFrq * 3./2.;
-    
-    int[] range = getRange(freqs, freqBoundaries);
-    
-    return getStatsFromIndices(range[0], range[1]);
-    
-  }
-  
+
   private static int[] getRange(double[] freqs, double[] freqBoundaries) {
     
     double lowFrq = freqBoundaries[0];
@@ -150,24 +138,26 @@ public class GainExperiment extends Experiment {
     return indices;
   }
   
-  public double[] getStats() {
-    return new double[]{ratio, sigma};
-  }
-  
-  public double[] getFreqBoundaries() {
-    return freqBoundaries;
-  }
-  
-  public double[] getStatsFromFreqs(double lowFreq, double highFreq) {
+  public double[] getStatsFromFreqs(int idx0, int idx1, 
+      double lowFreq, double highFreq) {
+    
+    FFTResult plot0 = fftResults.get(idx0);
+    
+    double[] freqBoundaries = new double[2];
     freqBoundaries[0] = Double.min(lowFreq, highFreq);
     freqBoundaries[1] = Double.max(lowFreq, highFreq);
     
     int[] indices = getRange( plot0.getFreqs(), freqBoundaries );
     
-    return getStatsFromIndices(indices[0], indices[1]);
+    return getStatsFromIndices(idx0, idx1, indices[0], indices[1]);
   }
   
-  private double[] getStatsFromIndices(int lowInd, int highInd) {
+  private double[] getStatsFromIndices(int idx0, int idx1,
+      int lowInd, int highInd) {
+    
+    FFTResult plot0 = fftResults.get(idx0);
+    FFTResult plot1 = fftResults.get(idx1);
+    
     double mean0 = mean(plot0, lowInd, highInd);
     // since both datasets must have matching interval, PSDs have same freqs
     double mean1 = mean(plot1, lowInd, highInd);
@@ -181,15 +171,7 @@ public class GainExperiment extends Experiment {
     
     // calculate ratio and sigma over the range
     
-    return getStats();
-  }
-  
-  @Override
-  public void setPlottingIndices(int[] plotBlocks) {
-    if (plotBlocks.length != 2) {
-      throw new RuntimeException("Relative gain requires exactly 2 plots");
-    }
-    plottingIndices = plotBlocks;
+    return new double[]{ratio, sigma};
   }
 
 }

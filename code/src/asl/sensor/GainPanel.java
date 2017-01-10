@@ -21,8 +21,10 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
-public class GainPanel extends ExperimentPanel implements ChangeListener {
+public class GainPanel extends ExperimentPanel 
+implements ChangeListener {
 
+  
   /**
    * 
    */
@@ -32,6 +34,7 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
   private JComboBox<String> firstSeries;
   private JComboBox<String> secondSeries;
   private JButton recalcButton;
+  boolean freqSpace = false;
   
   private double low, high;
   
@@ -52,7 +55,9 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
     recalcButton.addActionListener(this);
     
     firstSeries = new JComboBox<String>();
+    firstSeries.addActionListener(this);
     secondSeries = new JComboBox<String>();
+    secondSeries.addActionListener(this);
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       String out = "FILE NOT LOADED (" + i + ")";
@@ -85,6 +90,81 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
   }
 
   @Override
+  public void actionPerformed(ActionEvent e) {
+    super.actionPerformed(e); // saving?
+    
+    int idx0 = firstSeries.getSelectedIndex();
+    int idx1 = secondSeries.getSelectedIndex();
+    
+    if ( e.getSource() == recalcButton ) {
+      
+      // we need to get the values of the sliders again, convert to frequency
+      int leftPos = leftSlider.getValue();
+      double lowPrd = mapSliderToPeriod(leftPos);
+      int rightPos = rightSlider.getValue();
+      double highPrd = mapSliderToPeriod(rightPos);
+      
+      double[] meanAndStdDev = 
+          ((GainExperiment) expResult).getStatsFromFreqs(
+              idx0, idx1, 1/lowPrd, 1/highPrd);
+      
+      double mean = meanAndStdDev[0];
+      double sDev = meanAndStdDev[1];
+      
+      setTitle(mean, sDev);
+      
+      recalcButton.setEnabled(false);
+      
+      return;
+    } 
+    if ( e.getSource() == firstSeries ) {
+      
+      // if we got here from removing the items from the list
+      // (which happens when we load in new data)
+      // don't do anything
+      if (firstSeries.getItemCount() == 0) {
+        return;
+      }
+      
+      // don't allow the same value for the two indices (plot behaves badly)
+      // assume the user is setting firstSeries selection correctly,
+      // and thus make sure that the secondSeries doesn't have a collision
+      if (idx0 == idx1) {
+        secondSeries.setSelectedIndex( 
+            (idx1 + 1) % secondSeries.getItemCount() );
+      }
+      
+    } else if ( e.getSource() == secondSeries ) {      
+      
+      // same as above, do nothing
+      if (secondSeries.getItemCount() == 0) {
+        return;
+      }
+      
+      // same as with the above, but assume secondSeries selection intentional
+      if (idx0 == idx1) {
+        firstSeries.setSelectedIndex(
+            (idx0 + 1) % firstSeries.getItemCount() );
+      }
+      
+    }
+    // now that we have a guarantee of no collision, update data accordingly    
+    if ( e.getSource() == firstSeries || e.getSource() == secondSeries) {
+      // if we selected a new series to plot, redraw the chart
+      if (expResult.getData() != null) {
+        updateDataDriver();
+
+      }
+    }
+    
+  }
+
+  public double mapSliderToPeriod(int position) {
+    double scale = (high - low)/1000; // slider range is 0 to 1000
+    return Math.pow(10, low + (scale * position) );
+  }
+  
+  @Override
   public void setDataNames(String[] seedFileNames) {
     firstSeries.removeAllItems();
     secondSeries.removeAllItems();
@@ -96,7 +176,21 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
     firstSeries.setSelectedIndex(0);
     secondSeries.setSelectedIndex(1);
   }
-
+  
+  
+  private void setTitle(double mean, double sDev) {
+    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
+    TextTitle result = new TextTitle();
+    String temp = "ratio: "+ mean + "\n" + "sigma: " + sDev;
+    result.setText(temp);
+    result.setBackgroundPaint(Color.white);
+    XYTitleAnnotation xyt = new XYTitleAnnotation(0.98, 0.98, result,
+        RectangleAnchor.TOP_RIGHT);
+    xyp.clearAnnotations();
+    xyp.addAnnotation(xyt);
+  }
+  
+    
   @Override
   public void stateChanged(ChangeEvent e) {
     
@@ -120,137 +214,101 @@ public class GainPanel extends ExperimentPanel implements ChangeListener {
     }
     
     if (e.getSource() == leftSlider || e.getSource() == rightSlider) {
+      
       // now we need to redraw the vertical bars
       
-      // if either slider is moved, allow recalc gain and sigma values
+      // new slider window means new results on calculation
       recalcButton.setEnabled(true);
       
       // get plot (where we put the vertical bars)
       XYPlot xyp = chartPanel.getChart().getXYPlot();
       
+      // clear out annotations to prevent issues with misleading data
+      xyp.clearAnnotations();
+      
       // convert slider locations to (log-scale) frequency
       int leftPos = leftSlider.getValue();
-      double lowFreq = mapSliderToFrequency(leftPos);
+      double lowPrd = mapSliderToPeriod(leftPos);
       int rightPos = rightSlider.getValue();
-      double highFreq = mapSliderToFrequency(rightPos);
+      double highPrd = mapSliderToPeriod(rightPos);
       
       // remove old bars and draw the new ones
-      xyp.clearDomainMarkers();
-      Marker startMarker = new ValueMarker(lowFreq);
-      startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-      xyp.addDomainMarker(startMarker);
-      Marker endMarker = new ValueMarker(highFreq);
-      endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-      xyp.addDomainMarker(endMarker);
+      setDomainMarkers(lowPrd, highPrd, xyp);
     }
   }
-  
-  public double mapSliderToFrequency(int position) {
-    double scale = (high - low)/1000; // slider range is 0 to 1000
-    return Math.pow(10, low + (scale * position) );
+
+  private void setDomainMarkers(double lowPrd, double highPrd, XYPlot xyp) {
+    xyp.clearDomainMarkers();
+    Marker startMarker = new ValueMarker( lowPrd );
+    startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+    Marker endMarker = new ValueMarker( highPrd );
+    endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+    xyp.addDomainMarker(startMarker);
+    xyp.addDomainMarker(endMarker);
   }
-  
   
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     
-    int idx1 = firstSeries.getSelectedIndex();
-    int idx2 = secondSeries.getSelectedIndex();
+    expResult.setData(ds, psd, freqSpace);
+    
+    updateDataDriver();
+  }
+  
+  private void updateDataDriver() {
+      
+    int idx0 = firstSeries.getSelectedIndex();
+    int idx1 = secondSeries.getSelectedIndex();
     
     // have to make sure the plotting indices get properly set before
     // running the backend, so that we don't add more plots than we need
-    expResult.setPlottingIndices(new int[] {idx1, idx2});
+     
+    XYSeriesCollection xysc = expResult.getData();
     
-    super.updateData(ds, psd, true);
-    // setting the new chart is enough to update the plots
+    XYSeriesCollection plotXYSC = new XYSeriesCollection();
+      
+    plotXYSC.addSeries( xysc.getSeries(idx0) );
+    plotXYSC.addSeries( xysc.getSeries(idx1) );
+    plotXYSC.addSeries( xysc.getSeries("NLNM") );
     
-    // now to update all the unique data (ratio, sigma, and the vertical bars)
-    double[] meanAndSDev = ( (GainExperiment) expResult).getStats();
-    double[] highAndLowFreqs = 
-        ( (GainExperiment) expResult).getFreqBoundaries();
+    chart = populateChart(plotXYSC, freqSpace);
+    chartPanel.setChart(chart);
+    chartPanel.setMouseZoomable(false);
     
-    double mean = meanAndSDev[0];
-    double sDev = meanAndSDev[1];
-    
-    // set the vertical bars for the plot
-    // since we're looking at frequencies, convert to periods
-    double lowFreq = highAndLowFreqs[0];
-    double highFreq = highAndLowFreqs[1];
-    
-    double lowPrd = 1. / highFreq;
-    double highPrd = 1. / lowFreq;
-    
+    // set vertical bars and enable sliders
     XYPlot xyp = chartPanel.getChart().getXYPlot();
-    xyp.clearDomainMarkers();
-    Marker startMarker = new ValueMarker(lowPrd);
-    startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-    Marker endMarker = new ValueMarker(highPrd);
-    endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-    xyp.addDomainMarker(startMarker);
-    xyp.addDomainMarker(endMarker);
     
-    // set slider values to match where the vertical bars are 
-    XYSeriesCollection xysc = (XYSeriesCollection) xyp.getDataset();
     XYSeries xys = xysc.getSeries(0);
     if ( xysc.getSeriesKey(0).equals("NLNM") ) {
       xys = xysc.getSeries(1);
     }
+
+    // recall: we're plotting in period space (secs)
+    double lowPrd = xys.getMinX();
+    double highPrd = xys.getMaxX();
+    
+    setDomainMarkers(lowPrd, highPrd, xyp);
     
     // since intervals of incoming data set, should be the same for both inputs
-    low = Math.log10( xys.getMinX() ); // value when slider is 0
-    high = Math.log10( xys.getMaxX() ); // value when slider is 1000
+    low = Math.log10( lowPrd ); // value when slider is 0
+    high = Math.log10( highPrd ); // value when slider is 1000
     
-    double scale = (high - low) / 1000; // 1000 <- max value of slider
-    
-    // refer to http://stackoverflow.com/questions/846221/logarithmic-slider
-    int leftValue = (int) ( ( Math.log10(lowPrd) - low ) / scale);
-    int rightValue = (int) ( ( Math.log10(highPrd) - low ) / scale);
     
     leftSlider.setEnabled(true);
     rightSlider.setEnabled(true);
     
-    leftSlider.setValue(leftValue);
-    rightSlider.setValue(rightValue);
+    leftSlider.setValue(0);
+    rightSlider.setValue(1000);
+    
+    // get statistics from frequency (convert from period)
+    double[] meanAndStdDev = 
+        ((GainExperiment) expResult).getStatsFromFreqs(
+            idx0, idx1, 1 / lowPrd, 1 / highPrd);
+    
+    double mean = meanAndStdDev[0];
+    double sDev = meanAndStdDev[1];
     
     setTitle(mean, sDev);
-    
-  }
-  
-  @Override
-  public void actionPerformed(ActionEvent e) {
-    super.actionPerformed(e); // saving?
-    
-    if ( e.getSource() == recalcButton ) {
-      // we need to get the values of the sliders again, convert to frequency
-      int leftPos = leftSlider.getValue();
-      double lowFreq = mapSliderToFrequency(leftPos);
-      int rightPos = rightSlider.getValue();
-      double highFreq = mapSliderToFrequency(rightPos);
-      
-      double[] meanAndStdDev = 
-          ((GainExperiment) expResult).getStatsFromFreqs(lowFreq, highFreq);
-      
-      double mean = meanAndStdDev[0];
-      double sDev = meanAndStdDev[1];
-      
-      setTitle(mean, sDev);
-      
-      recalcButton.setEnabled(false);
-    }
-    
-  }
-  
-  private void setTitle(double mean, double sDev) {
-    // TODO: use XYTitleAnnotation?
-    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
-    TextTitle result = new TextTitle();
-    String temp = "ratio: "+ mean + "\n" + "sigma: " + sDev;
-    result.setText(temp);
-    result.setBackgroundPaint(Color.white);
-    XYTitleAnnotation xyt = new XYTitleAnnotation(0.98, 0.98, result,
-        RectangleAnchor.TOP_RIGHT);
-    xyp.clearAnnotations();
-    xyp.addAnnotation(xyt);
   }
 
 }

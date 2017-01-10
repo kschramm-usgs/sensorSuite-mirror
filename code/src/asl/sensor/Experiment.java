@@ -17,7 +17,6 @@ public abstract class Experiment {
   protected XYSeriesCollection xySeriesData;
   protected String xAxisTitle, freqAxisTitle, yAxisTitle;
   protected NumberAxis xAxis, freqAxis, yAxis;
-  protected int[] plottingIndices;
   protected boolean freqSpace;
   
   /**
@@ -35,15 +34,6 @@ public abstract class Experiment {
    */
   public String[] getBoldSeriesNames() {
     return new String[]{};
-  }
-  
-  /**
-   * Get a list with indices to each block actually getting plotted
-   * (Does nothing unless specifically overridden)
-   * @param plotBlocks List of indices in DataStore to plot the data of
-   */
-  public void setPlottingIndices(int[] plotBlocks) {
-    return;    
   }
   
   /**
@@ -133,11 +123,12 @@ public abstract class Experiment {
       DataBlock[] dataIn, 
       FFTResult[] psd,
       boolean freqSpace,
-      int[] plottingIndices,
       XYSeriesCollection xysc,
       Experiment exp) {
     
-    for (int i : plottingIndices) {
+    // TODO: throw exception if dataIn and psd are diff lengths
+    
+    for (int i = 0; i < dataIn.length; ++i) {
       
       XYSeries powerSeries = new XYSeries( "PSD " + dataIn[i].getName() );
 
