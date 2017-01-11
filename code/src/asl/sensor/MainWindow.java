@@ -1,6 +1,5 @@
 package asl.sensor;
 
-import java.awt.Checkbox;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
@@ -294,7 +293,7 @@ public class MainWindow extends JPanel implements ActionListener {
   public void actionPerformed(ActionEvent e) {
 
     if ( e.getSource() == clear ) {
-      dataBox.clearData();
+      dataBox.clearAllData();
       for (JTextField fn : seedFileNames) {
         fn.setText("NO FILE LOADED");
       }

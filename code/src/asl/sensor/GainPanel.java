@@ -38,6 +38,10 @@ implements ChangeListener {
   
   private double low, high;
   
+  /**
+   * Instantiate the panel, including sliders and stat calc button
+   * @param exp
+   */
   public GainPanel(ExperimentEnum exp) {
     // instantiate common components
     super(exp);
@@ -85,10 +89,16 @@ implements ChangeListener {
     this.add(chartPanel);
     this.add(sliderPanel);
     this.add(comboPanel);
+    // save button instantiated but not displayed on panel
     this.add(save); save.setAlignmentX(CENTER_ALIGNMENT);
     
   }
 
+  /**
+   * Replots when a new data source is chosen (inc. check to prevent same data
+   * from being plotted twice -- which causes an error with JFreeChart)
+   * and recalculates stats when the recalculate button is hit
+   */
   @Override
   public void actionPerformed(ActionEvent e) {
     super.actionPerformed(e); // saving?
@@ -159,11 +169,20 @@ implements ChangeListener {
     
   }
 
+  /**
+   * Converts the slider position to a logarithmic scale matching x-axis values
+   * which is the period given in a rate of seconds
+   * @param position value of slider
+   * @return x-axis value corresponding to that position
+   */
   public double mapSliderToPeriod(int position) {
     double scale = (high - low)/1000; // slider range is 0 to 1000
     return Math.pow(10, low + (scale * position) );
   }
   
+  /**
+   * Used to populate the combo box with the names of inputted data
+   */
   @Override
   public void setDataNames(String[] seedFileNames) {
     firstSeries.removeAllItems();
@@ -178,6 +197,11 @@ implements ChangeListener {
   }
   
   
+  /**
+   * Displays the statistic results when the calculate button is hit
+   * @param mean Calculated mean value
+   * @param sDev Calculated standard deviation value
+   */
   private void setTitle(double mean, double sDev) {
     XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
     TextTitle result = new TextTitle();
@@ -191,6 +215,10 @@ implements ChangeListener {
   }
   
     
+  /**
+   * Used to get boundaries of chart window specified by this panel's slider
+   * and to draw the vertical lines matching the location of those bounds
+   */
   @Override
   public void stateChanged(ChangeEvent e) {
     
@@ -237,6 +265,12 @@ implements ChangeListener {
     }
   }
 
+  /**
+   * Draws the lines marking the boundaries of the current window
+   * @param lowPrd lower x-axis value (period, in seconds)
+   * @param highPrd upper x-axis value (period, in seconds)
+   * @param xyp plot displayed in this object's chart
+   */
   private void setDomainMarkers(double lowPrd, double highPrd, XYPlot xyp) {
     xyp.clearDomainMarkers();
     Marker startMarker = new ValueMarker( lowPrd );
@@ -247,6 +281,10 @@ implements ChangeListener {
     xyp.addDomainMarker(endMarker);
   }
   
+  /**
+   * Sets the data and then calls function to update data based on
+   * the selected combo box entries
+   */
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     
@@ -255,6 +293,11 @@ implements ChangeListener {
     updateDataDriver();
   }
   
+  /**
+   * Given input data (including time series collection), get only the relevant
+   * ones to display based on combo boxes and then do the statistics on those
+   * Called when new data is loaded or when the combo box active entries change
+   */
   private void updateDataDriver() {
       
     int idx0 = firstSeries.getSelectedIndex();

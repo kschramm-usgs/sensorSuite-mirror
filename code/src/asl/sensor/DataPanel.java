@@ -356,7 +356,7 @@ implements ActionListener, ChangeListener {
       zooms = new DataStore(zooms, start, end);
       // plot the new data
       for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-        this.resetPlot(i);
+        this.resetPlotZoom(i);
       }
       allCharts.repaint();
       leftSlider.setValue(0); rightSlider.setValue(1000);
@@ -370,7 +370,7 @@ implements ActionListener, ChangeListener {
       // restore original loaded datastore
       zooms = ds;
       for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-        this.resetPlot(i);
+        this.resetPlotZoom(i);
       }
       
       leftSlider.setValue(0); rightSlider.setValue(1000);
@@ -380,7 +380,11 @@ implements ActionListener, ChangeListener {
     }
   }
   
-  private void resetPlot(int idx) {
+  /**
+   * Does the work to reset the zoom of each chart
+   * @param idx Index of appropriate chart/panel
+   */
+  private void resetPlotZoom(int idx) {
     XYPlot xyp = chartPanels[idx].getChart().getXYPlot();
     XYSeriesCollection xys = new XYSeriesCollection();
     xys.addSeries( zooms.getBlock(idx).toXYSeries() );
@@ -503,9 +507,9 @@ implements ActionListener, ChangeListener {
   }
 
   /**
-   * Resets the data and blanks out the current chart
+   * Resets the data and blanks out all charts
    */
-  public void clearData() {
+  public void clearAllData() {
     ds = new DataStore();
     zooms = ds;
     set = new boolean[DataStore.FILE_COUNT];
