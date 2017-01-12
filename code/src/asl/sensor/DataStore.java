@@ -155,8 +155,6 @@ public class DataStore {
     
     dataBlockArray[idx] = xy;
     
-    System.out.println("Writing the read-in data to plottable format...");
-    
     outToPlots[idx] = xy.toXYSeries();
     
     thisBlockIsSet[idx] = true;

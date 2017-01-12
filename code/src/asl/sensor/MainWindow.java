@@ -72,8 +72,6 @@ public class MainWindow extends JPanel implements ActionListener {
     
     boolean allThree = ds.allDataSet();
     
-    System.out.println(allThree);
-    
     int limit = 2;
     if (allThree) {
       limit = DataStore.FILE_COUNT;

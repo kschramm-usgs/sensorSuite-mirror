@@ -86,7 +86,9 @@ public class DataBlock {
    */
   public XYSeries toXYSeries() {
     
-    System.out.println("INTERVAL: " + interval);
+    // doing a quick decimation here on the displays for datapanel
+    // so that we can do the sliding/zooming operations relatively expediently
+    // trying to draw the charts with too much data slows it down terribly
     
     // lower interval means higher sample rate means more data
     int skipFactor = (int) (DataBlockHelper.ONE_HZ_INTERVAL / interval);
@@ -96,11 +98,6 @@ public class DataBlock {
       skipFactor = 1;
     }
     
-    // do this
-    skipFactor = 1;
-    
-    
-    System.out.println("SKIPPING BY A FACTOR OF " + skipFactor);
     
     XYSeries out = new XYSeries(name);
     long thisTime = getStartTime();
@@ -110,8 +107,6 @@ public class DataBlock {
       thisTime += skipFactor*interval;
     }
     
-    
-    System.out.println("We're done!");
     return out;
   }
 

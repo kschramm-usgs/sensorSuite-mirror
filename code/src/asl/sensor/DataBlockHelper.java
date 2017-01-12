@@ -325,16 +325,12 @@ public class DataBlockHelper {
               }
               break;
             } // switch on data-type
-
-            System.out.println(timeList.size());
             
           } // if statement on datarecord instanceof
         } catch(EOFException e) {
           break;
         } // end of try block (read file until EOF)
       } // end infinite while loop (read until EOF)
-
-      System.out.println("Data read!");
       
       db.setStartTime(startTime);     
       db.setData( timeList );
