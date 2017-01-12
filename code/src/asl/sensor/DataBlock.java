@@ -86,18 +86,32 @@ public class DataBlock {
    */
   public XYSeries toXYSeries() {
     
-    final int TRUNCATED_INTERVAL = 
-        (int) (interval / DataBlockHelper.ONE_HZ_INTERVAL);
-    // (the data loaded in is unchanged, this just speeds up display)
+    System.out.println("INTERVAL: " + interval);
+    
+    // lower interval means higher sample rate means more data
+    int skipFactor = (int) (DataBlockHelper.ONE_HZ_INTERVAL / interval);
+    
+    if (interval > DataBlockHelper.ONE_HZ_INTERVAL) {
+      // if data is already at or less than 1Hz rate, slow down
+      skipFactor = 1;
+    }
+    
+    // do this
+    skipFactor = 1;
+    
+    
+    System.out.println("SKIPPING BY A FACTOR OF " + skipFactor);
     
     XYSeries out = new XYSeries(name);
     long thisTime = getStartTime();
-    for (int i = 0; i < data.size(); i+=TRUNCATED_INTERVAL) {
+    for (int i = 0; i < data.size(); i+=skipFactor) {
       Number point = data.get(i);
       out.add(thisTime/1000, point);
-      thisTime += TRUNCATED_INTERVAL*interval;
+      thisTime += skipFactor*interval;
     }
     
+    
+    System.out.println("We're done!");
     return out;
   }
 

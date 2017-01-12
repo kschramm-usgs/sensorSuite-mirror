@@ -297,7 +297,7 @@ implements ActionListener, ChangeListener {
    * @return True if all data is set, including responses
    */
   public boolean allDataSet() {
-    return ds.isPlottable();
+    return ds.allDataSet();
   }
   
   public boolean firstTwoSet() {
@@ -366,23 +366,7 @@ implements ActionListener, ChangeListener {
     
     if ( e.getSource() == zoomIn ) {
       
-      // trim the data and store it
-      // assume that all datasets already trimmed to their common range
-      DataBlock db = zooms.getBlock(0);
-      long start = getMarkerLocation(db, leftSlider.getValue() );
-      long end = getMarkerLocation(db, rightSlider.getValue() );
-      zooms = new DataStore(zooms, start, end);
-      // plot the new data
-      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-        if (zooms.getBlock(i) == null) {
-          continue;
-        }
-        resetPlotZoom(i);
-      }
-      allCharts.repaint();
-      leftSlider.setValue(0); rightSlider.setValue(1000);
-      setVerticalBars();
-      zoomOut.setEnabled(true);
+      showRegionForGeneration();
       return;
     }
     
@@ -402,6 +386,22 @@ implements ActionListener, ChangeListener {
       zoomOut.setEnabled(false);
       return;
     }
+  }
+  
+  public void showRegionForGeneration() {
+    DataBlock db = zooms.getBlock(0);
+    long start = getMarkerLocation(db, leftSlider.getValue() );
+    long end = getMarkerLocation(db, rightSlider.getValue() );
+    zooms = new DataStore(ds, start, end);
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      if (zooms.getBlock(i) == null) {
+        continue;
+      }
+      resetPlotZoom(i);
+    }
+    leftSlider.setValue(0); rightSlider.setValue(1000);
+    setVerticalBars();
+    zoomOut.setEnabled(true);
   }
   
   /**

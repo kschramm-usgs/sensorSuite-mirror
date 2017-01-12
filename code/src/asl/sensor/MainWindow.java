@@ -55,8 +55,7 @@ public class MainWindow extends JPanel implements ActionListener {
   private DataPanel dataBox;
   private JTabbedPane tabbedPane; // holds set of experiment panels
 
-  private JButton generateTwo; // run two-input calculations
-  private JButton generateThree; // run all calculations
+  private JButton generate; // run all calculations
   private JButton savePDF;
   private JButton clear;
   
@@ -67,20 +66,48 @@ public class MainWindow extends JPanel implements ActionListener {
 
 
   private void resetTabPlots() {
+    
     DataStore ds = dataBox.getData();
     InstrumentResponse[] irs = ds.getResponses();
     
-    FFTResult[] powerSpectra = new FFTResult[DataStore.FILE_COUNT];
+    boolean allThree = ds.allDataSet();
     
-    for (int i = 0; i < powerSpectra.length; ++i) {
+    System.out.println(allThree);
+    
+    int limit = 2;
+    if (allThree) {
+      limit = DataStore.FILE_COUNT;
+    }
+    
+    FFTResult[] powerSpectra = new FFTResult[limit];
+    
+    dataBox.showRegionForGeneration();
+    
+    for (int i = 0; i < limit; ++i) {
+      
       DataBlock data = ds.getBlock(i);
       InstrumentResponse ir = irs[i];
       
       powerSpectra[i] = FFTResult.crossPower(data, data, ir, ir);
     }
     
+    boolean selectedIsTwoInput = 
+        ( (ExperimentPanel) tabbedPane.getSelectedComponent() ).isTwoInput();
+    
     for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
+      if (!allThree) {
+        // triggered if only two inputs exist (not all three)
+        if ( !ep.isTwoInput() ) {
+          // ignore anything that requires more than two inputs then
+          continue;
+        } else if ( !selectedIsTwoInput ) {
+          // display the first panel that actually has data to update with
+          tabbedPane.setSelectedComponent(ep);
+          selectedIsTwoInput = true;
+        }
+      }
+      // now update the panel with the correct data to plot
       ep.updateData(ds, powerSpectra);
       // updating the chartpanel auto-updates display
     }
@@ -183,16 +210,10 @@ public class MainWindow extends JPanel implements ActionListener {
     
     // TODO: replace duplicated effects factory-style methods?
     
-    generateThree = new JButton("Generate plots");
-    generateThree.setEnabled(false);
-    generateThree.addActionListener(this);
-    rightPanel.add(generateThree, rpc);
-    rpc.gridy += 1;
-    
-    generateTwo = new JButton("Generate two-input plots");
-    generateTwo.setEnabled(false);
-    generateTwo.addActionListener(this);
-    rightPanel.add(generateTwo, rpc);
+    generate = new JButton("Generate plots");
+    generate.setEnabled(false);
+    generate.addActionListener(this);
+    rightPanel.add(generate, rpc);
     rpc.gridy += 1;
 
     savePDF = new JButton("Save display (PNG)");
@@ -311,8 +332,7 @@ public class MainWindow extends JPanel implements ActionListener {
       for (JTextField fn : respFileNames) {
         fn.setText("NO FILE LOADED");
       }
-      generateThree.setEnabled(false);
-      generateTwo.setEnabled(false);
+      generate.setEnabled(false);
       return;
     }
     
@@ -355,6 +375,7 @@ public class MainWindow extends JPanel implements ActionListener {
           return;
         }
       } else if ( e.getSource() == respButton ) {
+        // don't need a new thread because resp loading is pretty prompt
         fc.setCurrentDirectory( new File(respDirectory) );
         fc.resetChoosableFileFilters();
         fc.setDialogTitle("Load response file...");
@@ -366,15 +387,13 @@ public class MainWindow extends JPanel implements ActionListener {
           respFileNames[i].setText( file.getName() );
         }
         checkIfDataSet();
+        return;
       }
       
     } // end for loop 
 
-    if ( e.getSource() == generateThree ) {
+    if ( e.getSource() == generate ) {
       this.resetTabPlots();
-      return;
-    } else if ( e.getSource() == generateTwo ) {
-      this.resetTabPlotsTwoInput();
       return;
     } else if ( e.getSource() == savePDF ) {
 
@@ -406,47 +425,10 @@ public class MainWindow extends JPanel implements ActionListener {
 
   }
 
-  private void resetTabPlotsTwoInput() {
-    // same as previous function but limit on first loop is 2
-    // second loop 
-    DataStore ds = dataBox.getData();
-    InstrumentResponse[] irs = ds.getResponses();
-    
-    FFTResult[] powerSpectra = new FFTResult[2];
-    
-    for (int i = 0; i < 2; ++i) {
-      DataBlock data = ds.getBlock(i);
-      InstrumentResponse ir = irs[i];
-      
-      powerSpectra[i] = FFTResult.crossPower(data, data, ir, ir);
-    }
-    
-    boolean selectedIsTwoInput = 
-        ( (ExperimentPanel) tabbedPane.getSelectedComponent() ).isTwoInput();
-    
-    for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
-      ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      if ( !ep.isTwoInput() ) {
-        // if it's not two input, ignore the panel
-        continue;
-      } else if ( !selectedIsTwoInput ) {
-        // display the first panel that actually has data to update with
-        tabbedPane.setSelectedComponent(ep);
-        selectedIsTwoInput = true;
-      }
-      ep.updateData(ds, powerSpectra);
-      // updating the chartpanel auto-updates display
-    }
-    savePDF.setEnabled(true);
-  }
-
   private void checkIfDataSet() {
+    // we can start generating data as soon as the first two are set
     if ( dataBox.firstTwoSet() ) {
-      generateTwo.setEnabled(true);
-    }
-    
-    if( dataBox.allDataSet() ) {
-      generateThree.setEnabled(true);
+      generate.setEnabled(true);
     }
   }
   

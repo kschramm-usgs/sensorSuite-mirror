@@ -118,7 +118,7 @@ public class DataStore {
     return responses;
   }
   
-  public boolean isPlottable() {
+  public boolean allDataSet() {
     for (int i = 0; i < FILE_COUNT; ++i) {
       if (!thisBlockIsSet[i] || !thisResponseIsSet[i]) {
         return false;
@@ -154,6 +154,8 @@ public class DataStore {
     DataBlock xy = slr.getData(); // executes in a new thread?!
     
     dataBlockArray[idx] = xy;
+    
+    System.out.println("Writing the read-in data to plottable format...");
     
     outToPlots[idx] = xy.toXYSeries();
     
