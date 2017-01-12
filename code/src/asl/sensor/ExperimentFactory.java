@@ -22,6 +22,8 @@ public class ExperimentFactory {
       return new NoiseExperiment();
     case RGAIN:
       return new GainExperiment();
+    case STCAL:
+      return new StepExperiment();
     default:
       // this shouldn't happen unless someone added to the enum
       // and forgot to follow-through on implementation

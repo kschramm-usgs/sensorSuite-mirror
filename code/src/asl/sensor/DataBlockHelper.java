@@ -5,8 +5,10 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +43,7 @@ public class DataBlockHelper {
    * Sample rate of a 1 Hz sample, in Hz, as a double (that is, 1.0)
    */
   public final static double ONE_HZ = 1.0;
-  
+
   /**
    * Reads in the time series data from a miniSEED file and produces it as a
    * list of Java numerics, which can be shorts, floats, doubles, or longs,
@@ -56,18 +58,18 @@ public class DataBlockHelper {
    * @param filename The full path to the file to be loaded in
    * @return A structure containing the time series and metadata for the file
    */
-  public static DataBlock getXYSeries(String filename) {
-    
+  public static DataBlock getXYSeriesWithErrorChecking(String filename) {
+
     DataInputStream dis;
     // XYSeries xys = null;
     DataBlock db = null;
     Map<Long, Number> timeMap = new HashMap<Long, Number>();
-    
+
     try {
       dis = new DataInputStream(  new FileInputStream(filename) );
-      
+
       while ( true ) {
-        
+
         try {
           long interval = 0L;
           SeedRecord sr = SeedRecord.read(dis,4096);
@@ -81,17 +83,17 @@ public class DataBlockHelper {
               fileID.append(dh.getChannelIdentifier());
               db = new DataBlock(null, interval, fileID.toString(), -1);
             }
-            
-            
+
+
             byte af = dh.getActivityFlags();
             byte correctionFlag = 0b00000010; // is there a time correction?
             int correction = 0;
             if ( (af & correctionFlag) != 0 ) {
               correction = dh.getTimeCorrection();
             }
-            
+
             Btime bt = dh.getStartBtime();
-            
+
             // convert Btime to microseconds
             long start = 0L;
             start += bt.jday * 864000000;
@@ -104,15 +106,15 @@ public class DataBlockHelper {
               // rounding to nearest milli
               start += 10; // 1 ms = 10 * (.1 ms)
             }
-            
+
             start += correction;
             // .1 ms = 100 microseconds
             start *= 100;
-            
-            
+
+
             int fact = dh.getSampleRateFactor();
             int mult = dh.getSampleRateMultiplier();
-               
+
             if( fact > 0 && mult > 0) {
               interval = ONE_HZ_INTERVAL / (fact * mult);
             } else if (fact > 0 && mult < 0) {
@@ -122,9 +124,9 @@ public class DataBlockHelper {
             } else {
               interval = ONE_HZ_INTERVAL * fact * mult;
             }
-            
+
             db.setInterval(interval);
-            
+
             DecompressedData decomp = dr.decompress();
 
             // get the original datatype of the series (loads data faster)
@@ -132,7 +134,7 @@ public class DataBlockHelper {
             // the other type instead
             int dataType = decomp.getType();
             long timeOfData = start;
-            
+
             switch (dataType) {
             case B1000Types.INTEGER:
               int[] decomArrayInt = decomp.getAsInt();
@@ -163,14 +165,14 @@ public class DataBlockHelper {
               }
               break;
             }
-            
+
           }
         } catch(EOFException e) {
           break;
         }
-        
+
       } // end infinite while loop (read until EOF)
-      
+
       // now we have all the data in a convenient map timestamp -> value
       // which we can then convert into an easy array
       Set<Long> times = timeMap.keySet();
@@ -186,10 +188,10 @@ public class DataBlockHelper {
         // (is point i+1's time difference from point i greater than interval?)
         sampleList[i] = timeMap.get(timeList[i]);
       }
-      
-      
+
+
       db.setData( Arrays.asList(sampleList) );
-      
+
     } catch (FileNotFoundException e) {
       // Auto-generated catch block
       e.printStackTrace();
@@ -206,10 +208,153 @@ public class DataBlockHelper {
       // Auto-generated catch block
       e.printStackTrace();
     }
-    
+
     return db;
   }
-  
+
+  public static DataBlock getXYSeries(String filename) {
+
+    DataInputStream dis;
+    // XYSeries xys = null;
+    DataBlock db = null;
+    List<Number> timeList = new ArrayList<Number>();
+    ( (ArrayList<Number>) timeList).ensureCapacity(100000000);
+
+    long startTime = -1L;
+
+    try {
+      
+      dis = new DataInputStream( new FileInputStream(filename) );
+      while ( true ) {
+
+        try {
+          
+          long interval = 0L;
+          SeedRecord sr = SeedRecord.read(dis,4096);
+          if(sr instanceof DataRecord) {
+            DataRecord dr = (DataRecord)sr;
+            DataHeader dh = dr.getHeader();
+            if (db == null){
+              StringBuilder fileID = new StringBuilder();
+              fileID.append(dh.getStationIdentifier() + "_");
+              fileID.append(dh.getLocationIdentifier() + "_");
+              fileID.append(dh.getChannelIdentifier());
+              db = new DataBlock(null, interval, fileID.toString(), -1);
+            }
+
+            byte af = dh.getActivityFlags();
+            byte correctionFlag = 0b00000010; // is there a time correction?
+            int correction = 0;
+            if ( (af & correctionFlag) != 0 ) {
+              correction = dh.getTimeCorrection();
+            }
+
+            Btime bt = dh.getStartBtime();
+
+            // convert Btime to microseconds
+            long blockStart = 0L;
+            blockStart += bt.jday * 864000000;
+            blockStart += bt.hour * 36000000;
+            blockStart += bt.min * 600000;
+            blockStart += bt.sec * 10000;
+            blockStart += (bt.tenthMilli / 10) * 10; 
+            // divided by 10 there to filter out sub-millisecond timing errors
+            if (bt.tenthMilli % 10 > 5) {
+              // rounding to nearest milli
+              blockStart += 10; // 1 ms = 10 * (.1 ms)
+            }
+
+            blockStart += correction;
+            // .1 ms = 100 microseconds
+            blockStart *= 100;
+
+            if (startTime == -1L) {
+              startTime = blockStart;
+            }
+
+            int fact = dh.getSampleRateFactor();
+            int mult = dh.getSampleRateMultiplier();
+
+            if( fact > 0 && mult > 0) {
+              interval = ONE_HZ_INTERVAL / (fact * mult);
+            } else if (fact > 0 && mult < 0) {
+              interval = Math.abs( (ONE_HZ_INTERVAL * mult) / fact);
+            } else if (fact < 0 && mult > 0) {
+              interval = Math.abs( (ONE_HZ_INTERVAL * fact) / mult);
+            } else {
+              interval = ONE_HZ_INTERVAL * fact * mult;
+            }
+
+            db.setInterval(interval);
+
+            DecompressedData decomp = dr.decompress();
+
+            // get the original datatype of the series (loads data faster)
+            // otherwise the decompressed data gets converted (cloned) as
+            // the other type instead
+            int dataType = decomp.getType();
+            long timeOfData = blockStart;
+
+            switch (dataType) {
+            case B1000Types.INTEGER:
+              int[] decomArrayInt = decomp.getAsInt();
+              for (int dataPoint : decomArrayInt ) {
+                timeList.add( (double) dataPoint );
+                timeOfData += interval;
+              }
+              break;
+            case B1000Types.FLOAT:
+              float[] decomArrayFlt = decomp.getAsFloat();
+              for (float dataPoint : decomArrayFlt ) {
+                timeList.add( (double) dataPoint );
+                timeOfData += interval;
+              }
+              break;
+            case B1000Types.SHORT:
+              short[] decomArrayShr = decomp.getAsShort();
+              for (short dataPoint : decomArrayShr ) {
+                timeList.add( (double) dataPoint );
+                timeOfData += interval;
+              }
+              break;
+            default:
+              double[] decomArrayDbl = decomp.getAsDouble();
+              for (double dataPoint : decomArrayDbl ) {
+                timeList.add( (double) dataPoint );
+                timeOfData += interval;
+              }
+              break;
+            } // switch on data-type
+
+          } // if statement on datarecord instanceof
+        } catch(EOFException e) {
+          break;
+        } // end of try block (read file until EOF)
+      } // end infinite while loop (read until EOF)
+
+      db.setStartTime(startTime);     
+      db.setData( timeList );
+
+    } catch (FileNotFoundException e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    } catch (SeedFormatException e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    } catch (UnsupportedCompressionType e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    } catch (CodecException e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    }
+
+    return db;
+  }
+
   /**
    * Initial driver for the decimation utility
    * which takes a timeseries of unknown rate and
@@ -220,34 +365,34 @@ public class DataBlockHelper {
    * @return A timeseries decimated to the correct frequency
    */
   public static List<Number> decimate(List<Number> data, long src){
-     
-     long tgt = ONE_HZ_INTERVAL; // target frequency
-     // a sample lower than 1Hz frq has longer time between samples
-     // since it's an inverse relationship and all
-     if(src >= tgt){
-       // if data is too low-frequency to decimate, do nothing
-       return data;
-     }
 
-     // find what the change in size is going to be
-     long gcd = euclidGCD(src, tgt);
-     // conversion up- and down-factors
-     // (upsample by target, downsample by source)
-     // cast is valid because any discrete interval
-     // from 1Hz and up is already expressable
-     // as an int
-     int upf = (int)(src/gcd);
-     int dnf = (int)(tgt/gcd);
+    long tgt = ONE_HZ_INTERVAL; // target frequency
+    // a sample lower than 1Hz frq has longer time between samples
+    // since it's an inverse relationship and all
+    if(src >= tgt){
+      // if data is too low-frequency to decimate, do nothing
+      return data;
+    }
 
-     // one valid sample rate for data is 2.5Hz
-     // with 1Hz that comes out as a ratio of 5/2, which won't
-     // downsample neatly in some cases so we would first upsample,
-     // filter out any noise terms, then downsample
-     List<Number> upped = upsample(data,upf);
-     List<Number> lpfed = lowPassFilter(upped,src*upf);
-     List<Number> down = downsample(lpfed,dnf);
-     
-     return down;
+    // find what the change in size is going to be
+    long gcd = euclidGCD(src, tgt);
+    // conversion up- and down-factors
+    // (upsample by target, downsample by source)
+    // cast is valid because any discrete interval
+    // from 1Hz and up is already expressable
+    // as an int
+    int upf = (int)(src/gcd);
+    int dnf = (int)(tgt/gcd);
+
+    // one valid sample rate for data is 2.5Hz
+    // with 1Hz that comes out as a ratio of 5/2, which won't
+    // downsample neatly in some cases so we would first upsample,
+    // filter out any noise terms, then downsample
+    List<Number> upped = upsample(data,upf);
+    List<Number> lpfed = lowPassFilter(upped,src*upf);
+    List<Number> down = downsample(lpfed,dnf);
+
+    return down;
 
   }
 
@@ -261,14 +406,14 @@ public class DataBlockHelper {
    * @return The GCD of the two frequencies
    */
   public static long euclidGCD(long src,long tgt){
-  
+
     // take remainders until we hit 0
     // which means the divisor is the gcd
     long rem = src % tgt;
     if(rem == 0){
       return tgt;
     }
-    
+
     return euclidGCD(tgt, rem);
   }
 
@@ -283,11 +428,11 @@ public class DataBlockHelper {
   public static List<Number> upsample(List<Number> data, int factor){
 
     List<Number> upsamp = Arrays.asList(new Number[data.size()*factor]);
-   
+
     for(int i=0; i<data.size(); i++){
       upsamp.set( i*factor, data.get(i) ); // index, element
     }
-    
+
     return upsamp;
   }
 
@@ -300,12 +445,12 @@ public class DataBlockHelper {
    * @return The downsampled series
    */
   public static List<Number> downsample(List<Number> data, int factor){
-    
+
     List<Number> downsamp = Arrays.asList(new Number[data.size()/factor]);
     for(int i=0; i < downsamp.size(); i++){
       downsamp.set( i, data.get(i*factor) ); 
     }
-    
+
     return downsamp;
   }
 
@@ -322,14 +467,14 @@ public class DataBlockHelper {
     while( pow < timeseries.size() ){
       pow *= 2;
     }
-    
+
     double[] timeseriesFilter = new double[pow];
 
     List<Number> timeseriesdouble = 
-                  Arrays.asList( new Number[timeseries.size()] );
+        Arrays.asList( new Number[timeseries.size()] );
     double fl = 5; // allow all low-frequency data through
     double fh = ONE_HZ_INTERVAL/2.0; // nyquist rate half of target frequency
-       // note that this 1/2F where F is 1Hz frequency
+    // note that this 1/2F where F is 1Hz frequency
     // we want the inverse of the target frequency
 
     for (int ind = 0; ind < timeseries.size(); ind++)
@@ -340,15 +485,15 @@ public class DataBlockHelper {
     }
 
     FastFourierTransformer fft = 
-                  new FastFourierTransformer(DftNormalization.STANDARD);
-    
-    
+        new FastFourierTransformer(DftNormalization.STANDARD);
+
+
     Complex[] frqDomn = fft.transform(timeseriesFilter, TransformType.FORWARD);
-    
+
     frqDomn = apply((double) sps, frqDomn, fl, fh);
 
     Complex[] timeDomn = fft.transform(frqDomn, TransformType.INVERSE);
-    
+
 
     for (int ind = 0; ind < timeseries.size(); ind++)
     {
@@ -410,7 +555,7 @@ public class DataBlockHelper {
       for (i = 0; i < nepp; i++)
       {
         ak = 2. * Math
-           .sin((2. * (double) i + 1.0) * PI / (2. * (double) npole));
+            .sin((2. * (double) i + 1.0) * PI / (2. * (double) npole));
         ar = ak * wch / 2.;
         ai = wch * Math.sqrt(4. - ak * ak) / 2.;
         np = np + 1;
@@ -430,7 +575,7 @@ public class DataBlockHelper {
       for (i = 0; i < nepp; i++)
       {
         ak = 2. * Math
-           .sin((2. * (double) i + 1.0) * PI / (2. * (double) npole));
+            .sin((2. * (double) i + 1.0) * PI / (2. * (double) npole));
         ar = ak * wcl / 2.;
         ai = wcl * Math.sqrt(4. - ak * ak) / 2.;
         np = np + 1;
@@ -451,27 +596,27 @@ public class DataBlockHelper {
       cpl = c1;
       for (j = 0; j < npole; j++)
       {
-        
+
         cph = cph.multiply(sph[j]);
         Complex div = new Complex(0.0, 0.0);
         div = sph[j].add(cjw);
         cph.divide(div);
-        
+
         cpl = cpl.multiply(cjw);
         div = new Complex(0.0, 0.0);
         div = spl[j].add(cjw);
         cpl = cpl.divide(div);
-        
+
         /*
         cph = Complex.div(Complex.mul(cph, sph[j]), Complex.add(sph[j], cjw));
         cpl = Complex.div(Complex.mul(cpl, cjw), Complex.add(spl[j], cjw));
-        */
+         */
       }
       Complex prod = new Complex(0.0,0.0).add(cph).multiply(cpl).conjugate();
       cx[i] = cx[i].multiply(prod);
 
       // cx[i] = Complex.mul(cx[i], (Complex.mul(cph, cpl)).conjg());
-      
+
       if (twopass == 2)
       {
         cx[i] = cx[i].multiply( cph.add(cpl) );

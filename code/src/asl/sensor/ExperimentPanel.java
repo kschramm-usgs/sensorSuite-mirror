@@ -110,6 +110,10 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     save.addActionListener(this);
   }
   
+  public boolean isTwoInput() {
+    return expType.isTwoInput();
+  }
+  
   /**
    * Handle's saving this plot's chart to file (PNG image) 
    * when the save button is clicked.

@@ -11,6 +11,8 @@ public class ExperimentPanelFactory {
       return new NoisePanel(exp);
     case RGAIN:
       return new GainPanel(exp);
+    case STCAL:
+      return new StepPanel(exp);
     default:
       // this shouldn't happen unless someone added to the enum
       // and forgot to follow-through on implementation

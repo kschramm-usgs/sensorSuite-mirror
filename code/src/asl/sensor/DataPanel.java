@@ -21,6 +21,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -170,44 +171,62 @@ implements ActionListener, ChangeListener {
    */
   public void setData(int idx, String filepath) { 
     
-    XYSeries ts = ds.setData(idx, filepath);
-    
+    // TODO: code block occurs in 3 places, set apart as own function
+    // set all data to the same range first (zoom out)
     zooms = ds;
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      if (zooms.getBlock(i) == null) {
+        continue;
+      }
+      this.resetPlotZoom(i);
+    }
     
-    JFreeChart chart = ChartFactory.createXYLineChart(
-        ts.getKey().toString(),
-        "Time",
-        "Counts",
-        new XYSeriesCollection(ts),
-        PlotOrientation.VERTICAL,
-        false, false, false);
+    // surround this with a swingworker somehow?
+    // XYSeries ts = ds.setData(idx, filepath);
     
-    XYPlot xyp = (XYPlot) chart.getPlot();
-    DateAxis da = new DateAxis();
-    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-    sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-    da.setLabel("UTC Time");
-    Font bold = da.getLabelFont();
-    bold = bold.deriveFont(Font.BOLD);
-    da.setLabelFont(bold);
-    da.setDateFormatOverride(sdf);
-    xyp.setDomainAxis(da);
-    xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+    ReadFileWorker rfw = new ReadFileWorker(idx, filepath, ds);
     
-    chartPanels[idx].setChart(chart);
-    chartPanels[idx].setMouseZoomable(true);
-    
-    set[idx] = true;
-    
-    if ( this.plotsAreLoaded() ) {
+    try {
+      XYSeries ts;
+      ts = rfw.doInBackground();
+      
+      JFreeChart chart = ChartFactory.createXYLineChart(
+          ts.getKey().toString(),
+          "Time",
+          "Counts",
+          new XYSeriesCollection(ts),
+          PlotOrientation.VERTICAL,
+          false, false, false);
+      
+      XYPlot xyp = (XYPlot) chart.getPlot();
+      DateAxis da = new DateAxis();
+      SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+      sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+      da.setLabel("UTC Time");
+      Font bold = da.getLabelFont();
+      bold = bold.deriveFont(Font.BOLD);
+      da.setLabelFont(bold);
+      da.setDateFormatOverride(sdf);
+      xyp.setDomainAxis(da);
+      xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+      
+      chartPanels[idx].setChart(chart);
+      chartPanels[idx].setMouseZoomable(true);
+      
+      set[idx] = true;
+      
       zoomIn.setEnabled(true);
       leftSlider.setEnabled(true);
       rightSlider.setEnabled(true);
+      
+      leftSlider.setValue(0);
+      rightSlider.setValue(1000);
+      setVerticalBars();
+      
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
-    
-    leftSlider.setValue(0);
-    rightSlider.setValue(1000);
-    setVerticalBars();
     
   }
   
@@ -221,9 +240,7 @@ implements ActionListener, ChangeListener {
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( null == ds.getBlock(i) ) {
-        leftSlider.setValue(0);
-        rightSlider.setValue(1000);
-        return;
+        continue;
       }
       
       int leftValue = leftSlider.getValue();
@@ -283,6 +300,10 @@ implements ActionListener, ChangeListener {
     return ds.isPlottable();
   }
   
+  public boolean firstTwoSet() {
+    return ds.firstTwoSet();
+  }
+  
   /**
    * Method to check if plots have been set with data
    * @return True if all plots are set (responses don't need to be loaded)
@@ -303,10 +324,7 @@ implements ActionListener, ChangeListener {
    * @return A DataStore object (contains arrays of DataBlocks & Responses)
    */
   public DataStore getData() {
-    if ( ! this.allDataSet() ){
-      throw new RuntimeException("Not all necessary data loaded in...");
-    }
-    // TODO: modify this to create a new dataStore with trimmed data
+
     int leftValue = leftSlider.getValue();
     int rightValue = rightSlider.getValue();
     DataBlock db = zooms.getBlock(0); // dataBlocks should have same time range
@@ -356,7 +374,10 @@ implements ActionListener, ChangeListener {
       zooms = new DataStore(zooms, start, end);
       // plot the new data
       for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-        this.resetPlotZoom(i);
+        if (zooms.getBlock(i) == null) {
+          continue;
+        }
+        resetPlotZoom(i);
       }
       allCharts.repaint();
       leftSlider.setValue(0); rightSlider.setValue(1000);
@@ -370,6 +391,9 @@ implements ActionListener, ChangeListener {
       // restore original loaded datastore
       zooms = ds;
       for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+        if (zooms.getBlock(i) == null) {
+          continue;
+        }
         this.resetPlotZoom(i);
       }
       
@@ -534,5 +558,22 @@ implements ActionListener, ChangeListener {
     }
   }
   
+}
+
+class ReadFileWorker extends SwingWorker<XYSeries, Void> {
+
+  public String filename;
+  public int index;
+  public DataStore ds;
+  public ReadFileWorker(int index, String filename, DataStore ds) {
+    this.filename = filename;
+    this.index = index;
+    this.ds = ds;
+  }
+  
+  @Override
+  protected XYSeries doInBackground() throws Exception {
+    return ds.setData(index, filename);
+  }
   
 }

@@ -48,8 +48,11 @@ public class DataStore {
     dataBlockArray = new DataBlock[FILE_COUNT];
     responses = new InstrumentResponse[FILE_COUNT];
     for (int i = 0; i < FILE_COUNT; ++i) {
-      dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
-      responses[i] = ds.getResponses()[i];
+      if ( ds.getBlock(i) != null ) {
+        // check in case we're only working with two instead of 3 data sets
+        dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
+        responses[i] = ds.getResponses()[i];
+      }
     }
     // TODO: deep copy?
     thisResponseIsSet = ds.responsesAreSet();
@@ -60,6 +63,70 @@ public class DataStore {
   public boolean[] dataIsSet() {
     return thisBlockIsSet;
   }
+  
+  /**
+   * Checks if first two blocks and matching responses are set
+   * @return True if both of the first two sets have loaded miniSEED and RESP
+   */
+  public boolean firstTwoSet() {
+    // get results for indices 0 and 1 only
+    for (int i = 0; i < 2; ++i) {
+      if (!thisBlockIsSet[i] || !thisResponseIsSet[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  /**
+   * Return a single data block according to the passed index 
+   * @param idx Index of datablock, corresponding to data panel plot index
+   * @return Timeseries data for corresponing plot
+   */
+  public DataBlock getBlock(int idx) {
+    if (idx < FILE_COUNT) {
+      return dataBlockArray[idx];
+    }
+    throw new IndexOutOfBoundsException();
+  }
+  
+  /**
+   * Returns the set of structures used to hold the loaded miniSeed data sets
+   * @return An array of DataBlocks (time series and metadata)
+   */
+  public DataBlock[] getData() {
+    return dataBlockArray;
+  }
+  
+  /**
+   * Returns the plottable format of the data held in the arrays at 
+   * the specified index
+   * @param idx Which of this structure's plottable series should be loaded
+   * @return The time series data at given index, to be sent to a chart
+   */
+  public XYSeries getPlotSeries(int idx) {
+    return outToPlots[idx];
+  }
+  
+  /**
+   * Returns the instrument responses as an array, ordered such that the
+   * response at index i is the response associated with the DataBlock at i
+   * in the array of DataBlocks
+   * @return
+   */
+  public InstrumentResponse[] getResponses() {
+    return responses;
+  }
+  
+  public boolean isPlottable() {
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (!thisBlockIsSet[i] || !thisResponseIsSet[i]) {
+        return false;
+      }
+    }
+    
+    return true;
+}
   
   public boolean[] responsesAreSet() {
     return thisResponseIsSet;
@@ -72,7 +139,19 @@ public class DataStore {
    * @return The miniSEED data, in a plottable format
    */
   public XYSeries setData(int idx, String filepath) {
-    DataBlock xy = DataBlockHelper.getXYSeries(filepath);
+    
+    SeedLoaderRunner slr = new SeedLoaderRunner(filepath);
+    
+    Thread t = new Thread(slr);
+    t.start();
+    try {
+      t.join();
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    
+    DataBlock xy = slr.getData(); // executes in a new thread?!
     
     dataBlockArray[idx] = xy;
     
@@ -97,27 +176,7 @@ public class DataStore {
       e.printStackTrace();
     }
   }
-  
-  public boolean isPlottable() {
-    for (int i = 0; i < FILE_COUNT; ++i) {
-      if (!thisBlockIsSet[i] || !thisResponseIsSet[i]) {
-        return false;
-      }
-    }
-    
-    return true;
-}
-  
-  /**
-   * Returns the instrument responses as an array, ordered such that the
-   * response at index i is the response associated with the DataBlock at i
-   * in the array of DataBlocks
-   * @return
-   */
-  public InstrumentResponse[] getResponses() {
-    return responses;
-  }
-  
+
   /**
    * Trims all data blocks to be within a certain time range.
    * Used for getting a sub-range specified by sliding-bar window.
@@ -130,36 +189,6 @@ public class DataStore {
         data.trim(start, end);
       }
     }
-  }
-  
-  /**
-   * Returns the set of structures used to hold the loaded miniSeed data sets
-   * @return An array of DataBlocks (time series and metadata)
-   */
-  public DataBlock[] getData() {
-    return dataBlockArray;
-  }
-  
-  /**
-   * Return a single data block according to the passed index 
-   * @param idx Index of datablock, corresponding to data panel plot index
-   * @return Timeseries data for corresponing plot
-   */
-  public DataBlock getBlock(int idx) {
-    if (idx < FILE_COUNT) {
-      return dataBlockArray[idx];
-    }
-    throw new IndexOutOfBoundsException();
-  }
-  
-  /**
-   * Returns the plottable format of the data held in the arrays at 
-   * the specified index
-   * @param idx Which of this structure's plottable series should be loaded
-   * @return The time series data at given index, to be sent to a chart
-   */
-  public XYSeries getPlotSeries(int idx) {
-    return outToPlots[idx];
   }
 
   /**

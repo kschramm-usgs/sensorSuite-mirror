@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
@@ -25,6 +26,7 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -53,7 +55,8 @@ public class MainWindow extends JPanel implements ActionListener {
   private DataPanel dataBox;
   private JTabbedPane tabbedPane; // holds set of experiment panels
 
-  private JButton generate;
+  private JButton generateTwo; // run two-input calculations
+  private JButton generateThree; // run all calculations
   private JButton savePDF;
   private JButton clear;
   
@@ -178,10 +181,18 @@ public class MainWindow extends JPanel implements ActionListener {
     rpc.fill = GridBagConstraints.HORIZONTAL;
     rpc.ipady = 10;
     
-    generate = new JButton("Generate plots");
-    generate.setEnabled(false);
-    generate.addActionListener(this);
-    rightPanel.add(generate, rpc);
+    // TODO: replace duplicated effects factory-style methods?
+    
+    generateThree = new JButton("Generate plots");
+    generateThree.setEnabled(false);
+    generateThree.addActionListener(this);
+    rightPanel.add(generateThree, rpc);
+    rpc.gridy += 1;
+    
+    generateTwo = new JButton("Generate two-input plots");
+    generateTwo.setEnabled(false);
+    generateTwo.addActionListener(this);
+    rightPanel.add(generateTwo, rpc);
     rpc.gridy += 1;
 
     savePDF = new JButton("Save display (PNG)");
@@ -300,11 +311,13 @@ public class MainWindow extends JPanel implements ActionListener {
       for (JTextField fn : respFileNames) {
         fn.setText("NO FILE LOADED");
       }
-      generate.setEnabled(false);
+      generateThree.setEnabled(false);
+      generateTwo.setEnabled(false);
       return;
     }
     
     for(int i = 0; i < seedLoaders.length; ++i) {
+      final int idx = i; // used to play nice with swingworker
       JButton seedButton = seedLoaders[i];
       JButton respButton = respLoaders[i];
       if ( e.getSource() == seedButton ) {
@@ -315,16 +328,31 @@ public class MainWindow extends JPanel implements ActionListener {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
           seedDirectory = file.getParent();
-          dataBox.setData( i, file.getAbsolutePath() );
-          seedFileNames[i].setText( file.getName() );
-          for ( int j = 0; j < tabbedPane.getTabCount(); ++j ) {
-            ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(j);
-            String[] names = new String[seedFileNames.length];
-            for (int k = 0; k < names.length; ++k) {
-              names[k] = seedFileNames[k].getText();
+          
+          seedFileNames[i].setText("LOADING: " + file.getName());
+          
+          // Swing worker here?
+          SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
+            @Override
+            public Integer doInBackground() {
+              dataBox.setData( idx, file.getAbsolutePath() );
+              seedFileNames[idx].setText( file.getName() );
+              for ( int j = 0; j < tabbedPane.getTabCount(); ++j ) {
+                ExperimentPanel ep = 
+                    (ExperimentPanel) tabbedPane.getComponentAt(j);
+                String[] names = new String[seedFileNames.length];
+                for (int k = 0; k < names.length; ++k) {
+                  names[k] = seedFileNames[k].getText();
+                }
+                ep.setDataNames(names);
+              }
+              checkIfDataSet();
+              return 0;
             }
-            ep.setDataNames(names);
-          }
+          };
+          
+          worker.execute();
+          return;
         }
       } else if ( e.getSource() == respButton ) {
         fc.setCurrentDirectory( new File(respDirectory) );
@@ -337,16 +365,16 @@ public class MainWindow extends JPanel implements ActionListener {
           dataBox.setResponse( i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
         }
-      }
-
-      if( dataBox.allDataSet() ) {
-        generate.setEnabled(true);
+        checkIfDataSet();
       }
       
     } // end for loop 
 
-    if ( e.getSource() == generate ) {
+    if ( e.getSource() == generateThree ) {
       this.resetTabPlots();
+      return;
+    } else if ( e.getSource() == generateTwo ) {
+      this.resetTabPlotsTwoInput();
       return;
     } else if ( e.getSource() == savePDF ) {
 
@@ -378,6 +406,50 @@ public class MainWindow extends JPanel implements ActionListener {
 
   }
 
+  private void resetTabPlotsTwoInput() {
+    // same as previous function but limit on first loop is 2
+    // second loop 
+    DataStore ds = dataBox.getData();
+    InstrumentResponse[] irs = ds.getResponses();
+    
+    FFTResult[] powerSpectra = new FFTResult[2];
+    
+    for (int i = 0; i < 2; ++i) {
+      DataBlock data = ds.getBlock(i);
+      InstrumentResponse ir = irs[i];
+      
+      powerSpectra[i] = FFTResult.crossPower(data, data, ir, ir);
+    }
+    
+    boolean selectedIsTwoInput = 
+        ( (ExperimentPanel) tabbedPane.getSelectedComponent() ).isTwoInput();
+    
+    for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
+      ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
+      if ( !ep.isTwoInput() ) {
+        // if it's not two input, ignore the panel
+        continue;
+      } else if ( !selectedIsTwoInput ) {
+        // display the first panel that actually has data to update with
+        tabbedPane.setSelectedComponent(ep);
+        selectedIsTwoInput = true;
+      }
+      ep.updateData(ds, powerSpectra);
+      // updating the chartpanel auto-updates display
+    }
+    savePDF.setEnabled(true);
+  }
+
+  private void checkIfDataSet() {
+    if ( dataBox.firstTwoSet() ) {
+      generateTwo.setEnabled(true);
+    }
+    
+    if( dataBox.allDataSet() ) {
+      generateThree.setEnabled(true);
+    }
+  }
+  
   /**
    * Handles function to create a PNG image with all currently-displayed plots
    * (active experiment and read-in time series data)

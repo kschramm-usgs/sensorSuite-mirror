@@ -53,20 +53,18 @@ public abstract class Experiment {
     long interval = dataIn[0].getInterval();
     // int length = dataIn[0].size();
     for (DataBlock data : dataIn) {
+      
+      if ( data == null) {
+        // we can have null data for the third entry in some cases
+        continue;
+      }
+      
       if ( data.getInterval() != interval ) {
         throw new RuntimeException("Interval mismatch on datasets.");
       }
     }
     
-    for (int i = 0; i < dataIn.length; ++i) {
-      // don't calculate if all the data isn't in yet
-      if( dataIn[i] == null ||  
-          dataIn[i].size() == 0 ||
-          resps[i] == null ) {
-        return;
-        // we can't plot without all the data (certainly need responses loaded)
-      }
-    }
+    // used to have a check that all 3 were set, not valid any longer
     
     backend(ds, psd, freqSpace);
   }
@@ -130,6 +128,10 @@ public abstract class Experiment {
     
     for (int i = 0; i < dataIn.length; ++i) {
       
+      if( dataIn[i] == null ) {
+        continue;
+      }
+      
       XYSeries powerSeries = new XYSeries( "PSD " + dataIn[i].getName() );
 
       Complex[] resultPSD = psd[i].getFFT();
@@ -146,7 +148,7 @@ public abstract class Experiment {
         if (freqSpace) {
           powerSeries.add( freqs[j], 10*Math.log10( temp.abs() ) );
         } else {
-         powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
+          powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
         }
       }
 

@@ -69,8 +69,12 @@ implements ChangeListener {
       secondSeries.addItem(out);
     }
 
+    // we will force these to be disabled to load in first two data sets
+    // in all cases -- so we can only load in two inputs and get that value
     firstSeries.setSelectedIndex(0);
+    firstSeries.setEnabled(false);
     secondSeries.setSelectedIndex(1);
+    secondSeries.setEnabled(false);
     
     // create layout
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
@@ -299,7 +303,8 @@ implements ChangeListener {
    * Called when new data is loaded or when the combo box active entries change
    */
   private void updateDataDriver() {
-      
+    
+    // these should be 0 and 1 since the series cannot be selected currently
     int idx0 = firstSeries.getSelectedIndex();
     int idx1 = secondSeries.getSelectedIndex();
     
