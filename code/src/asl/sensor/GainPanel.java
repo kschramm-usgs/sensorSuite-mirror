@@ -138,7 +138,7 @@ implements ChangeListener {
       // if we got here from removing the items from the list
       // (which happens when we load in new data)
       // don't do anything
-      if (firstSeries.getItemCount() == 0) {
+      if (firstSeries.getItemCount() < 2) {
         return;
       }
       
@@ -153,7 +153,7 @@ implements ChangeListener {
     } else if ( e.getSource() == secondSeries ) {      
       
       // same as above, do nothing
-      if (secondSeries.getItemCount() == 0) {
+      if (secondSeries.getItemCount() < 2) {
         return;
       }
       
@@ -318,6 +318,14 @@ implements ChangeListener {
   public void updateData(DataStore ds, FFTResult[] psd) {
     
     expResult.setData(ds, psd, freqSpace);
+    
+    if ( ds.allDataSet() ) {
+      firstSeries.setEnabled(true);
+      secondSeries.setEnabled(true);
+    } else {
+      firstSeries.setEnabled(false);
+      secondSeries.setEnabled(false);
+    }
     
     updateDataDriver();
   }
