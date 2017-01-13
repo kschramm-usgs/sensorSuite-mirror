@@ -260,7 +260,7 @@ public class GainExperiment extends Experiment {
     sigma = sdev(plot0, plot1, ratio, lowInd, highInd);
     
     double gain1 = gainStage1[idx0];
-    double gain2 = ratio * gain1;
+    double gain2 = ratio * gainStage1[idx1];
     
     // calculate ratio and sigma over the range
     
