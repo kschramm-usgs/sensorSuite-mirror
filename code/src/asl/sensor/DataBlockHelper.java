@@ -320,7 +320,7 @@ public class DataBlockHelper {
             default:
               double[] decomArrayDbl = decomp.getAsDouble();
               for (double dataPoint : decomArrayDbl ) {
-                timeList.add( (double) dataPoint );
+                timeList.add(dataPoint);
                 timeOfData += interval;
               }
               break;
