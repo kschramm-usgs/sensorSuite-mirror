@@ -17,7 +17,9 @@ public class GainExperiment extends Experiment {
    * frequencies
    * @return The index of the peak location
    */
-  private static int getPeakIndex(FFTResult fft) {
+  private int getPeakIndex(int idx) {
+    
+    FFTResult fft = fftResults.get(idx);
     
     Complex[] timeSeries = fft.getFFT();
     double[] freqs = fft.getFreqs();
@@ -33,6 +35,20 @@ public class GainExperiment extends Experiment {
       }
     }
     return index;
+  }
+  
+  public double[] getOctaveCenteredAtPeak(int idx) {
+    
+    int center = getPeakIndex(idx);
+    double[] freqs = fftResults.get(idx).getFreqs();
+    double peakFreq = freqs[center];
+    
+    double lowFreq = peakFreq / Math.sqrt(2);
+    double highFreq = peakFreq * Math.sqrt(2);
+    
+    System.out.println(lowFreq+","+highFreq);
+    
+    return new double[]{lowFreq, highFreq};
   }
   
   /**

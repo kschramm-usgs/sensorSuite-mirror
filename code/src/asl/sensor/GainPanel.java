@@ -185,6 +185,16 @@ implements ChangeListener {
   }
   
   /**
+   * Converts x-axis value from log scale to linear, to get slider position
+   * @param prd period value marking data window boundary
+   * @return value of slider (ranges from 0 to 1000)
+   */
+  public int mapPeriodToSlider(double prd) {
+    double scale = (high - low)/1000; // recall slider range is 0 to 1000
+    return (int) ( ( Math.log10(prd) - low ) / scale );
+  }
+  
+  /**
    * Used to populate the combo box with the names of inputted data
    */
   @Override
@@ -305,6 +315,7 @@ implements ChangeListener {
   private void updateDataDriver() {
     
     // these should be 0 and 1 since the series cannot be selected currently
+    // TODO: add check if 3 data sets are loaded in to allow choosing?
     int idx0 = firstSeries.getSelectedIndex();
     int idx1 = secondSeries.getSelectedIndex();
     
@@ -331,27 +342,36 @@ implements ChangeListener {
       xys = xysc.getSeries(1);
     }
 
-    // recall: we're plotting in period space (secs)
-    double lowPrd = xys.getMinX();
-    double highPrd = xys.getMaxX();
+    // want to default to octave centered at highest value of fixed freq
+    double[] freqRange = 
+        ( (GainExperiment) expResult).getOctaveCenteredAtPeak(idx0);
     
+    // get the locations (x-axis values) of frequency range in 
+    double lowPrd = Math.min(1/freqRange[0], 1/freqRange[1]);
+    double highPrd = Math.max(1/freqRange[0], 1/freqRange[1]);
+    
+    // since intervals of incoming data match, so too limits of plot
+    // this is used in mapping scale of slider to x-axis values
+    low = Math.log10( xys.getMinX() ); // value when slider is 0
+    high = Math.log10( xys.getMaxX() ); // value when slider is 1000
+    
+    // set the domain to match the boundaries of the octave centered at peak
     setDomainMarkers(lowPrd, highPrd, xyp);
     
-    // since intervals of incoming data set, should be the same for both inputs
-    low = Math.log10( lowPrd ); // value when slider is 0
-    high = Math.log10( highPrd ); // value when slider is 1000
-    
-    
+    // and now set the sliders to match where that window is
     leftSlider.setEnabled(true);
     rightSlider.setEnabled(true);
     
-    leftSlider.setValue(0);
-    rightSlider.setValue(1000);
+    int leftSliderValue = mapPeriodToSlider(lowPrd);
+    int rightSliderValue = mapPeriodToSlider(highPrd);
+    
+    leftSlider.setValue(leftSliderValue);
+    rightSlider.setValue(rightSliderValue);
     
     // get statistics from frequency (convert from period)
     double[] meanAndStdDev = 
-        ((GainExperiment) expResult).getStatsFromFreqs(
-            idx0, idx1, 1 / lowPrd, 1 / highPrd);
+        ( (GainExperiment) expResult ).getStatsFromFreqs(
+            idx0, idx1, freqRange[0], freqRange[1]);
     
     double mean = meanAndStdDev[0];
     double sDev = meanAndStdDev[1];
