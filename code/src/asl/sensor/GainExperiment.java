@@ -48,8 +48,6 @@ public class GainExperiment extends Experiment {
     double lowFreq = peakFreq / Math.sqrt(2);
     double highFreq = peakFreq * Math.sqrt(2);
     
-    System.out.println(lowFreq+","+highFreq);
-    
     return new double[]{lowFreq, highFreq};
   }
   
