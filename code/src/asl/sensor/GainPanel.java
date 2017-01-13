@@ -124,8 +124,10 @@ implements ChangeListener {
       
       double mean = meanAndStdDev[0];
       double sDev = meanAndStdDev[1];
+      double refGain = meanAndStdDev[2];
+      double calcGain = meanAndStdDev[3];
       
-      setTitle(mean, sDev);
+      setTitle(mean, sDev, refGain, calcGain);
       
       recalcButton.setEnabled(false);
       
@@ -216,10 +218,23 @@ implements ChangeListener {
    * @param mean Calculated mean value
    * @param sDev Calculated standard deviation value
    */
-  private void setTitle(double mean, double sDev) {
+  private void 
+  setTitle(double mean, double sDev, double refGain, double calcGain) {
     XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
     TextTitle result = new TextTitle();
-    String temp = "ratio: "+ mean + "\n" + "sigma: " + sDev;
+    StringBuilder sb = new StringBuilder();
+    sb.append("ratio: ");
+    sb.append(mean);
+    sb.append("\n");
+    sb.append("sigma: ");
+    sb.append(sDev);
+    sb.append("\n");
+    sb.append("ref. gain: ");
+    sb.append(refGain);
+    sb.append("\n");
+    sb.append("** CALCULATED GAIN: ");
+    sb.append(calcGain);
+    String temp = sb.toString();
     result.setText(temp);
     result.setBackgroundPaint(Color.white);
     XYTitleAnnotation xyt = new XYTitleAnnotation(0.98, 0.98, result,
@@ -369,14 +384,16 @@ implements ChangeListener {
     rightSlider.setValue(rightSliderValue);
     
     // get statistics from frequency (convert from period)
-    double[] meanAndStdDev = 
+    double[] gainStatistics = 
         ( (GainExperiment) expResult ).getStatsFromFreqs(
             idx0, idx1, freqRange[0], freqRange[1]);
     
-    double mean = meanAndStdDev[0];
-    double sDev = meanAndStdDev[1];
+    double mean = gainStatistics[0];
+    double sDev = gainStatistics[1];
+    double refGain = gainStatistics[2];
+    double calcGain = gainStatistics[3];
     
-    setTitle(mean, sDev);
+    setTitle(mean, sDev, refGain, calcGain);
   }
 
 }

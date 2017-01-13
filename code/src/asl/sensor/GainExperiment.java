@@ -11,6 +11,8 @@ import org.jfree.chart.axis.NumberAxis;
 
 public class GainExperiment extends Experiment {
 
+  private double[] gainStage1;
+  
   /**
    * Finds the maximum value of PSD plot curve
    * @param fft PSD calculation, including both FFT function and matching
@@ -175,6 +177,16 @@ public class GainExperiment extends Experiment {
   @Override
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
+    gainStage1 = new double[DataStore.FILE_COUNT];
+    InstrumentResponse[] resps = ds.getResponses();
+    for (int i = 0; i < gainStage1.length; ++i) {
+      if (resps[i] == null) {
+        continue;
+      }
+      double[] gains = resps[i].getGain();
+      gainStage1[i] = gains[1];
+    }
+    
     fftResults = new ArrayList<FFTResult>( Arrays.asList(psd) );
     
     freqSpace = false;
@@ -249,9 +261,12 @@ public class GainExperiment extends Experiment {
     
     sigma = sdev(plot0, plot1, ratio, lowInd, highInd);
     
+    double gain1 = gainStage1[idx0];
+    double gain2 = ratio * gain1;
+    
     // calculate ratio and sigma over the range
     
-    return new double[]{ratio, sigma};
+    return new double[]{ratio, sigma, gain1, gain2};
   }
 
 }
