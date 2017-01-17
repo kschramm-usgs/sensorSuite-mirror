@@ -33,6 +33,12 @@ public class StepExperiment extends Experiment {
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     // TODO Auto-generated method stub
 
+    // what do we do here? get corner freq and damping from first pole
+    
+    // then take the FFT of the inputted data and multiply by response
+    // (i.e., convolving time-series data with response function)
+    // then de-convolve
+    
   }
 
 }
