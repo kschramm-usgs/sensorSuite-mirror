@@ -322,6 +322,55 @@ public class FFTResult {
     // test shows this works as in-place method
   }
   
+  public static FFTResult simpleFFT(DataBlock db) {
+    ArrayList<Number> list1 = new ArrayList<Number>( db.getData() );
+        
+    int padding = 2;
+    while ( padding < list1.size() ) {
+      padding *= 2;
+    }
+    
+    double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
+    period *= db.getInterval();
+    double deltaFrq = 1. / (period * padding);
+    
+    detrend(list1);
+    demean(list1);
+    double wss = cosineTaper(list1, TAPER_WIDTH);
+   
+    double[] toFFT = new double[padding];
+    
+    for (int i = 0; i < list1.size(); ++i) {
+      toFFT[i] = list1.get(i).doubleValue();
+    }
+    
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.STANDARD);
+    
+    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+    
+    double[] frequencies = new double[toFFT.length];
+    
+    for (int i = 0; i < frequencies.length; ++i) {
+      frequencies[i] = i * deltaFrq;
+    }
+    
+    return new FFTResult(frqDomn, frequencies);
+  }
+  
+  public static double[] inverseFFT(Complex[] freqDomn) {
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.STANDARD);
+    
+    Complex[] timeSeriesCpx = fft.transform(freqDomn, TransformType.INVERSE);
+    double[] timeSeries = new double[timeSeriesCpx.length];
+    for (int i = 0; i < timeSeries.length; ++i) {
+      timeSeries[i] = timeSeriesCpx[i].abs();
+    }
+    
+    return timeSeries;
+  }
+  
   /**
    * In-place subtraction of trend from each point in an incoming data set.
    * This is a necessary step in calculating the power-spectral density.
@@ -397,7 +446,7 @@ public class FFTResult {
     try {
       BufferedReader fr = new BufferedReader(
                             new FileReader(
-                              new File("data/NLNM.txt") ) );
+                              new File(".resources/NLNM.txt") ) );
       String str = fr.readLine();
       while (str != null) {
         String[] values = str.split("\\s+");

@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
@@ -38,18 +40,19 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author akearns
  *
  */
-public class MainWindow extends JPanel implements ActionListener {
+public class SensorSuite extends JPanel implements ActionListener {
 
   /**
    * 
    */
   private static final long serialVersionUID = 2866426897343097822L;
 
+  ExecutorService executor = Executors.newCachedThreadPool();
+  
   private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
   private JTextField[] seedFileNames = new JTextField[DataStore.FILE_COUNT];
   private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
   private JTextField[] respFileNames = new JTextField[DataStore.FILE_COUNT];
-
 
   private JFileChooser fc; // loads in files based on parameter
   private DataPanel dataBox;
@@ -118,7 +121,7 @@ public class MainWindow extends JPanel implements ActionListener {
    * of sensor tests; the lower panel for displaying plots of raw data from
    * miniSEED files; the side panel for most file-IO operations
    */
-  public MainWindow() {
+  public SensorSuite() {
 
     super();
     
@@ -310,7 +313,7 @@ public class MainWindow extends JPanel implements ActionListener {
     JFrame frame = new JFrame("Sensor Tests");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    frame.add( new MainWindow() );
+    frame.add( new SensorSuite() );
 
     frame.pack();
     frame.setVisible(true);
@@ -373,8 +376,8 @@ public class MainWindow extends JPanel implements ActionListener {
             }
           };
           // need a new thread so the UI won't lock with big programs
-          Thread t = new Thread(worker);
-          t.start();
+          
+          executor.submit(worker);
           return;
         }
       } else if ( e.getSource() == respButton ) {

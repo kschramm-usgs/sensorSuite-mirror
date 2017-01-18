@@ -51,6 +51,13 @@ public class GainExperiment extends Experiment {
     return new double[]{lowFreq, highFreq};
   }
   
+  public double[] getStatsFromPeak(int idx0, int idx1) {
+    double[] freqBounds = getOctaveCenteredAtPeak(idx0);
+    double freq1 = freqBounds[0];
+    double freq2 = freqBounds[1];
+    return getStatsFromFreqs(idx0, idx1, freq1, freq2);
+  }
+  
   /**
    * Gets the indices denoting the inclusive range of a frequency bound on
    * a list of input frequencies
@@ -244,6 +251,13 @@ public class GainExperiment extends Experiment {
    */
   private double[] getStatsFromIndices(int idx0, int idx1,
       int lowInd, int highInd) {
+    
+    // make sure lowInd really is the lower index
+    if (lowInd > highInd) {
+      int temp = highInd;
+      highInd = lowInd;
+      lowInd = temp;
+    }
     
     FFTResult plot0 = fftResults.get(idx0);
     FFTResult plot1 = fftResults.get(idx1);

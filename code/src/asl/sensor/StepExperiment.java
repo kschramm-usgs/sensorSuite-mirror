@@ -22,11 +22,11 @@ public class StepExperiment extends Experiment {
   
   @Override
   public ValueAxis getFreqAxis() {
-    throw new RuntimeException("X-axis is a timescale, not freq/period");
+    return xAxis;
   }
   
   public String getFreqTitle() {
-    throw new RuntimeException("X-axis is a timescale, not freq/period");
+    return xAxisTitle;
   }
   
   @Override
