@@ -182,13 +182,9 @@ implements ActionListener, ChangeListener {
     }
     
     // surround this with a swingworker somehow?
-    // XYSeries ts = ds.setData(idx, filepath);
-    
-    ReadFileWorker rfw = new ReadFileWorker(idx, filepath, ds);
+    XYSeries ts = ds.setData(idx, filepath);
     
     try {
-      XYSeries ts;
-      ts = rfw.doInBackground();
       
       JFreeChart chart = ChartFactory.createXYLineChart(
           ts.getKey().toString(),
@@ -556,24 +552,6 @@ implements ActionListener, ChangeListener {
       cp.setChart(chart);
       cp.setMouseZoomable(true);
     }
-  }
-  
-}
-
-class ReadFileWorker extends SwingWorker<XYSeries, Void> {
-
-  public String filename;
-  public int index;
-  public DataStore ds;
-  public ReadFileWorker(int index, String filename, DataStore ds) {
-    this.filename = filename;
-    this.index = index;
-    this.ds = ds;
-  }
-  
-  @Override
-  protected XYSeries doInBackground() throws Exception {
-    return ds.setData(index, filename);
   }
   
 }

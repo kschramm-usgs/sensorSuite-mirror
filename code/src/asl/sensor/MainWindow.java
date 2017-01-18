@@ -349,11 +349,16 @@ public class MainWindow extends JPanel implements ActionListener {
           
           seedFileNames[i].setText("LOADING: " + file.getName());
           
-          // Swing worker here?
+          // create swingworker to load large files in the background
           SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
             @Override
             public Integer doInBackground() {
               dataBox.setData( idx, file.getAbsolutePath() );
+              
+              return 0;
+            }
+            
+            public void done() {
               seedFileNames[idx].setText( file.getName() );
               for ( int j = 0; j < tabbedPane.getTabCount(); ++j ) {
                 ExperimentPanel ep = 
@@ -365,11 +370,11 @@ public class MainWindow extends JPanel implements ActionListener {
                 ep.setDataNames(names);
               }
               checkIfDataSet();
-              return 0;
             }
           };
-          
-          worker.execute();
+          // need a new thread so the UI won't lock with big programs
+          Thread t = new Thread(worker);
+          t.start();
           return;
         }
       } else if ( e.getSource() == respButton ) {

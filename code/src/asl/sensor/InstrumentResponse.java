@@ -61,6 +61,7 @@ public class InstrumentResponse {
     poles.add( new Complex(pole2) );
     gain = new double[]{10.0, 1.0, 10.0}; // arbitrary choice of 10.0 sens.
     
+    zeros = new ArrayList<Complex>();
     zeros.add( new Complex(0.0) ); // calculated response zero is at 0
     
     unitType = Unit.ACCELERATION;
