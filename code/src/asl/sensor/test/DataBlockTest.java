@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import asl.sensor.DataBlock;
-import asl.sensor.DataBlockHelper;
+import asl.sensor.TimeSeriesUtils;
 import asl.sensor.DataPanel;
 
 public class DataBlockTest {
@@ -23,7 +23,7 @@ public class DataBlockTest {
     int left = 250;
     int right = 750;
     
-    DataBlock db = DataBlockHelper.getXYSeries(filename1);
+    DataBlock db = TimeSeriesUtils.getTimeSeries(filename1);
 
     int sizeOld = db.size();
     

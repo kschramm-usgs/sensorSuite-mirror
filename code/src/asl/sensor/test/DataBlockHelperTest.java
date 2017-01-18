@@ -18,7 +18,7 @@ import java.util.List;
 import org.junit.Test;
 
 import asl.sensor.DataBlock;
-import asl.sensor.DataBlockHelper;
+import asl.sensor.TimeSeriesUtils;
 import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
@@ -106,10 +106,10 @@ public class DataBlockHelperTest {
           
           // checking the correct values for the intervals
           
-          double multOf1Hz = rate/DataBlockHelper.ONE_HZ;
-          long inverse = DataBlockHelper.ONE_HZ_INTERVAL/(long)multOf1Hz;
+          double multOf1Hz = rate/TimeSeriesUtils.ONE_HZ;
+          long inverse = TimeSeriesUtils.ONE_HZ_INTERVAL/(long)multOf1Hz;
           
-          long interval = DataBlockHelper.ONE_HZ_INTERVAL*mult/fact;
+          long interval = TimeSeriesUtils.ONE_HZ_INTERVAL*mult/fact;
           
           assertEquals( inverse, interval);
           // System.out.println(interval);
@@ -172,7 +172,7 @@ public class DataBlockHelperTest {
             int fact = dh.getSampleRateFactor();
             int mult = dh.getSampleRateMultiplier();
 
-            final long ONE_HZ_INTERVAL = DataBlockHelper.ONE_HZ_INTERVAL;
+            final long ONE_HZ_INTERVAL = TimeSeriesUtils.ONE_HZ_INTERVAL;
             
             if( fact > 0 && mult > 0) {
               interval = ONE_HZ_INTERVAL / (fact * mult);
@@ -232,7 +232,7 @@ public class DataBlockHelperTest {
         
       }
       
-      DataBlock testAgainst = DataBlockHelper.getXYSeries(filename1);
+      DataBlock testAgainst = TimeSeriesUtils.getTimeSeries(filename1);
       assertEquals( db.getData().size(), testAgainst.getData().size() );
       
     } catch (FileNotFoundException e) {

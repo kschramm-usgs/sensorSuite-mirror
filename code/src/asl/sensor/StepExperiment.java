@@ -31,13 +31,20 @@ public class StepExperiment extends Experiment {
   
   @Override
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+    // we'll need to take FFTs, but not the PSD
     // TODO Auto-generated method stub
 
     // what do we do here? get corner freq and damping from first pole
     
     // then take the FFT of the inputted data and multiply by response
-    // (i.e., convolving time-series data with response function)
-    // then de-convolve
+    // (i.e., convolving time-series data with response function in time-dmn)
+    // then de-convolve with the calculated response (from corner & damping)
+    
+    // after that do Levenberg-Marquardt to match to the input timeseries
+    // giving us known parameters from response and calculated ones
+    // calculated ones effectively matching the input
+    
+    
     
   }
 

@@ -98,6 +98,13 @@ public class DataStore {
     return dataBlockArray;
   }
   
+  public InstrumentResponse getResponse(int idx) {
+    if (idx < FILE_COUNT) {
+      return responses[idx];
+    }
+    throw new IndexOutOfBoundsException();
+  }
+  
   /**
    * Returns the plottable format of the data held in the arrays at 
    * the specified index
@@ -140,18 +147,7 @@ public class DataStore {
    */
   public XYSeries setData(int idx, String filepath) {
     
-    SeedLoaderRunner slr = new SeedLoaderRunner(filepath);
-    
-    Thread t = new Thread(slr);
-    t.start();
-    try {
-      t.join();
-    } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    
-    DataBlock xy = slr.getData(); // executes in a new thread?!
+    DataBlock xy = TimeSeriesUtils.getTimeSeries(filepath);
     
     dataBlockArray[idx] = xy;
     

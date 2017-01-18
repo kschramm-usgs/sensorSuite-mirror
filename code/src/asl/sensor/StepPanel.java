@@ -4,6 +4,9 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
+
+import org.apache.commons.math3.complex.Complex;
+
 import javax.swing.JLabel;
 
 public class StepPanel extends ExperimentPanel {
@@ -41,7 +44,16 @@ public class StepPanel extends ExperimentPanel {
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     // TODO Auto-generated method stub
-
+    DataBlock db = ds.getBlock(0);
+    InstrumentResponse ir = ds.getResponse(0);
+    Complex pole = ir.getPoles().get(0);
+    double f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
+    double h = Math.abs( pole.getReal() / pole.abs() ); // damping
+    
+    InstrumentResponse appxResp = new InstrumentResponse(f, h);
+    
+    // get FFT of datablock timeseries, apply response to input
+    
   }
 
 }

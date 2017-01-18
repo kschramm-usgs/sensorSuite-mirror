@@ -22,6 +22,7 @@ import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
 import edu.iris.dmc.seedcodec.UnsupportedCompressionType;
+import edu.sc.seis.seisFile.mseed.Blockette;
 import edu.sc.seis.seisFile.mseed.Btime;
 import edu.sc.seis.seisFile.mseed.DataHeader;
 import edu.sc.seis.seisFile.mseed.DataRecord;
@@ -33,7 +34,7 @@ import edu.sc.seis.seisFile.mseed.SeedRecord;
  * @author akearns
  *
  */
-public class DataBlockHelper {
+public class TimeSeriesUtils {
 
   /**
    * Interval for data that has been sampled at 1 Hz in microseconds
@@ -58,8 +59,10 @@ public class DataBlockHelper {
    * @param filename The full path to the file to be loaded in
    * @return A structure containing the time series and metadata for the file
    */
-  public static DataBlock getXYSeriesWithErrorChecking(String filename) {
+  public static DataBlock getTimeSeriesWithErrorChecking(String filename) {
 
+    // TODO: add gathering of data from step cal blockette (sep. function?)
+    
     DataInputStream dis;
     // XYSeries xys = null;
     DataBlock db = null;
@@ -212,7 +215,14 @@ public class DataBlockHelper {
     return db;
   }
 
-  public static DataBlock getXYSeries(String filename) {
+  /**
+   * Reads in timeseries data from a miniseed file, plus identifiers
+   * More efficient than other read-in method as it does not keep track of the
+   * time of each sample taken, but assumes input data is continuous
+   * @param filename
+   * @return
+   */
+  public static DataBlock getTimeSeries(String filename) {
 
     DataInputStream dis;
     // XYSeries xys = null;
@@ -242,6 +252,14 @@ public class DataBlockHelper {
               db = new DataBlock(null, interval, fileID.toString(), -1);
             }
 
+            // TODO: move this loop into its own function, add to other check
+            for ( Blockette bk : dr.getBlockettes() ) {
+              if (bk.getType() == 300) {
+                // it's a step calibration
+                // TODO: write the code to collect data from step calibration
+              }
+            }
+            
             byte af = dh.getActivityFlags();
             byte correctionFlag = 0b00000010; // is there a time correction?
             int correction = 0;

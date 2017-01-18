@@ -17,6 +17,8 @@ public class DataBlock {
   private String name;
   private long startTime;
   
+  private StepCalibration stepCal;
+  
   /**
    * Creates a new DataBlock based on the given parameters
    * @param dataIn Time series data, as a list of numeric objects
@@ -91,9 +93,9 @@ public class DataBlock {
     // trying to draw the charts with too much data slows it down terribly
     
     // lower interval means higher sample rate means more data
-    int skipFactor = (int) (DataBlockHelper.ONE_HZ_INTERVAL / interval);
+    int skipFactor = (int) (TimeSeriesUtils.ONE_HZ_INTERVAL / interval);
     
-    if (interval > DataBlockHelper.ONE_HZ_INTERVAL) {
+    if (interval > TimeSeriesUtils.ONE_HZ_INTERVAL) {
       // if data is already at or less than 1Hz rate, slow down
       skipFactor = 1;
     }
@@ -103,7 +105,7 @@ public class DataBlock {
     long thisTime = getStartTime();
     for (int i = 0; i < data.size(); i+=skipFactor) {
       Number point = data.get(i);
-      out.add(thisTime/1000, point);
+      out.add(thisTime/1000, point); // microseconds to nanoseconds
       thisTime += skipFactor*interval;
     }
     

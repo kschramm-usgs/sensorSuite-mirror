@@ -44,6 +44,30 @@ public class InstrumentResponse {
     
     normalization = Double.valueOf( responseIn.getNormalization() );
     normalFreq = Double.valueOf( responseIn.getNormalizationFrequency() );
+    
+  }
+  
+  public InstrumentResponse(double corner, double damping) {
+    double omega = 2*Math.PI*corner; // the zero?
+    
+    double pole1 = -( damping + Math.sqrt( Math.pow(damping,2) - 1 ) );
+    pole1 *= omega;
+    
+    double pole2 = -( damping - Math.sqrt( Math.pow(damping,2) - 1 ) );
+    pole2 *= omega;
+    
+    poles = new ArrayList<Complex>();
+    poles.add( new Complex(pole1) );
+    poles.add( new Complex(pole2) );
+    gain = new double[]{10.0, 1.0, 10.0}; // arbitrary choice of 10.0 sens.
+    
+    zeros.add( new Complex(0.0) ); // calculated response zero is at 0
+    
+    unitType = Unit.ACCELERATION;
+    transferType = TransferFunction.LAPLACIAN;
+    
+    normalization = 1.0; // TODO: check if correct
+    
   }
   
   public TransferFunction getTransferFunction() {
@@ -95,7 +119,7 @@ public class InstrumentResponse {
     // unlike s (see below) this is always 2Pi
     double integConstant = 2*Math.PI;
     
-    for (int i =0; i < frequencies.length; ++i) {
+    for (int i = 0; i < frequencies.length; ++i) {
       // TODO: check this is right (Adam seemed to be saying so)
       double deltaFrq = frequencies[i];
       
@@ -117,14 +141,14 @@ public class InstrumentResponse {
       
       if (differentiations > 0) {
         // i*omega; integration is I(w) x (iw)^n
-        Complex iw = new Complex(0.0, integConstant*frequencies[i]);
+        Complex iw = new Complex(0.0, integConstant*deltaFrq);
         for (int j = 1; j < Math.abs(differentiations); j++){
           iw = iw.multiply(iw);
         }
         resps[i] = resps[i].multiply(iw);
       } else if (differentiations > 0) { 
         // differentiation is I(w) / (-i/w)^n
-        Complex iw = new Complex(0.0, -1.0 / (integConstant*frequencies[i]) );
+        Complex iw = new Complex(0.0, -1.0 / (integConstant*deltaFrq) );
         for (int j = 1; j < Math.abs(differentiations); j++){
           iw = iw.multiply(iw);
         }
@@ -141,6 +165,76 @@ public class InstrumentResponse {
       resps[i] = resps[i].multiply( resps[i].conjugate() );
       resps[i] = resps[i].multiply( Math.pow(conversion, 2) );
       */
+      
+    }
+    
+    return resps;
+  }
+  
+  public Complex[] removeResponse(double[] frequencies) {
+    Complex[] resps = new Complex[frequencies.length];
+    
+    // precalculate gain for scaling the response
+    // use gain1 * gain2 unless gain0 differs by more than 10%
+    // (apparently an issue with Q680 detectors)
+    double diff = 100 * ( gain[0] - (gain[1]*gain[2]) ) / gain[0];
+    double scale;
+    if (Math.abs(diff) > 10) {
+      scale = gain[0];
+    } else {
+      scale = gain[1] * gain[2];
+    }
+    
+    // how many times do we need to do differentiation?
+    // outUnits (acceleration) - inUnits
+    int differentiations = Unit.ACCELERATION.getDifferentiations(unitType);
+    // unlike s (see below) this is always 2Pi
+    double integConstant = 2*Math.PI;
+    
+    for (int i = 0; i < frequencies.length; ++i) {
+      double deltaFrq = frequencies[i];
+      
+      Complex s = new Complex( 0, deltaFrq*transferType.getFunction() );
+      
+      Complex numerator = Complex.ONE;
+      Complex denominator = Complex.ONE;
+      
+      for (Complex zero : zeros) {
+        numerator = numerator.multiply( s.subtract(zero) );
+      }
+      
+      for (Complex pole : poles) {
+        denominator = denominator.multiply( s.subtract(pole) );
+      }
+      
+      Complex result = numerator.multiply(normalization).divide(denominator);
+      double correction = 0.008 * result.abs();
+      
+      // removing response here
+      resps[i] = s.multiply (result.conjugate() )
+          .divide( result.multiply( result.conjugate() ).multiply(correction) );
+      
+      // now do any necessary integration/differentiation here
+      
+      if (differentiations > 0) {
+        // i*omega; integration is I(w) x (iw)^n
+        Complex iw = new Complex(0.0, integConstant*deltaFrq);
+        for (int j = 1; j < Math.abs(differentiations); j++){
+          iw = iw.multiply(iw);
+        }
+        resps[i] = resps[i].multiply(iw);
+      } else if (differentiations > 0) { 
+        // differentiation is I(w) / (-i/w)^n
+        Complex iw = new Complex(0.0, -1.0 / (integConstant*deltaFrq) );
+        for (int j = 1; j < Math.abs(differentiations); j++){
+          iw = iw.multiply(iw);
+        }
+        resps[i] = iw.multiply(resps[i]);
+      }
+      
+      
+      // lastly, scale by the scale we chose (gain0 or gain1*gain2)
+      resps[i] = resps[i].multiply(scale);
       
     }
     
@@ -248,11 +342,11 @@ public class InstrumentResponse {
           case "B053F10-13":
             // these are the lists of response zeros, in order with index,
             // real (double), imaginary (double), & corresponding error terms
-            parseAndApplyComplex(line,zerosArr);
+            parseTermAsComplex(line,zerosArr);
             break;
           case "B053F15-18":
             // as above but for poles
-            parseAndApplyComplex(line, polesArr);
+            parseTermAsComplex(line, polesArr);
             break;
           case "B058F03":
             // gain stage sequence number; again, full third word as int
@@ -260,12 +354,16 @@ public class InstrumentResponse {
             gainStage = Integer.parseInt(words[2]);
             break;
           case "B058F04":
+            
+            // should come immediately and only after the gain sequence number
+            
             // gain value -- has to have had stage sequence already set
             // again, it's the third full word, this time as a double
             if (gainStage < 3) {
+              // values we take -- 0, 1, 2
               gain[gainStage] = Double.parseDouble(words[2]);
             }
-            // now reset gainStage to prevent it getting modified again
+            // reset the stage to prevent data being overwritten
             gainStage = -1;
             break;
           }
@@ -286,14 +384,14 @@ public class InstrumentResponse {
     
   }
   
-  private void parseAndApplyComplex(String line, Complex[] array) {
+  private void parseTermAsComplex(String line, Complex[] array) {
     // reparse the line. why are we doing this?
     // if a number is negative, only one space between it and prev. number
     // and the previous split operation assumed > 2 spaces between numbers
     String[] words = line.split("\\s+");
 
 
-    // index 0 is the identifier for the field types
+    // index 0 is the identifier for the field types (used in switch-stmt)
     // index 1 is where in the list this zero or pole is
     // index 2 is the real part, and index 3 the imaginary
     // indices 4 and 5 are error terms (ignored)    

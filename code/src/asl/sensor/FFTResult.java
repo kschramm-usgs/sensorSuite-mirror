@@ -117,7 +117,7 @@ public class FFTResult {
    * representing the PSD result, and an array of doubles representing the
    * frequencies of the PSD.
    */
-  private static FFTResult spectralCalc(DataBlock data1, DataBlock data2) {
+  public static FFTResult spectralCalc(DataBlock data1, DataBlock data2) {
 
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
@@ -139,7 +139,7 @@ public class FFTResult {
     // let's divide it by that large number to get our period
     
     // shouldn't need to worry about a cast here
-    double period = 1.0 / DataBlockHelper.ONE_HZ_INTERVAL;
+    double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;
     period *= data1.getInterval();
     
     int padding = 2;

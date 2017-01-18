@@ -16,7 +16,7 @@ public class SeedLoaderRunner implements Runnable {
   @Override
   public void run() {
     // TODO Auto-generated method stub
-    blockReadIn = DataBlockHelper.getXYSeries(filename);
+    blockReadIn = TimeSeriesUtils.getTimeSeries(filename);
   }
 
 }
