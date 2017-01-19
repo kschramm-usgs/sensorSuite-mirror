@@ -58,7 +58,7 @@ implements ActionListener, ChangeListener {
    * Default height of image produced by the save-as-image function
    * (each chart is 240 pixels tall)
    */
-  public static final int IMAGE_HEIGHT = 240*DataStore.FILE_COUNT;
+  public static final int IMAGE_HEIGHT = 240;
   
   private DataStore ds;
   private DataStore zooms;
@@ -422,6 +422,10 @@ implements ActionListener, ChangeListener {
     chartPanels[idx].repaint();
   }
   
+  public int getImageHeight() {
+    return IMAGE_HEIGHT * ds.numberOfBlocksLoaded();
+  }
+  
   /**
    * Return this panel's charts as a single buffered image
    * @return Buffered image of the plots, writeable to file
@@ -432,7 +436,7 @@ implements ActionListener, ChangeListener {
     // otherwise, we only use the height of images actually set
     height /= DataStore.FILE_COUNT;
     height *= ds.numberOfBlocksLoaded();
-    return getAsImage( allCharts.getWidth(), allCharts.getHeight() );
+    return getAsImage( allCharts.getWidth(), height );
   }
   
   /**

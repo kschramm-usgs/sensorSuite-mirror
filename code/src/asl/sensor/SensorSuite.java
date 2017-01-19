@@ -440,7 +440,7 @@ public class SensorSuite extends JPanel implements ActionListener {
    */
   public void plotsToPNG(File file) throws IOException {
     // using 0s to set image height and width to default values (match window)
-    int inHeight = DataPanel.IMAGE_HEIGHT;
+    int inHeight = dataBox.getImageHeight();
     int width = 640;
     BufferedImage inPlot = dataBox.getAsImage(width, inHeight);
     ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
