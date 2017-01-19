@@ -1,12 +1,9 @@
 package asl.sensor;
 
-import java.awt.Component;
-import java.awt.event.ActionEvent;
 import java.awt.Checkbox;
+import java.awt.event.ActionEvent;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 
 public class NoisePanel extends ExperimentPanel {

@@ -317,35 +317,52 @@ implements ChangeListener {
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     
-    if (ds.amountOfDataLoaded() < 2) {
+    try{
+      expResult.setData(ds, psd, freqSpace);
+    } catch (IndexOutOfBoundsException e) {
       displayErrorMessage("INSUFFICIENT DATA LOADED");
       return;
     }
     
-    expResult.setData(ds, psd, freqSpace);
     // need to have 2 series for relative gain
     if ( ds.amountOfDataLoaded() > 2 ) {
       firstSeries.setEnabled(true);
       secondSeries.setEnabled(true);
+      updateDataDriver();
     } else {
-      firstSeries.setEnabled(false);
-      secondSeries.setEnabled(false);
+      // get first and then second loaded data sets
+      int idx0, idx1;
+      try {
+        idx0 = ds.getIndexOfXthLoadedData(1);
+        idx1 = ds.getIndexOfXthLoadedData(2);
+        firstSeries.setEnabled(false);
+        secondSeries.setEnabled(false);
+        updateDataDriver(idx0, idx1);
+      } catch (IndexOutOfBoundsException e) {
+        displayErrorMessage("INSUFFICIENT DATA LOADED");
+        return;
+      }
+
+
     }
     
-    updateDataDriver();
+
   }
   
   /**
    * Given input data (including time series collection), get only the relevant
    * ones to display based on combo boxes and then do the statistics on those
-   * Called when new data is loaded or when the combo box active entries change
+   * Called when new data is fed in or when the combo box active entries change
    */
   private void updateDataDriver() {
     
-    // these should be 0 and 1 since the series cannot be selected currently
-    // TODO: add check if 3 data sets are loaded in to allow choosing?
     int idx0 = firstSeries.getSelectedIndex();
     int idx1 = secondSeries.getSelectedIndex();
+    updateDataDriver(idx0, idx1);
+  }
+  
+    
+  private void updateDataDriver(int idx0, int idx1) {
     
     // have to make sure the plotting indices get properly set before
     // running the backend, so that we don't add more plots than we need

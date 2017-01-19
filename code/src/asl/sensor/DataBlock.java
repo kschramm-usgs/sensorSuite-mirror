@@ -17,8 +17,6 @@ public class DataBlock {
   private String name;
   private long startTime;
   
-  private StepCalibration stepCal;
-  
   /**
    * Creates a new DataBlock based on the given parameters
    * @param dataIn Time series data, as a list of numeric objects

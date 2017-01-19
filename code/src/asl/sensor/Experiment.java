@@ -45,12 +45,15 @@ public abstract class Experiment {
    */
   public void setData(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
+    int idx;
+    
+    idx = ds.getFirstLoadedBlock();
+    
     DataBlock[] dataIn = ds.getData();
-    InstrumentResponse[] resps = ds.getResponses();
     
     xySeriesData = new XYSeriesCollection();
     
-    long interval = dataIn[0].getInterval();
+    long interval = dataIn[idx].getInterval();
     // int length = dataIn[0].size();
     for (DataBlock data : dataIn) {
       

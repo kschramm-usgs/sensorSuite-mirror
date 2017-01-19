@@ -221,6 +221,50 @@ public class DataStore {
     
   }
   
+  /**
+   * Used to get the first loaded block (does not check for response)
+   * used to find the panel where a step calibration is loaded
+   * @return index of the first block to have timeseries data
+   * though not necessarily a response; -1 if no data has been loaded
+   */
+  public int getFirstLoadedBlock() {
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (thisBlockIsSet[i]) {
+        return i;
+      }
+    }
+    throw new IndexOutOfBoundsException("No data blocks loaded");
+  }
+  
+  /**
+   * Used to get the first, second, etc. data set loaded. Used when operations
+   * reading in data don't require all the inputs to be loaded.
+   * Requires both SEED and RESP to be loaded for this to be valid.
+   * @param x x-th set of loaded data to get, starting at 1
+   * @return index of the loaded data (-1 if data could not be loaded)
+   */
+  public int getIndexOfXthLoadedData(int x) {
+    if (x < 1) {
+      throw new IndexOutOfBoundsException("Parameter must be >= 1");
+    }
+    
+    if (x > amountOfDataLoaded() || x > FILE_COUNT) {
+      throw new IndexOutOfBoundsException("Only " + amountOfDataLoaded() +
+          " data points have been loaded in");
+    }
+    
+    int loaded = 0;
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if ( bothComponentsSet(i) ) {
+        ++loaded;
+        if (loaded == x) {
+          return i;
+        }
+      }
+    }
+    return -1; // exceptions in if statements should mean this never happens
+  }
+  
   public boolean timeSeriesSet(int idx) {
     return thisBlockIsSet[idx];
   }
