@@ -222,18 +222,29 @@ public class DataStore {
   }
   
   /**
-   * Used to get the first loaded block (does not check for response)
-   * used to find the panel where a step calibration is loaded
-   * @return index of the first block to have timeseries data
-   * though not necessarily a response; -1 if no data has been loaded
+   * Used to get the first, second, etc. loaded block, whether or not it has
+   * a loaded response file as well.
+   * Used to find the panel where a step calibration is loaded
+   * @param x x-th set of data to get, starting at 1
+   * @return The Xth DataBlock in this object that is not null
    */
-  public int getFirstLoadedBlock() {
+  public DataBlock getXthLoadedBlock(int x) {
+    if (x < 1) {
+      throw new IndexOutOfBoundsException("Parameter must be >= 1");
+    }
+    
+    int count = 0;
     for (int i = 0; i < FILE_COUNT; ++i) {
       if (thisBlockIsSet[i]) {
-        return i;
+        ++count;
+        if (count == x) {
+          return dataBlockArray[i];
+        }
       }
     }
-    throw new IndexOutOfBoundsException("No data blocks loaded");
+    
+    String errMsg = "Not enough data loaded in (found " + count + ")";
+    throw new IndexOutOfBoundsException(errMsg);
   }
   
   /**
@@ -241,16 +252,11 @@ public class DataStore {
    * reading in data don't require all the inputs to be loaded.
    * Requires both SEED and RESP to be loaded for this to be valid.
    * @param x x-th set of loaded data to get, starting at 1
-   * @return index of the loaded data (-1 if data could not be loaded)
+   * @return index of the loaded data
    */
   public int getIndexOfXthLoadedData(int x) {
     if (x < 1) {
       throw new IndexOutOfBoundsException("Parameter must be >= 1");
-    }
-    
-    if (x > amountOfDataLoaded() || x > FILE_COUNT) {
-      throw new IndexOutOfBoundsException("Only " + amountOfDataLoaded() +
-          " data points have been loaded in");
     }
     
     int loaded = 0;
@@ -262,7 +268,9 @@ public class DataStore {
         }
       }
     }
-    return -1; // exceptions in if statements should mean this never happens
+    
+    String errMsg = "Not enough data loaded in (found " + loaded + ")";
+    throw new IndexOutOfBoundsException(errMsg);
   }
   
   public boolean timeSeriesSet(int idx) {

@@ -170,7 +170,7 @@ implements ActionListener, ChangeListener {
    * @param filepath The full address of the file to be loaded in
    */
   public void setData(int idx, String filepath) { 
-    
+
     // TODO: code block occurs in 3 places, set apart as own function
     // set all data to the same range first (zoom out)
     zooms = ds;
@@ -180,49 +180,58 @@ implements ActionListener, ChangeListener {
       }
       this.resetPlotZoom(i);
     }
-    
-    XYSeries ts = ds.setData(idx, filepath);
-    
-    try {
-      
-      JFreeChart chart = ChartFactory.createXYLineChart(
-          ts.getKey().toString(),
-          "Time",
-          "Counts",
-          new XYSeriesCollection(ts),
-          PlotOrientation.VERTICAL,
-          false, false, false);
-      
-      XYPlot xyp = (XYPlot) chart.getPlot();
-      DateAxis da = new DateAxis();
-      SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-      sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-      da.setLabel("UTC Time");
-      Font bold = da.getLabelFont();
-      bold = bold.deriveFont(Font.BOLD);
-      da.setLabelFont(bold);
-      da.setDateFormatOverride(sdf);
-      xyp.setDomainAxis(da);
-      xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
-      
-      chartPanels[idx].setChart(chart);
-      chartPanels[idx].setMouseZoomable(true);
-      
-      set[idx] = true;
-      
-      zoomIn.setEnabled(true);
-      leftSlider.setEnabled(true);
-      rightSlider.setEnabled(true);
-      
-      leftSlider.setValue(0);
-      rightSlider.setValue(1000);
-      setVerticalBars();
-      
-    } catch (Exception e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-    
+
+    SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
+      @Override
+      public Integer doInBackground() { 
+        XYSeries ts = ds.setData(idx, filepath);
+        try {
+          JFreeChart chart = ChartFactory.createXYLineChart(
+              ts.getKey().toString(),
+              "Time",
+              "Counts",
+              new XYSeriesCollection(ts),
+              PlotOrientation.VERTICAL,
+              false, false, false);
+
+          XYPlot xyp = (XYPlot) chart.getPlot();
+          DateAxis da = new DateAxis();
+          SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+          sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+          da.setLabel("UTC Time");
+          Font bold = da.getLabelFont();
+          bold = bold.deriveFont(Font.BOLD);
+          da.setLabelFont(bold);
+          da.setDateFormatOverride(sdf);
+          xyp.setDomainAxis(da);
+          xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+
+
+          chartPanels[idx].setChart(chart);
+          chartPanels[idx].setMouseZoomable(true);
+
+          set[idx] = true;
+
+          zoomIn.setEnabled(true);
+          leftSlider.setEnabled(true);
+          rightSlider.setEnabled(true);
+
+          leftSlider.setValue(0);
+          rightSlider.setValue(1000);
+          setVerticalBars();
+          return 0;
+        } catch (Exception e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+        return 1;
+      } 
+    };
+
+    Thread t = new Thread(worker);
+    t.start();
+    return;
+
   }
   
   /**
@@ -375,23 +384,14 @@ implements ActionListener, ChangeListener {
   
   public void showRegionForGeneration() {
     
-    if ( ds.amountOfDataLoaded() < 1 ) {
+    if ( ds.numberOfBlocksLoaded() < 1 ) {
       return;
     }
     
     // get (any) loaded data block to map slider to domain boundary
     // all data should have the same range
-    
-    DataBlock db = zooms.getBlock(0);
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      db = zooms.getBlock(i);
-      if (db == null) {
-        continue;
-      } else {
-        break;
-      }
-    }
-    
+    DataBlock db = zooms.getXthLoadedBlock(1);
+
     long start = getMarkerLocation(db, leftSlider.getValue() );
     long end = getMarkerLocation(db, rightSlider.getValue() );
     zooms = new DataStore(ds, start, end);
@@ -404,6 +404,7 @@ implements ActionListener, ChangeListener {
     leftSlider.setValue(0); rightSlider.setValue(1000);
     setVerticalBars();
     zoomOut.setEnabled(true);
+    
   }
   
   /**

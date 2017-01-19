@@ -47,13 +47,13 @@ public abstract class Experiment {
     
     int idx;
     
-    idx = ds.getFirstLoadedBlock();
+    DataBlock db = ds.getXthLoadedBlock(1);
+    long interval = db.getInterval();
     
     DataBlock[] dataIn = ds.getData();
     
     xySeriesData = new XYSeriesCollection();
     
-    long interval = dataIn[idx].getInterval();
     // int length = dataIn[0].size();
     for (DataBlock data : dataIn) {
       
