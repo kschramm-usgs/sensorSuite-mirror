@@ -13,12 +13,6 @@ public class OrthogonalPanel extends ExperimentPanel {
   }
 
   @Override
-  public void setDataNames(String[] seedFileNames) {
-    // do nothing
-    return;
-  }
-
-  @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     // TODO Auto-generated method stub
     

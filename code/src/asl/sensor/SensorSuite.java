@@ -57,9 +57,7 @@ public class SensorSuite extends JPanel implements ActionListener {
   private DataPanel dataBox;
   private JTabbedPane tabbedPane; // holds set of experiment panels
 
-  private JButton generate; // run all calculations
-  private JButton savePDF;
-  private JButton clear;
+  private JButton generate, savePDF, clear; // run all calculations
   
   // used to store current directory locations
   private String seedDirectory = "data";
@@ -91,30 +89,6 @@ public class SensorSuite extends JPanel implements ActionListener {
     ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
     ep.updateData(ds, powerSpectra);
     
-    /*
-    for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
-    
-    boolean selectedIsTwoInput = 
-        ( (ExperimentPanel) tabbedPane.getSelectedComponent() ).isTwoInput();
-    
-      ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
-      if (!allThree) {
-        // triggered if only two inputs exist (not all three)
-        if ( !ep.isTwoInput() ) {
-          // ignore anything that requires more than two inputs then
-          continue;
-        } else if ( !selectedIsTwoInput ) {
-          // display the first panel that actually has data to update with
-          tabbedPane.setSelectedComponent(ep);
-          selectedIsTwoInput = true;
-        }
-      }
-    
-      // now update the panel with the correct data to plot
-      ep.updateData(ds, powerSpectra);
-      // updating the chartpanel auto-updates display
-    }
-    */
     savePDF.setEnabled(true);
   }
 
@@ -214,7 +188,7 @@ public class SensorSuite extends JPanel implements ActionListener {
     
     // TODO: replace duplicated effects factory-style methods?
     
-    generate = new JButton("Generate plots");
+    generate = new JButton("Generate plot");
     generate.setEnabled(true);
     generate.addActionListener(this);
     rightPanel.add(generate, rpc);
@@ -359,21 +333,7 @@ public class SensorSuite extends JPanel implements ActionListener {
             @Override
             public Integer doInBackground() {
               dataBox.setData( idx, file.getAbsolutePath() );
-              
               return 0;
-            }
-            
-            public void done() {
-              seedFileNames[idx].setText( file.getName() );
-              for ( int j = 0; j < tabbedPane.getTabCount(); ++j ) {
-                ExperimentPanel ep = 
-                    (ExperimentPanel) tabbedPane.getComponentAt(j);
-                String[] names = new String[seedFileNames.length];
-                for (int k = 0; k < names.length; ++k) {
-                  names[k] = seedFileNames[k].getText();
-                }
-                ep.setDataNames(names);
-              }
             }
           };
           // need a new thread so the UI won't lock with big programs

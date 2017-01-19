@@ -111,7 +111,7 @@ public class DataStore {
     return responses;
   }
   
-  public int amountOfDataLoaded() {
+  public int numberFullySet() {
     int loaded = 0;
     for (int i = 0; i < FILE_COUNT; ++i) {
       if ( bothComponentsSet(i) ) {
@@ -254,7 +254,7 @@ public class DataStore {
    * @param x x-th set of loaded data to get, starting at 1
    * @return index of the loaded data
    */
-  public int getIndexOfXthLoadedData(int x) {
+  public int getXthFullyLoadedIndex(int x) {
     if (x < 1) {
       throw new IndexOutOfBoundsException("Parameter must be >= 1");
     }

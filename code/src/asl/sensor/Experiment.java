@@ -45,8 +45,6 @@ public abstract class Experiment {
    */
   public void setData(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
-    int idx;
-    
     DataBlock db = ds.getXthLoadedBlock(1);
     long interval = db.getInterval();
     
@@ -122,8 +120,7 @@ public abstract class Experiment {
       DataBlock[] dataIn, 
       FFTResult[] psd,
       boolean freqSpace,
-      XYSeriesCollection xysc,
-      Experiment exp) {
+      XYSeriesCollection xysc) {
     
     // TODO: throw exception if dataIn and psd are diff lengths
     

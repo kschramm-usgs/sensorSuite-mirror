@@ -194,9 +194,4 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     // setting the new chart is enough to update the plots
   }
 
-  public void setDataNames(String[] seedFileNames) {
-    // nothing to use the filenames for here
-    return;
-  }
-  
 }

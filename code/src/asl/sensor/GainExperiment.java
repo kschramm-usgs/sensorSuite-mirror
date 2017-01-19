@@ -11,53 +11,6 @@ import org.jfree.chart.axis.NumberAxis;
 
 public class GainExperiment extends Experiment {
 
-  private double[] gainStage1;
-  
-  /**
-   * Finds the maximum value of PSD plot curve
-   * @param fft PSD calculation, including both FFT function and matching
-   * frequencies
-   * @return The index of the peak location
-   */
-  private int getPeakIndex(int idx) {
-    
-    FFTResult fft = fftResults.get(idx);
-    
-    Complex[] timeSeries = fft.getFFT();
-    double[] freqs = fft.getFreqs();
-    
-    double max = Double.NEGATIVE_INFINITY;
-    int index = 0;
-    for (int i = 0; i < timeSeries.length; ++i) {
-      Complex temp = timeSeries[i].multiply(Math.pow(2*Math.PI*freqs[i],4));
-      double result = 10*Math.log10( temp.abs() );
-      if ( result < Double.POSITIVE_INFINITY && result > max ) {
-        max = result;
-        index = i;
-      }
-    }
-    return index;
-  }
-  
-  public double[] getOctaveCenteredAtPeak(int idx) {
-    
-    int center = getPeakIndex(idx);
-    double[] freqs = fftResults.get(idx).getFreqs();
-    double peakFreq = freqs[center];
-    
-    double lowFreq = peakFreq / Math.sqrt(2);
-    double highFreq = peakFreq * Math.sqrt(2);
-    
-    return new double[]{lowFreq, highFreq};
-  }
-  
-  public double[] getStatsFromPeak(int idx0, int idx1) {
-    double[] freqBounds = getOctaveCenteredAtPeak(idx0);
-    double freq1 = freqBounds[0];
-    double freq2 = freqBounds[1];
-    return getStatsFromFreqs(idx0, idx1, freq1, freq2);
-  }
-  
   /**
    * Gets the indices denoting the inclusive range of a frequency bound on
    * a list of input frequencies
@@ -151,8 +104,10 @@ public class GainExperiment extends Experiment {
     return Math.sqrt(sigma);
   }
   
+  private Double[] gainStage1;
+  
   private List<FFTResult> fftResults;
-
+  
   private double ratio;
   
   private double sigma;
@@ -175,38 +130,52 @@ public class GainExperiment extends Experiment {
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);
   }
-  
+
   /**
    * Populate XYSeriesCollection with all input data (will be trimmed on plot)
    */
   @Override
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
-    gainStage1 = new double[DataStore.FILE_COUNT];
+    int dataCount = ds.numberFullySet(); // need both timeseries and resps
+    
+    ArrayList<Double> gainArray = new ArrayList<Double>();
+    
     InstrumentResponse[] resps = ds.getResponses();
-    for (int i = 0; i < gainStage1.length; ++i) {
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if (resps[i] == null) {
         continue;
       }
       double[] gains = resps[i].getGain();
-      gainStage1[i] = gains[1];
+      gainArray.add(gains[1]);
     }
     
-    fftResults = new ArrayList<FFTResult>( Arrays.asList(psd) );
+    gainStage1 = gainArray.toArray(new Double[0]);
+    
+    fftResults = new ArrayList<FFTResult>();
+    ArrayList<DataBlock> blocksPlotting = new ArrayList<DataBlock>();
+    
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      if ( ds.bothComponentsSet(i) ) {
+        fftResults.add(psd[i]);
+        blocksPlotting.add(ds.getBlock(i));
+      }
+    }
     
     freqSpace = false;
     
-    DataBlock[] dataIn = ds.getData();
-    // used to get values related to range, etc.
-    
     xySeriesData.setAutoWidth(true);
     
-    addToPlot(dataIn, psd, freqSpace, xySeriesData, this);
+    addToPlot(
+        blocksPlotting.toArray(new DataBlock[0]), 
+        fftResults.toArray(new FFTResult[0]), 
+        freqSpace, 
+        xySeriesData); // TODO: is passing in the experiment itself even necessary?!
     
     xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
     
   }
-
+  
   @Override
   /**
    * Specifies plotting the NLNM curve in bold
@@ -215,6 +184,44 @@ public class GainExperiment extends Experiment {
     return new String[]{"NLNM"};
   }
   
+  public double[] getOctaveCenteredAtPeak(int idx) {
+    
+    int center = getPeakIndex(idx);
+    double[] freqs = fftResults.get(idx).getFreqs();
+    double peakFreq = freqs[center];
+    
+    double lowFreq = peakFreq / Math.sqrt(2);
+    double highFreq = peakFreq * Math.sqrt(2);
+    
+    return new double[]{lowFreq, highFreq};
+  }
+  
+  /**
+   * Finds the maximum value of PSD plot curve
+   * @param fft PSD calculation, including both FFT function and matching
+   * frequencies
+   * @return The index of the peak location
+   */
+  private int getPeakIndex(int idx) {
+    
+    FFTResult fft = fftResults.get(idx);
+    
+    Complex[] timeSeries = fft.getFFT();
+    double[] freqs = fft.getFreqs();
+    
+    double max = Double.NEGATIVE_INFINITY;
+    int index = 0;
+    for (int i = 0; i < timeSeries.length; ++i) {
+      Complex temp = timeSeries[i].multiply(Math.pow(2*Math.PI*freqs[i],4));
+      double result = 10*Math.log10( temp.abs() );
+      if ( result < Double.POSITIVE_INFINITY && result > max ) {
+        max = result;
+        index = i;
+      }
+    }
+    return index;
+  }
+
   /**
    * Given indices to specific PSD data sets and frequency boundaries, gets
    * the mean and standard deviation ratios 
@@ -245,33 +252,33 @@ public class GainExperiment extends Experiment {
    * frequency boundaries, gets the mean and standard deviation ratios
    * @param idx0 Index of numerator PSD
    * @param idx1 Index of denominator PSD
-   * @param lowInd Lower-bound index of PSDs' frequency array
-   * @param highInd Upper-bound index of PSDs' frequency array
+   * @param lowBnd Lower-bound index of PSDs' frequency array
+   * @param higBnd Upper-bound index of PSDs' frequency array
    * @return
    */
   private double[] getStatsFromIndices(int idx0, int idx1,
-      int lowInd, int highInd) {
+      int lowBnd, int higBnd) {
     
     // make sure lowInd really is the lower index
-    if (lowInd > highInd) {
-      int temp = highInd;
-      highInd = lowInd;
-      lowInd = temp;
+    if (lowBnd > higBnd) {
+      int temp = higBnd;
+      higBnd = lowBnd;
+      lowBnd = temp;
     }
     
     FFTResult plot0 = fftResults.get(idx0);
     FFTResult plot1 = fftResults.get(idx1);
     
-    double mean0 = mean(plot0, lowInd, highInd);
+    double mean0 = mean(plot0, lowBnd, higBnd);
     // since both datasets must have matching interval, PSDs have same freqs
-    double mean1 = mean(plot1, lowInd, highInd);
+    double mean1 = mean(plot1, lowBnd, higBnd);
     
     // double MIN_VALUE field is effectively java's machine epsilon
     
     ratio = (mean0+Double.MIN_VALUE) / (mean1+Double.MIN_VALUE); 
       // prevent division by 0
     
-    sigma = sdev(plot0, plot1, ratio, lowInd, highInd);
+    sigma = sdev(plot0, plot1, ratio, lowBnd, higBnd);
     
     double gain1 = gainStage1[idx0];
     double gain2 = gainStage1[idx1]/Math.sqrt(ratio);
@@ -279,6 +286,13 @@ public class GainExperiment extends Experiment {
     // calculate ratio and sigma over the range
     
     return new double[]{ratio, sigma, gain1, gain2};
+  }
+  
+  public double[] getStatsFromPeak(int idx0, int idx1) {
+    double[] freqBounds = getOctaveCenteredAtPeak(idx0);
+    double freq1 = freqBounds[0];
+    double freq2 = freqBounds[1];
+    return getStatsFromFreqs(idx0, idx1, freq1, freq2);
   }
 
 }

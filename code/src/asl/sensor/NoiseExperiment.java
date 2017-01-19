@@ -74,7 +74,7 @@ public class NoiseExperiment extends Experiment {
       freqRespd[i] = ir.applyResponseToInput( freqs );
     }
     
-    addToPlot(dataIn, psd, freqSpace, xySeriesData, this);
+    addToPlot(dataIn, psd, freqSpace, xySeriesData);
     
     // spectra[i] is crosspower pii, now to get pij terms for i!=j
     FFTResult fft = 

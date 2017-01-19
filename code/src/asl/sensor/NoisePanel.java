@@ -43,7 +43,7 @@ public class NoisePanel extends ExperimentPanel {
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     
-    if (ds.amountOfDataLoaded() < 3) {
+    if (ds.numberFullySet() < 3) {
       displayErrorMessage("INSUFFICIENT DATA LOADED");
       return;
     }

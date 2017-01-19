@@ -58,10 +58,13 @@ implements ChangeListener {
     recalcButton.setEnabled(false);
     recalcButton.addActionListener(this);
     
+    // add dummy entries to the combo box, but don't let them get filled
     firstSeries = new JComboBox<String>();
     firstSeries.addActionListener(this);
+    firstSeries.setEnabled(false);
     secondSeries = new JComboBox<String>();
     secondSeries.addActionListener(this);
+    secondSeries.setEnabled(false);
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       String out = "FILE NOT LOADED (" + i + ")";
@@ -69,12 +72,8 @@ implements ChangeListener {
       secondSeries.addItem(out);
     }
 
-    // we will force these to be disabled to load in first two data sets
-    // in all cases -- so we can only load in two inputs and get that value
     firstSeries.setSelectedIndex(0);
-    firstSeries.setEnabled(false);
     secondSeries.setSelectedIndex(1);
-    secondSeries.setEnabled(false);
     
     // create layout
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
@@ -138,7 +137,7 @@ implements ChangeListener {
       // if we got here from removing the items from the list
       // (which happens when we load in new data)
       // don't do anything
-      if (firstSeries.getItemCount() < 2) {
+      if ( !firstSeries.isEnabled() ){
         return;
       }
       
@@ -146,31 +145,28 @@ implements ChangeListener {
       // assume the user is setting firstSeries selection correctly,
       // and thus make sure that the secondSeries doesn't have a collision
       if (idx0 == idx1) {
-        secondSeries.setSelectedIndex( 
-            (idx1 + 1) % secondSeries.getItemCount() );
+        idx1 = (idx1 + 1) % secondSeries.getItemCount();
+        secondSeries.setSelectedIndex(idx1);
       }
       
     } else if ( e.getSource() == secondSeries ) {      
       
       // same as above, do nothing
-      if (secondSeries.getItemCount() < 2) {
+      if ( !secondSeries.isEnabled() ) {
         return;
       }
       
       // same as with the above, but assume secondSeries selection intentional
       if (idx0 == idx1) {
-        firstSeries.setSelectedIndex(
-            (idx0 + 1) % firstSeries.getItemCount() );
+        idx0 = (idx0 + 1) % firstSeries.getItemCount();
+        firstSeries.setSelectedIndex(idx0);
       }
       
     }
     // now that we have a guarantee of no collision, update data accordingly    
     if ( e.getSource() == firstSeries || e.getSource() == secondSeries) {
       // if we selected a new series to plot, redraw the chart
-      if (expResult.getData() != null) {
-        updateDataDriver();
-
-      }
+      updateDataDriver(idx0, idx1);
     }
     
   }
@@ -196,18 +192,27 @@ implements ChangeListener {
     return (int) ( ( Math.log10(prd) - low ) / scale );
   }
   
+
   /**
-   * Used to populate the combo box with the names of inputted data
+   * Used to populate the comboboxes with the incoming data
+   * @param ds DataStore object being processed 
    */
-  @Override
-  public void setDataNames(String[] seedFileNames) {
+  private void setDataNames(DataStore ds) {
+    
+    firstSeries.setEnabled(false);
+    secondSeries.setEnabled(false);
+    
     firstSeries.removeAllItems();
     secondSeries.removeAllItems();
+    
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      String out = seedFileNames[i] + " (" + i + ")";
-      firstSeries.addItem(out);
-      secondSeries.addItem(out);
+      if ( ds.bothComponentsSet(i) ) {
+        String name = ds.getBlock(i).getName();
+        firstSeries.addItem( name );
+        secondSeries.addItem( name );
+      }
     }
+    
     firstSeries.setSelectedIndex(0);
     secondSeries.setSelectedIndex(1);
   }
@@ -317,6 +322,8 @@ implements ChangeListener {
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     
+    setDataNames(ds);
+    
     try{
       expResult.setData(ds, psd, freqSpace);
     } catch (IndexOutOfBoundsException e) {
@@ -325,27 +332,11 @@ implements ChangeListener {
     }
     
     // need to have 2 series for relative gain
-    if ( ds.amountOfDataLoaded() > 2 ) {
-      firstSeries.setEnabled(true);
-      secondSeries.setEnabled(true);
-      updateDataDriver();
-    } else {
-      // get first and then second loaded data sets
-      int idx0, idx1;
-      try {
-        idx0 = ds.getIndexOfXthLoadedData(1);
-        idx1 = ds.getIndexOfXthLoadedData(2);
-        firstSeries.setEnabled(false);
-        secondSeries.setEnabled(false);
-        updateDataDriver(idx0, idx1);
-      } catch (IndexOutOfBoundsException e) {
-        displayErrorMessage("INSUFFICIENT DATA LOADED");
-        return;
-      }
-
-
-    }
-    
+    firstSeries.setEnabled(true);
+    secondSeries.setEnabled(true);
+    int idx0 = firstSeries.getSelectedIndex();
+    int idx1 = secondSeries.getSelectedIndex();
+    updateDataDriver(idx0, idx1);
 
   }
   
@@ -354,28 +345,16 @@ implements ChangeListener {
    * ones to display based on combo boxes and then do the statistics on those
    * Called when new data is fed in or when the combo box active entries change
    */
-  private void updateDataDriver() {
-    
-    int idx0 = firstSeries.getSelectedIndex();
-    int idx1 = secondSeries.getSelectedIndex();
-    updateDataDriver(idx0, idx1);
-  }
-  
-    
   private void updateDataDriver(int idx0, int idx1) {
     
-    // have to make sure the plotting indices get properly set before
-    // running the backend, so that we don't add more plots than we need
-     
-    XYSeriesCollection xysc = expResult.getData();
+    // plot has 3 components: source, destination, NLNM line plot
+    XYSeriesCollection xyscIn = expResult.getData();
+    XYSeriesCollection xysc = new XYSeriesCollection();
+    xysc.addSeries( xyscIn.getSeries(idx0) );
+    xysc.addSeries( xyscIn.getSeries(idx1) );
+    xysc.addSeries( xyscIn.getSeries("NLNM") );
     
-    XYSeriesCollection plotXYSC = new XYSeriesCollection();
-      
-    plotXYSC.addSeries( xysc.getSeries(idx0) );
-    plotXYSC.addSeries( xysc.getSeries(idx1) );
-    plotXYSC.addSeries( xysc.getSeries("NLNM") );
-    
-    chart = populateChart(plotXYSC, freqSpace);
+    chart = populateChart(xysc, freqSpace);
     chartPanel.setChart(chart);
     chartPanel.setMouseZoomable(false);
     
