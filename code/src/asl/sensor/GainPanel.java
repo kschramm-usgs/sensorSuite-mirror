@@ -317,9 +317,14 @@ implements ChangeListener {
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     
-    expResult.setData(ds, psd, freqSpace);
+    if (ds.amountOfDataLoaded() < 2) {
+      displayErrorMessage("INSUFFICIENT DATA LOADED");
+      return;
+    }
     
-    if ( ds.allDataSet() ) {
+    expResult.setData(ds, psd, freqSpace);
+    // need to have 2 series for relative gain
+    if ( ds.amountOfDataLoaded() > 2 ) {
       firstSeries.setEnabled(true);
       secondSeries.setEnabled(true);
     } else {

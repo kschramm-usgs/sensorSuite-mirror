@@ -86,7 +86,7 @@ public class InstrumentResponse {
     zeros.add( new Complex(0.0) ); // calculated response zero is at 0
     
     unitType = Unit.ACCELERATION;
-    transferType = TransferFunction.LINEAR;
+    transferType = TransferFunction.LAPLACIAN;
     
     normalization = 1.0; // TODO: check if correct
     
@@ -301,8 +301,8 @@ public class InstrumentResponse {
               unitType = Unit.ACCELERATION;
               break;
             default:
-              System.out.println(unit);
-              String e = "Nonstandard units, or not a velocity or acceleration";
+              String e = "Unit type was given as " + unit + ".\n";
+              e += "Nonstandard unit, or not a velocity or acceleration";
               throw new IOException(e);
             }
             break;

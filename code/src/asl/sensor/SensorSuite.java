@@ -73,18 +73,15 @@ public class SensorSuite extends JPanel implements ActionListener {
     DataStore ds = dataBox.getData();
     InstrumentResponse[] irs = ds.getResponses();
     
-    boolean allThree = ds.allDataSet();
-    
-    int limit = 2;
-    if (allThree) {
-      limit = DataStore.FILE_COUNT;
-    }
-    
-    FFTResult[] powerSpectra = new FFTResult[limit];
+    FFTResult[] powerSpectra = new FFTResult[DataStore.FILE_COUNT];
     
     dataBox.showRegionForGeneration();
     
-    for (int i = 0; i < limit; ++i) {
+    for (int i = 0; i < powerSpectra.length; ++i) {
+      
+      if ( !ds.bothComponentsSet(i) ) {
+        continue;
+      }
       
       DataBlock data = ds.getBlock(i);
       InstrumentResponse ir = irs[i];
@@ -92,10 +89,15 @@ public class SensorSuite extends JPanel implements ActionListener {
       powerSpectra[i] = FFTResult.crossPower(data, data, ir, ir);
     }
     
+    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+    ep.updateData(ds, powerSpectra);
+    
+    /*
+    for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
+    
     boolean selectedIsTwoInput = 
         ( (ExperimentPanel) tabbedPane.getSelectedComponent() ).isTwoInput();
     
-    for ( int i = 0; i < tabbedPane.getTabCount(); ++i ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getComponentAt(i);
       if (!allThree) {
         // triggered if only two inputs exist (not all three)
@@ -108,10 +110,12 @@ public class SensorSuite extends JPanel implements ActionListener {
           selectedIsTwoInput = true;
         }
       }
+    
       // now update the panel with the correct data to plot
       ep.updateData(ds, powerSpectra);
       // updating the chartpanel auto-updates display
     }
+    */
     savePDF.setEnabled(true);
   }
 
@@ -212,7 +216,7 @@ public class SensorSuite extends JPanel implements ActionListener {
     // TODO: replace duplicated effects factory-style methods?
     
     generate = new JButton("Generate plots");
-    generate.setEnabled(false);
+    generate.setEnabled(true);
     generate.addActionListener(this);
     rightPanel.add(generate, rpc);
     rpc.gridy += 1;
@@ -333,7 +337,6 @@ public class SensorSuite extends JPanel implements ActionListener {
       for (JTextField fn : respFileNames) {
         fn.setText("NO FILE LOADED");
       }
-      generate.setEnabled(false);
       return;
     }
     
@@ -372,7 +375,6 @@ public class SensorSuite extends JPanel implements ActionListener {
                 }
                 ep.setDataNames(names);
               }
-              checkIfDataSet();
             }
           };
           // need a new thread so the UI won't lock with big programs
@@ -392,7 +394,6 @@ public class SensorSuite extends JPanel implements ActionListener {
           dataBox.setResponse( i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
         }
-        checkIfDataSet();
         return;
       }
       
@@ -429,13 +430,6 @@ public class SensorSuite extends JPanel implements ActionListener {
     }
 
 
-  }
-
-  private void checkIfDataSet() {
-    // we can start generating data as soon as the first two are set
-    if ( dataBox.firstTwoSet() ) {
-      generate.setEnabled(true);
-    }
   }
   
   /**

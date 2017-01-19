@@ -11,27 +11,13 @@ import org.jfree.data.xy.XYSeriesCollection;
 public class StepPanel extends ExperimentPanel {
 
   JFileChooser fc;
-  JButton loadCal;
-  JLabel fileNameArea;
-  
   
   public StepPanel(ExperimentEnum exp) {
     super(exp);
     
-    fc = new JFileChooser();
-    
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     
-    loadCal = new JButton("Load calibration data");
-    fileNameArea = new JLabel("NO FILE LOADED");
-    
     this.add(chartPanel);
-    
-    JPanel loadPanel = new JPanel();
-    loadPanel.setLayout( new BoxLayout(loadPanel, BoxLayout.X_AXIS) );
-    loadPanel.add(loadCal);
-    loadPanel.add(fileNameArea);
-    this.add(loadPanel);
     
   }
 

@@ -65,20 +65,6 @@ public class DataStore {
   }
   
   /**
-   * Checks if first two blocks and matching responses are set
-   * @return True if both of the first two sets have loaded miniSEED and RESP
-   */
-  public boolean firstTwoSet() {
-    // get results for indices 0 and 1 only
-    for (int i = 0; i < 2; ++i) {
-      if (!thisBlockIsSet[i] || !thisResponseIsSet[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-  
-  /**
    * Return a single data block according to the passed index 
    * @param idx Index of datablock, corresponding to data panel plot index
    * @return Timeseries data for corresponing plot
@@ -125,15 +111,25 @@ public class DataStore {
     return responses;
   }
   
-  public boolean allDataSet() {
+  public int amountOfDataLoaded() {
+    int loaded = 0;
     for (int i = 0; i < FILE_COUNT; ++i) {
-      if (!thisBlockIsSet[i] || !thisResponseIsSet[i]) {
-        return false;
+      if ( bothComponentsSet(i) ) {
+        ++loaded;
       }
     }
-    
-    return true;
-}
+    return loaded;
+  }
+  
+  public int numberOfBlocksLoaded() {
+    int loaded = 0;
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (thisBlockIsSet[i]){
+        ++loaded;
+      }
+    }
+    return loaded;
+  }
   
   public boolean[] responsesAreSet() {
     return thisResponseIsSet;
@@ -148,12 +144,15 @@ public class DataStore {
   public XYSeries setData(int idx, String filepath) {
     
     DataBlock xy = TimeSeriesUtils.getTimeSeries(filepath);
-    
+    thisBlockIsSet[idx] = true;
     dataBlockArray[idx] = xy;
     
-    outToPlots[idx] = xy.toXYSeries();
+    if (numberOfBlocksLoaded() > 1) {
+      // loading in multiple series of data? trim to common time now
+      trimToCommonTime();
+    }
     
-    thisBlockIsSet[idx] = true;
+    outToPlots[idx] = xy.toXYSeries();
     
     return outToPlots[idx];
   }
@@ -220,5 +219,22 @@ public class DataStore {
       data.trim(lastStartTime, firstEndTime);
     }
     
+  }
+  
+  public boolean timeSeriesSet(int idx) {
+    return thisBlockIsSet[idx];
+  }
+
+  /**
+   * Checks if both components at a specific index are set
+   * @param idx Index of data to check if set or not
+   * @return True if a miniseed and response have been both loaded in
+   */
+  public boolean bothComponentsSet(int idx) {
+    return (thisBlockIsSet[idx] && thisResponseIsSet[idx]);
+  }
+  
+  public boolean blockIsSet(int idx) {
+    return thisBlockIsSet[idx];
   }
 }

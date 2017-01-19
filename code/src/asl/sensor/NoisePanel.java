@@ -46,6 +46,11 @@ public class NoisePanel extends ExperimentPanel {
   @Override
   public void updateData(DataStore ds, FFTResult[] psd) {
     
+    if (ds.amountOfDataLoaded() < 3) {
+      displayErrorMessage("INSUFFICIENT DATA LOADED");
+      return;
+    }
+    
     boolean freqSpace = freqSpaceBox.getState();
     
     super.updateData(ds, psd, freqSpace);

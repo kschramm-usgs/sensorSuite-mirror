@@ -64,8 +64,6 @@ public abstract class Experiment {
       }
     }
     
-    // used to have a check that all 3 were set, not valid any longer
-    
     backend(ds, psd, freqSpace);
   }
   

@@ -181,7 +181,6 @@ implements ActionListener, ChangeListener {
       this.resetPlotZoom(i);
     }
     
-    // surround this with a swingworker somehow?
     XYSeries ts = ds.setData(idx, filepath);
     
     try {
@@ -288,31 +287,6 @@ implements ActionListener, ChangeListener {
     zooms.setResponse(idx, filepath);
   }
   
-  /**
-   * Checks if all the data has been loaded
-   * @return True if all data is set, including responses
-   */
-  public boolean allDataSet() {
-    return ds.allDataSet();
-  }
-  
-  public boolean firstTwoSet() {
-    return ds.firstTwoSet();
-  }
-  
-  /**
-   * Method to check if plots have been set with data
-   * @return True if all plots are set (responses don't need to be loaded)
-   */
-  private boolean plotsAreLoaded() {
-    for (boolean bool : set) {
-      if (!bool) {
-        return false;
-      }
-    }
-    return true;
-  }
-  
   
   /**
    * Returns the selected region of underlying DataStore, to be fed 
@@ -320,10 +294,25 @@ implements ActionListener, ChangeListener {
    * @return A DataStore object (contains arrays of DataBlocks & Responses)
    */
   public DataStore getData() {
-
+    
+    if ( ds.amountOfDataLoaded() < 1 ) {
+      return new DataStore();
+    }
+    
     int leftValue = leftSlider.getValue();
     int rightValue = rightSlider.getValue();
-    DataBlock db = zooms.getBlock(0); // dataBlocks should have same time range
+    DataBlock db = zooms.getBlock(0); // default initialization
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      // dataBlocks should have same time range
+      db = zooms.getBlock(i); 
+      if (db == null) {
+        // if this data wasn't set, try the next one
+        continue;
+      } else {
+        break; // all data should have the same range
+      }
+    }
+
     long start = getMarkerLocation(db, leftValue);
     long end = getMarkerLocation(db, rightValue);
     return new DataStore(zooms, start, end);
@@ -385,7 +374,24 @@ implements ActionListener, ChangeListener {
   }
   
   public void showRegionForGeneration() {
+    
+    if ( ds.amountOfDataLoaded() < 1 ) {
+      return;
+    }
+    
+    // get (any) loaded data block to map slider to domain boundary
+    // all data should have the same range
+    
     DataBlock db = zooms.getBlock(0);
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      db = zooms.getBlock(i);
+      if (db == null) {
+        continue;
+      } else {
+        break;
+      }
+    }
+    
     long start = getMarkerLocation(db, leftSlider.getValue() );
     long end = getMarkerLocation(db, rightSlider.getValue() );
     zooms = new DataStore(ds, start, end);
@@ -421,6 +427,11 @@ implements ActionListener, ChangeListener {
    * @return Buffered image of the plots, writeable to file
    */
   public BufferedImage getAsImage() {
+    // if all 3 plots are set, height of panel is height of image
+    int height = allCharts.getHeight();
+    // otherwise, we only use the height of images actually set
+    height /= DataStore.FILE_COUNT;
+    height *= ds.numberOfBlocksLoaded();
     return getAsImage( allCharts.getWidth(), allCharts.getHeight() );
   }
   
@@ -438,10 +449,13 @@ implements ActionListener, ChangeListener {
     width = Math.max( width, chartPanels[0].getWidth() );
     // height = Math.max( height, shownHeight );
     
+    int loaded = ds.numberOfBlocksLoaded();
+    // TODO: don't bother including plots that have no data loaded
+    // (replace FILE_COUNT with a call to 'amountOfDataLoaded' or similar)
     // cheap way to make sure height is a multiple of the chart count
-    height = (height*DataStore.FILE_COUNT)/DataStore.FILE_COUNT;
+    height = (height*loaded)/loaded;
     
-    int chartHeight = height/DataStore.FILE_COUNT;
+    int chartHeight = height/loaded;
     
     Dimension outSize = new Dimension(width, height);
 
@@ -453,7 +467,11 @@ implements ActionListener, ChangeListener {
     
     toDraw.setLayout( new BoxLayout(toDraw, BoxLayout.Y_AXIS) );
 
-    for (ChartPanel cp : chartPanels) {
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      if ( !ds.blockIsSet(i) ) {
+        continue;
+      }
+      ChartPanel cp = chartPanels[i];
       // toDraw.add( Box.createVerticalStrut(5) );
       Dimension chartSize = new Dimension(width, chartHeight);
       ChartPanel outPanel = new ChartPanel( cp.getChart() );
