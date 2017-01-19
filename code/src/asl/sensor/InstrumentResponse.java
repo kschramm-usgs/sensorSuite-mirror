@@ -27,10 +27,19 @@ public class InstrumentResponse {
   private double normalization;
   private double normalFreq; // ♫ cuz she's a normalFreq, normalFreq 
   
+  /**
+   * Reads in an instrument response from a RESP file
+   * @param filename full path of the RESP file
+   * @throws IOException
+   */
   public InstrumentResponse(String filename) throws IOException {
     parseResponseFile(filename);
   }
   
+  /**
+   * Create a copy of an existing response object
+   * @param responseIn The response object to be copied
+   */
   public InstrumentResponse(InstrumentResponse responseIn) {
     transferType = responseIn.getTransferFunction();
     
@@ -47,6 +56,11 @@ public class InstrumentResponse {
     
   }
   
+  /**
+   * Create a response file from a corner frequency and damping factor
+   * @param corner Corner frequency (Hz)
+   * @param damping Damping factor
+   */
   public InstrumentResponse(double corner, double damping) {
     double omega = 2 * Math.PI * corner; // omega_0
     
@@ -78,34 +92,70 @@ public class InstrumentResponse {
     
   }
   
+  /**
+   * Get the transfer function of this response file (laplacian, linear)
+   * @return
+   */
   public TransferFunction getTransferFunction() {
     return transferType;
   }
   
+  /**
+   * Get the 3 gain stages of the RESP file. Stage x is at index x. That is,
+   * the sensitivity is at 0, the sensor gain is at 1, and the digitizer
+   * gain is at 2.
+   * @return
+   */
   public double[] getGain() {
     return gain;
   }
   
+  /**
+   * Return the list of zeros in the RESP file, not including error terms
+   * @return List of complex numbers; index y is the yth zero in response list
+   */
   public List<Complex> getZeros() {
     return zeros;
   }
   
+  /**
+   * Return the list of poles in the RESP file, not including error terms
+   * @return List of complex numbers; index y is the yth pole in response list
+   */
   public List<Complex> getPoles() {
     return poles;
   }
   
+  /**
+   * Gives the unit type of the RESP file (displacement, velocity, acceleration)
+   * @return
+   */
   public Unit getUnits() {
     return unitType;
   }
   
+  /**
+   * Get the normalization of the response
+   * @return
+   */
   public double getNormalization() {
     return normalization;
   }
   
+  /**
+   * Get the normalization frequency
+   * @return
+   */
   public double getNormalizationFrequency() {
     return normalFreq;
   }
   
+  /**
+   * Apply the values of this response object to a list of frequencies and
+   * return the resulting (complex) frequencies
+   * @param frequencies inputted list of frequencies, such as FFT windows
+   * @return application of the response to those frequencies
+   */
   public Complex[] applyResponseToInput(double[] frequencies) {
    
     Complex[] resps = new Complex[frequencies.length];
@@ -322,7 +372,12 @@ public class InstrumentResponse {
     
   }
   
-  private void parseTermAsComplex(String line, Complex[] array) {
+  /**
+   * Extract the real and imaginary terms from a pole or zero in a RESP file
+   * @param line the line the zero or pole is found on in the file
+   * @param array the array of zeros and poles the term will be added to
+   */
+  private static void parseTermAsComplex(String line, Complex[] array) {
     // reparse the line. why are we doing this?
     // if a number is negative, only one space between it and prev. number
     // and the previous split operation assumed > 2 spaces between numbers
