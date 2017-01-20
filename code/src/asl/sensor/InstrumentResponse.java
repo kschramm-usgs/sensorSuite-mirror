@@ -6,18 +6,20 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.math3.complex.Complex;
 
 public class InstrumentResponse {
 
-  public static final int GAIN_STAGES = 3; // sensitivity, stage 1, stage 2
   
   private TransferFunction transferType;
   
   // gain values, indexed by stage
-  private double[] gain = new double[GAIN_STAGES];
+  private List<Double> gain;
   
   private List<Complex> zeros;
   private List<Complex> poles;
@@ -43,8 +45,7 @@ public class InstrumentResponse {
   public InstrumentResponse(InstrumentResponse responseIn) {
     transferType = responseIn.getTransferFunction();
     
-    int len = responseIn.getGain().length;
-    gain = Arrays.copyOf( responseIn.getGain(), len );
+    gain = new ArrayList<Double>( responseIn.getGain() );
 
     zeros = new ArrayList<Complex>( responseIn.getZeros() );
     poles = new ArrayList<Complex>( responseIn.getPoles() );
@@ -80,7 +81,8 @@ public class InstrumentResponse {
     poles = new ArrayList<Complex>();
     poles.add(pole1);
     poles.add(pole2);
-    gain = new double[]{10.0, 1.0, 10.0}; // arbitrary choice of 10.0 sens.
+    gain = Arrays.asList(new Double[]{10.0, 1.0, 10.0}); 
+      // arbitrary choice of 10.0 sens.
     
     zeros = new ArrayList<Complex>();
     zeros.add( new Complex(0.0) ); // calculated response zero is at 0
@@ -106,7 +108,7 @@ public class InstrumentResponse {
    * gain is at 2.
    * @return
    */
-  public double[] getGain() {
+  public List<Double> getGain() {
     return gain;
   }
   
@@ -161,14 +163,13 @@ public class InstrumentResponse {
     Complex[] resps = new Complex[frequencies.length];
     
     // precalculate gain for scaling the response
-    // use gain1 * gain2 unless gain0 differs by more than 10%
+    // TODO: use sensitivity if differs from gain product by more than 10%
     // (apparently an issue with Q680 detectors)
-    double diff = 100 * ( gain[0] - (gain[1]*gain[2]) ) / gain[0];
-    double scale;
-    if (Math.abs(diff) > 10) {
-      scale = gain[0];
-    } else {
-      scale = gain[1] * gain[2];
+    double scale = 1.;
+    // stage 0 is sensitivity (supposed to be product of all gains)
+    // we will get scale by multiplying all gain stages except for it
+    for (int i = 1; i < gain.size(); ++i) {
+      scale *= gain.get(i);
     }
     
     // how many times do we need to do differentiation?
@@ -253,6 +254,8 @@ public class InstrumentResponse {
     
     BufferedReader br;
     try {
+      // <gain stage, gain value>
+      Map<Integer, Double> gainMap = new HashMap<Integer, Double>();
       br = new BufferedReader( new FileReader(filename) );
       String line = br.readLine();
       
@@ -344,13 +347,12 @@ public class InstrumentResponse {
           case "B058F04":
             
             // should come immediately and only after the gain sequence number
-            
-            // gain value -- has to have had stage sequence already set
             // again, it's the third full word, this time as a double
-            if (gainStage < 3) {
-              // values we take -- 0, 1, 2
-              gain[gainStage] = Double.parseDouble(words[2]);
-            }
+            // map allows us to read in the stages in whatever order
+            // in the event they're not sorted in the response file
+            // and allows us to have basically arbitrarily many stages
+            gainMap.put( gainStage, Double.parseDouble(words[2]) );
+            
             // reset the stage to prevent data being overwritten
             gainStage = -1;
             break;
@@ -361,6 +363,14 @@ public class InstrumentResponse {
         
       } // end of file-read loop (EOF reached, line is null)
       
+      // turn map of gain stages into list
+      List<Integer> stages = new ArrayList<Integer>( gainMap.keySet() );
+      Collections.sort( stages );
+      gain = new ArrayList<Double>();
+      for (int stage : stages) {
+        gain.add( gainMap.get(stage) );
+      }
+      // turn pole/zero arrays into lists
       zeros = Arrays.asList(zerosArr);
       poles = Arrays.asList(polesArr);
       

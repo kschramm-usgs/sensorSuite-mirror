@@ -182,16 +182,4 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   
   public abstract void updateData(DataStore ds, FFTResult[] psd);
 
-  public void updateData(DataStore ds, FFTResult[] psd, boolean freqSpace) {
-    
-    expResult.setData(ds, psd, freqSpace);
-    
-    chart = populateChart(expResult.getData(), freqSpace);
-    
-    chartPanel.setChart(chart);
-    chartPanel.setMouseZoomable(false);
-    
-    // setting the new chart is enough to update the plots
-  }
-
 }

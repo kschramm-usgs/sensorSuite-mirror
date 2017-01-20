@@ -1,6 +1,7 @@
 package asl.sensor;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.jfree.data.xy.XYSeries;
 
@@ -47,16 +48,20 @@ public class DataStore {
   public DataStore(DataStore ds, long start, long end) {
     dataBlockArray = new DataBlock[FILE_COUNT];
     responses = new InstrumentResponse[FILE_COUNT];
+    thisBlockIsSet = new boolean[FILE_COUNT];
+    thisResponseIsSet = new boolean[FILE_COUNT];
     for (int i = 0; i < FILE_COUNT; ++i) {
-      if ( ds.getBlock(i) != null ) {
-        // check in case we're only working with two instead of 3 data sets
+      boolean[] setBlocks = ds.dataIsSet();
+      boolean[] setResps = ds.responsesAreSet();
+      if ( setBlocks[i] ) {
         dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
-        responses[i] = ds.getResponses()[i];
+        thisBlockIsSet[i] = true;
+      }
+      if ( setResps[i] ) {
+        responses[i] = ds.getResponse(i);
+        thisResponseIsSet[i] = true;
       }
     }
-    // TODO: deep copy?
-    thisResponseIsSet = ds.responsesAreSet();
-    thisBlockIsSet = ds.dataIsSet();
     this.trimAll(start, end);
   }
   
@@ -70,10 +75,7 @@ public class DataStore {
    * @return Timeseries data for corresponing plot
    */
   public DataBlock getBlock(int idx) {
-    if (idx < FILE_COUNT) {
-      return dataBlockArray[idx];
-    }
-    throw new IndexOutOfBoundsException();
+    return dataBlockArray[idx];
   }
   
   /**
@@ -85,10 +87,7 @@ public class DataStore {
   }
   
   public InstrumentResponse getResponse(int idx) {
-    if (idx < FILE_COUNT) {
-      return responses[idx];
-    }
-    throw new IndexOutOfBoundsException();
+    return responses[idx];
   }
   
   /**

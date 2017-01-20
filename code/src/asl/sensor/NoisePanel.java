@@ -50,10 +50,19 @@ public class NoisePanel extends ExperimentPanel {
     
     boolean freqSpace = freqSpaceBox.getState();
     
-    super.updateData(ds, psd, freqSpace);
+    updateDriver(ds, psd, freqSpace);
     // setting the new chart is enough to update the plots
     
     
+  }
+  
+  private void updateDriver(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+    expResult.setData(ds, psd, freqSpace);
+    
+    chart = populateChart(expResult.getData(), freqSpace);
+    
+    chartPanel.setChart(chart);
+    chartPanel.setMouseZoomable(false);
   }
   
 

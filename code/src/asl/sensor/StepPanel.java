@@ -33,6 +33,16 @@ public class StepPanel extends ExperimentPanel {
   public void updateData(DataStore ds, FFTResult[] psd) {
     // TODO Auto-generated method stub
     
+    int numLoaded = ds.numberOfBlocksLoaded();
+    int numLoadedWithResp = ds.numberFullySet();
+    
+    // we need two sets of data, one of which has a response file
+    if (numLoaded < 2 || numLoadedWithResp < 1) {
+      displayErrorMessage("INSUFFICIENT DATA LOADED");
+      return;
+    }
+
+    
     expResult.setData(ds, psd, true);
     XYSeriesCollection xysc = expResult.getData();
     

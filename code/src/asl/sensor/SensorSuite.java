@@ -326,17 +326,20 @@ public class SensorSuite extends JPanel implements ActionListener {
           seedDirectory = file.getParent();
           
           seedFileNames[i].setText("LOADING: " + file.getName());
+
           
           // create swingworker to load large files in the background
           SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
             @Override
             public Integer doInBackground() {
+              generate.setEnabled(false);
               dataBox.setData( idx, file.getAbsolutePath() );
               return 0;
             }
             
             public void done() {
               seedFileNames[idx].setText( file.getName() );
+              generate.setEnabled(true);
             }
           };
           // need a new thread so the UI won't lock with big programs

@@ -304,7 +304,7 @@ implements ActionListener, ChangeListener {
    */
   public DataStore getData() {
     
-    if ( ds.numberFullySet() < 1 ) {
+    if ( ds.numberOfBlocksLoaded() < 1 ) {
       return new DataStore();
     }
     

@@ -45,7 +45,9 @@ public abstract class Experiment {
    */
   public void setData(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
+
     DataBlock db = ds.getXthLoadedBlock(1);
+
     long interval = db.getInterval();
     
     DataBlock[] dataIn = ds.getData();

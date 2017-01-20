@@ -94,7 +94,7 @@ public class StepExperiment extends Experiment {
     
     XYSeries xys = new XYSeries( db.getName() );
     for (double point : toPlot) {
-      xys.add(point, now/1000);
+      xys.add(now/1000, point);
       now += interval;
     }
     

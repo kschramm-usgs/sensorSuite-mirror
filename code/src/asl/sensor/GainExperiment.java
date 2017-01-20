@@ -137,8 +137,6 @@ public class GainExperiment extends Experiment {
   @Override
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
-    int dataCount = ds.numberFullySet(); // need both timeseries and resps
-    
     ArrayList<Double> gainArray = new ArrayList<Double>();
     
     InstrumentResponse[] resps = ds.getResponses();
@@ -146,8 +144,8 @@ public class GainExperiment extends Experiment {
       if (resps[i] == null) {
         continue;
       }
-      double[] gains = resps[i].getGain();
-      gainArray.add(gains[1]);
+      List<Double> gains = resps[i].getGain();
+      gainArray.add( gains.get(1) );
     }
     
     gainStage1 = gainArray.toArray(new Double[0]);
@@ -170,7 +168,7 @@ public class GainExperiment extends Experiment {
         blocksPlotting.toArray(new DataBlock[0]), 
         fftResults.toArray(new FFTResult[0]), 
         freqSpace, 
-        xySeriesData); // TODO: is passing in the experiment itself even necessary?!
+        xySeriesData);
     
     xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
     
