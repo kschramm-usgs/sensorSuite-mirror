@@ -10,6 +10,9 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class StepExperiment extends Experiment {
 
+  double f, h; //corner and damping of output (uncorrected)
+  double fCorr, hCorr; // fit parameters to turn output into cal input
+  
   public StepExperiment() {
     super();
     xAxisTitle = "Time (s)";
@@ -32,16 +35,34 @@ public class StepExperiment extends Experiment {
     return xAxisTitle;
   }
   
+  public double[] getCornerAndDamping() {
+    return new double[]{f, h};
+  }
+  
   @Override
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
- // TODO move to stepexperiment
-    DataBlock db = ds.getBlock(0);
+    
+    // assume that the first block is the raw step calibration
+    // the raw calibration is defined as not having an associated response
+    DataBlock stepCalRaw = ds.getXthLoadedBlock(1);
+    // but we want the response and the data of the cal result
+    int outIdx = ds.getXthFullyLoadedIndex(1);
+    
+    // if someone did load a raw cal with the response, then we wouldn't
+    // get a different block with the second call above, so we get the 
+    // next loaded block/response pair
+    if ( ds.getBlock(outIdx).getName().equals( stepCalRaw.getName() ) ) {
+      outIdx = ds.getXthFullyLoadedIndex(2);
+    }
+    
+
+    DataBlock db = ds.getBlock(outIdx);
     long interval = db.getInterval();
-    InstrumentResponse ir = ds.getResponse(0);
+    InstrumentResponse ir = ds.getResponse(outIdx);
     Complex pole = ir.getPoles().get(0);
-    // WE WILL WANT TO KEEP TRACK OF THESE VALUES
-    double f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
-    double h = Math.abs( pole.getReal() / pole.abs() ); // damping
+    
+    f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
+    h = Math.abs( pole.getReal() / pole.abs() ); // damping
     
     InstrumentResponse appxResp = new InstrumentResponse(f, h);
     
@@ -73,15 +94,14 @@ public class StepExperiment extends Experiment {
     
     XYSeries xys = new XYSeries( db.getName() );
     for (double point : toPlot) {
-      xys.add(point, now);
+      xys.add(point, now/1000);
       now += interval;
     }
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
     
-    XYSeriesCollection xysc = new XYSeriesCollection();
-    xysc.addSeries(xys);
+    xySeriesData.addSeries(xys);
     
   }
 

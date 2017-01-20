@@ -204,7 +204,6 @@ public class SensorSuite extends JPanel implements ActionListener {
     clear.setEnabled(true);
     clear.addActionListener(this);
     rightPanel.add(clear, rpc);
-    // TODO: clear out the old data in the result plot too 
     
     // add space between the plots and the file-operation panel
     dataBox.setBorder( new EmptyBorder(0, 0, 0, 5) );
@@ -334,6 +333,10 @@ public class SensorSuite extends JPanel implements ActionListener {
             public Integer doInBackground() {
               dataBox.setData( idx, file.getAbsolutePath() );
               return 0;
+            }
+            
+            public void done() {
+              seedFileNames[idx].setText( file.getName() );
             }
           };
           // need a new thread so the UI won't lock with big programs
