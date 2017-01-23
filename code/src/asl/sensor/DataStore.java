@@ -140,9 +140,9 @@ public class DataStore {
    * @param filepath Full address of file to be loaded in
    * @return The miniSEED data, in a plottable format
    */
-  public XYSeries setData(int idx, String filepath) {
+  public void setData(int idx, String filepath) {
     
-    DataBlock xy = TimeSeriesUtils.getTimeSeries(filepath);
+    DataBlock xy = TimeSeriesUtils.getTimeSeriesWithErrorChecking(filepath);
     thisBlockIsSet[idx] = true;
     dataBlockArray[idx] = xy;
     
@@ -151,9 +151,6 @@ public class DataStore {
       trimToCommonTime();
     }
     
-    outToPlots[idx] = xy.toXYSeries();
-    
-    return outToPlots[idx];
   }
   
   /**

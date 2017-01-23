@@ -62,10 +62,10 @@ public class InstrumentResponse {
    * @param corner Corner frequency (Hz)
    * @param damping Damping factor
    */
-  public InstrumentResponse(double corner, double damping) {
+  public InstrumentResponse(double corner, double damping, Unit unit) {
     double omega = 2 * Math.PI * corner; // omega_0
     
-    Complex tempResult = new Complex( Math.pow(damping, 2) -1 );
+    Complex tempResult = new Complex( 1 - Math.pow(damping, 2) );
     
     Complex pole1 = tempResult.sqrt().add(damping).multiply(-1);
     pole1.multiply(omega);
@@ -87,7 +87,7 @@ public class InstrumentResponse {
     zeros = new ArrayList<Complex>();
     zeros.add( new Complex(0.0) ); // calculated response zero is at 0
     
-    unitType = Unit.ACCELERATION;
+    unitType = unit;
     transferType = TransferFunction.LAPLACIAN;
     
     normalization = 1.0; // TODO: check if correct

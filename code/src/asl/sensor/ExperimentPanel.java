@@ -171,5 +171,10 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   }
   
   public abstract void updateData(DataStore ds, FFTResult[] psd);
+  
+  // details of how to run updateData are left up to the implementing panel
+  // however, it is advised to wrap the code inside a swingworker,
+  // using doInBackground() to make calls to the experiment backend to
+  // compute the data and then using the done() method to update chartPanel
 
 }

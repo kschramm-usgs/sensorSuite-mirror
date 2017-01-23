@@ -184,11 +184,15 @@ implements ActionListener, ChangeListener {
     final int index = idx;
 
     SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
+
+      JFreeChart chart;
+      
       @Override
-      public Integer doInBackground() { 
-        XYSeries ts = ds.setData(index, pathFinal);
+      public Integer doInBackground() {
+        ds.setData(index, pathFinal);
+        XYSeries ts = ds.getBlock(index).toXYSeries();
         try {
-          JFreeChart chart = ChartFactory.createXYLineChart(
+          chart = ChartFactory.createXYLineChart(
               ts.getKey().toString(),
               "Time",
               "Counts",
@@ -208,26 +212,33 @@ implements ActionListener, ChangeListener {
           xyp.setDomainAxis(da);
           xyp.getRenderer().setSeriesPaint(0, defaultColor[index]);
 
-
-          chartPanels[index].setChart(chart);
-          chartPanels[index].setMouseZoomable(true);
-
-          set[index] = true;
-
-          zoomIn.setEnabled(true);
-          leftSlider.setEnabled(true);
-          rightSlider.setEnabled(true);
-
-          leftSlider.setValue(0);
-          rightSlider.setValue(1000);
-          setVerticalBars();
           return 0;
         } catch (Exception e) {
           // TODO Auto-generated catch block
           e.printStackTrace();
         }
         return 1;
-      } 
+      }
+      
+      @Override
+      public void done() {
+        // drawing the chart generally takes longer than reading in the data
+        // which can be very fast if we don't use the error checking read-in
+        // so threading here may not be necessary
+        chartPanels[index].setChart(chart);
+        chartPanels[index].setMouseZoomable(true);
+
+        set[index] = true;
+
+        zoomIn.setEnabled(true);
+        leftSlider.setEnabled(true);
+        rightSlider.setEnabled(true);
+
+        leftSlider.setValue(0);
+        rightSlider.setValue(1000);
+        setVerticalBars();
+      }
+      
     };
 
     new Thread(worker).start();

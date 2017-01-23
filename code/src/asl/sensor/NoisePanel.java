@@ -1,12 +1,22 @@
 package asl.sensor;
 
 import java.awt.Checkbox;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public class NoisePanel extends ExperimentPanel {
 
@@ -59,18 +69,38 @@ public class NoisePanel extends ExperimentPanel {
   }
   
   private void updateDriver(DataStore ds, FFTResult[] psd, boolean freqSpace) {
-    expResult.setData(ds, psd, freqSpace);
     
-    chart = populateChart(expResult.getData());
+    final DataStore dsImmutable = ds;
+    final FFTResult[] psdImmutable = psd;
+    final boolean freqSpaceImmutable = freqSpace;
     
-    // override the default axis if the checkbox is set to use Hz units
-    if (freqSpace) {
-      ValueAxis xAxis = ( (NoiseExperiment) expResult ).getXAxis(freqSpace);
-      chart.getXYPlot().setDomainAxis(xAxis);
-    }
+    SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
+      @Override
+      public Integer doInBackground() {
+        expResult.setData(dsImmutable, psdImmutable, freqSpaceImmutable);
+        
+        chart = populateChart(expResult.getData());
+        
+        // override the default axis if the checkbox is set to use Hz units
+        if (freqSpaceImmutable) {
+          ValueAxis xAxis = 
+              ( (NoiseExperiment) expResult ).getXAxis(freqSpaceImmutable);
+          chart.getXYPlot().setDomainAxis(xAxis);
+        }
+        return 0;
+      }
+
+      @Override
+      public void done() {
+        chartPanel.setChart(chart);
+        chartPanel.setMouseZoomable(false);
+      }
+
+    };
     
-    chartPanel.setChart(chart);
-    chartPanel.setMouseZoomable(false);
+    new Thread(worker).start();
+    return;
+    
   }
   
 

@@ -54,8 +54,9 @@ public class StepExperiment extends Experiment {
     
     f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
+    Unit respUnit = ir.getUnits();
     
-    InstrumentResponse appxResp = new InstrumentResponse(f, h);
+    InstrumentResponse appxResp = new InstrumentResponse(f, h, respUnit);
     
     // get FFT of datablock timeseries, apply response to input
     FFTResult fft = FFTResult.simpleFFT(db);
