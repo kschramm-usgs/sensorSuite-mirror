@@ -16,7 +16,7 @@ public abstract class Experiment {
   
   protected XYSeriesCollection xySeriesData;
   protected String xAxisTitle, yAxisTitle;
-  protected NumberAxis xAxis, yAxis;
+  protected ValueAxis xAxis, yAxis;
   protected boolean freqSpace;
   
   /**

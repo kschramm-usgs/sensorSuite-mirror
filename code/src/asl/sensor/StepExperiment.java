@@ -1,8 +1,11 @@
 package asl.sensor;
 
 import java.awt.Font;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 
 import org.apache.commons.math3.complex.Complex;
+import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.data.xy.XYSeries;
@@ -17,9 +20,11 @@ public class StepExperiment extends Experiment {
     super();
     xAxisTitle = "Time (s)";
     yAxisTitle = "Counts (normalized)";
-    xAxis = new NumberAxis(xAxisTitle);
+    xAxis = new DateAxis(xAxisTitle);
+    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+    sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+    xAxis.setLabel("UTC Time");
     yAxis = new NumberAxis(yAxisTitle);
-    yAxis.setAutoRangeIncludesZero(false);
     yAxis.setAutoRange(true);
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
@@ -63,9 +68,9 @@ public class StepExperiment extends Experiment {
     
     Complex[] respValues = appxResp.applyResponseToInput( fft.getFreqs() );
     
-    double maxVal = respValues[0].abs();
+    double maxVal = Double.NEGATIVE_INFINITY;
     for (Complex respVal : respValues) {
-      if ( respVal.abs()  > maxVal ) {
+      if ( respVal.abs()  > maxVal  && respVal.abs() != Double.NaN) {
         maxVal = respVal.abs();
       }
     }
@@ -74,7 +79,11 @@ public class StepExperiment extends Experiment {
     
     Complex[] correctedValues = new Complex[fftValues.length];
     // don't let denominator be zero
-    for (int i = 0; i < correctedValues.length; ++i) {
+    System.out.println(fftValues[0]);
+    System.out.println(respValues[0]);
+    System.out.println(0.008 * maxVal);
+    correctedValues[0] = Complex.ONE;
+    for (int i = 1; i < correctedValues.length; ++i) {
       Complex numer = fftValues[i].multiply( respValues[i].conjugate() );
       Complex denom = respValues[i].multiply( respValues[i].conjugate() );
       denom = denom.add(0.008 * maxVal);
@@ -82,7 +91,7 @@ public class StepExperiment extends Experiment {
     }
     
     double[] toPlot = FFTResult.inverseFFT(correctedValues);
-    long now = 0;
+    long now = db.getStartTime();
     
     XYSeries xys = new XYSeries( db.getName() );
     for (double point : toPlot) {

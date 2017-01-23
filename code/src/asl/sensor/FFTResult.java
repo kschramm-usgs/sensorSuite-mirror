@@ -365,7 +365,7 @@ public class FFTResult {
     Complex[] timeSeriesCpx = fft.transform(freqDomn, TransformType.INVERSE);
     double[] timeSeries = new double[timeSeriesCpx.length];
     for (int i = 0; i < timeSeries.length; ++i) {
-      timeSeries[i] = timeSeriesCpx[i].abs();
+      timeSeries[i] = timeSeriesCpx[i].getReal();
     }
     
     return timeSeries;

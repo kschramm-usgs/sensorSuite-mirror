@@ -31,7 +31,6 @@ public class NoiseExperiment extends Experiment {
     xAxis = new LogarithmicAxis(xAxisTitle);
     freqAxis = new LogarithmicAxis(freqAxisTitle);
     yAxis = new NumberAxis(yAxisTitle);
-    yAxis.setAutoRangeIncludesZero(false);
     yAxis.setAutoRange(true);
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);

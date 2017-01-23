@@ -75,8 +75,9 @@ public class InstrumentResponse {
     Complex pole2 = tempResult.sqrt().subtract(damping).multiply(-1);
     pole2.multiply(omega);
     
-    // double pole2 = -( damping - Math.sqrt( Math.pow(damping,2) - 1 ) );
-    // pole2 *= omega;
+    // reset the values of poles 1 and two FOR DEBUGGING (TODO: remove these)
+    pole1 = new Complex(0.);
+    pole2 = new Complex(0.);
     
     poles = new ArrayList<Complex>();
     poles.add(pole1);
@@ -172,9 +173,10 @@ public class InstrumentResponse {
       scale *= gain.get(i);
     }
     
-    // how many times do we need to do differentiation?
+    // how many times do we need to do integration?
     // outUnits (acceleration) - inUnits
-    int differentiations = Unit.ACCELERATION.getDifferentiations(unitType);
+    // i.e., if the units of this response are velocity, we integrate once
+    int integrations = Unit.ACCELERATION.getDifferentiations(unitType);
     // unlike s (see below) this is always 2Pi
     double integConstant = 2*Math.PI;
     
@@ -198,17 +200,19 @@ public class InstrumentResponse {
       
       resps[i] = numerator.multiply(normalization).divide(denominator);
       
-      if (differentiations > 0) {
+      if (integrations > 0) {
         // i*omega; integration is I(w) x (iw)^n
         Complex iw = new Complex(0.0, integConstant*deltaFrq);
-        for (int j = 1; j < Math.abs(differentiations); j++){
+        for (int j = 1; j < Math.abs(integrations); j++){
           iw = iw.multiply(iw);
         }
         resps[i] = resps[i].multiply(iw);
-      } else if (differentiations > 0) { 
+      } else if (integrations < 0) { 
+        // a negative number of integrations 
+        // is a positive number of differentiations
         // differentiation is I(w) / (-i/w)^n
         Complex iw = new Complex(0.0, -1.0 / (integConstant*deltaFrq) );
-        for (int j = 1; j < Math.abs(differentiations); j++){
+        for (int j = 1; j < Math.abs(integrations); j++){
           iw = iw.multiply(iw);
         }
         resps[i] = iw.multiply(resps[i]);

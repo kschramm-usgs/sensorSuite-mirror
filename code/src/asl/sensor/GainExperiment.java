@@ -121,7 +121,6 @@ public class GainExperiment extends Experiment {
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
     xAxis = new LogarithmicAxis(xAxisTitle);
     yAxis = new NumberAxis(yAxisTitle);
-    yAxis.setAutoRangeIncludesZero(false);
     yAxis.setAutoRange(true);
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
