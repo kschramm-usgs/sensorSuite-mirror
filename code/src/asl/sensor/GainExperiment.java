@@ -117,12 +117,9 @@ public class GainExperiment extends Experiment {
    * Currently does not include setting to set x-axis to display in freq. space
    */
   public GainExperiment() {
-    super();
-    freqAxisTitle = "Period (s)";
-    xAxisTitle = freqAxisTitle;
+    xAxisTitle = "Period (s)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
     xAxis = new LogarithmicAxis(xAxisTitle);
-    freqAxis = new LogarithmicAxis(freqAxisTitle);
     yAxis = new NumberAxis(yAxisTitle);
     yAxis.setAutoRangeIncludesZero(false);
     yAxis.setAutoRange(true);

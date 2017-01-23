@@ -15,8 +15,8 @@ public abstract class Experiment {
   // (i.e., logarithmic, etc.)
   
   protected XYSeriesCollection xySeriesData;
-  protected String xAxisTitle, freqAxisTitle, yAxisTitle;
-  protected NumberAxis xAxis, freqAxis, yAxis;
+  protected String xAxisTitle, yAxisTitle;
+  protected NumberAxis xAxis, yAxis;
   protected boolean freqSpace;
   
   /**
@@ -85,14 +85,6 @@ public abstract class Experiment {
   public String getYTitle() {
     return yAxisTitle;
   }
-
-  /**
-   * Get the name for the domain axis when using units of frequency
-   * @return the name of the axis
-   */
-  public String getFreqTitle() {
-    return freqAxisTitle;
-  }
   
   /**
    * Get the domain axis for plotting
@@ -108,14 +100,6 @@ public abstract class Experiment {
    */
   public ValueAxis getYAxis() {
     return yAxis;
-  }
-  
-  /**
-   * Get the domain axis for plotting when using units of frequency
-   * @return the axis for the corresponding chart
-   */
-  public ValueAxis getFreqAxis() {
-    return freqAxis;
   }
   
   public static void addToPlot(

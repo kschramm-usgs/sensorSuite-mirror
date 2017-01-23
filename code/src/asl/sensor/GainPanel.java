@@ -34,7 +34,6 @@ implements ChangeListener {
   private JComboBox<String> firstSeries;
   private JComboBox<String> secondSeries;
   private JButton recalcButton;
-  boolean freqSpace = false;
   
   private double low, high;
   
@@ -325,7 +324,7 @@ implements ChangeListener {
     setDataNames(ds);
     
     try{
-      expResult.setData(ds, psd, freqSpace);
+      expResult.setData(ds, psd, false);
     } catch (IndexOutOfBoundsException e) {
       displayErrorMessage("INSUFFICIENT DATA LOADED");
       return;
@@ -354,7 +353,7 @@ implements ChangeListener {
     xysc.addSeries( xyscIn.getSeries(idx1) );
     xysc.addSeries( xyscIn.getSeries("NLNM") );
     
-    chart = populateChart(xysc, freqSpace);
+    chart = populateChart(xysc);
     chartPanel.setChart(chart);
     chartPanel.setMouseZoomable(false);
     

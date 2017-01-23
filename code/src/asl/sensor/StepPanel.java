@@ -43,15 +43,17 @@ public class StepPanel extends ExperimentPanel {
     }
 
     
-    expResult.setData(ds, psd, true);
+    expResult.setData(ds, psd, false);
     XYSeriesCollection xysc = expResult.getData();
     
     // here's the stuff that needs to stay here, not moved to experiment class
-    chart = populateChart(xysc, true);
+    chart = populateChart(xysc);
     XYPlot xyp = (XYPlot) chart.getPlot();
     double[] rolloff = ( (StepExperiment) expResult ).getCornerAndDamping();
     double corner = rolloff[0];
     double damping = rolloff[1];
+    
+    // TODO: will probably need to relocate some of this to its own method
     TextTitle result = new TextTitle();
     StringBuilder sb = new StringBuilder();
     sb.append("corner frequency: ");
@@ -66,6 +68,7 @@ public class StepPanel extends ExperimentPanel {
         RectangleAnchor.TOP_RIGHT);
     xyp.clearAnnotations();
     xyp.addAnnotation(xyt);
+    
     chartPanel.setChart(chart);
   }
 

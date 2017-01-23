@@ -26,15 +26,6 @@ public class StepExperiment extends Experiment {
     yAxis.setLabelFont(bold);
   }
   
-  @Override
-  public ValueAxis getFreqAxis() {
-    return xAxis;
-  }
-  
-  public String getFreqTitle() {
-    return xAxisTitle;
-  }
-  
   public double[] getCornerAndDamping() {
     return new double[]{f, h};
   }

@@ -6,6 +6,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
+import org.jfree.chart.axis.ValueAxis;
+
 public class NoisePanel extends ExperimentPanel {
 
   private Checkbox freqSpaceBox;
@@ -59,7 +61,13 @@ public class NoisePanel extends ExperimentPanel {
   private void updateDriver(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     expResult.setData(ds, psd, freqSpace);
     
-    chart = populateChart(expResult.getData(), freqSpace);
+    chart = populateChart(expResult.getData());
+    
+    // override the default axis if the checkbox is set to use Hz units
+    if (freqSpace) {
+      ValueAxis xAxis = ( (NoiseExperiment) expResult ).getXAxis(freqSpace);
+      chart.getXYPlot().setDomainAxis(xAxis);
+    }
     
     chartPanel.setChart(chart);
     chartPanel.setMouseZoomable(false);

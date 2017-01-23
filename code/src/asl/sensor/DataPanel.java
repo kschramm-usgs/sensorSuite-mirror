@@ -171,7 +171,6 @@ implements ActionListener, ChangeListener {
    */
   public void setData(int idx, String filepath) { 
 
-    // TODO: code block occurs in 3 places, set apart as own function
     // set all data to the same range first (zoom out)
     zooms = ds;
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
@@ -228,8 +227,7 @@ implements ActionListener, ChangeListener {
       } 
     };
 
-    Thread t = new Thread(worker);
-    t.start();
+    new Thread(worker).start();
     return;
 
   }

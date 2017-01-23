@@ -4,7 +4,7 @@
     </description>
 
     <!-- set global properties for this build -->
-    <property name="project.main"               value="asl.sensor.MainWindow" />
+    <property name="project.main"               value="asl.sensor.SensorSuite" />
     <property name="project.archive"            value="SensorTestSuite.jar" />
     <property name="src.dir"                    location="src"/>
     <property name="libs.dir"                   location="lib"/>

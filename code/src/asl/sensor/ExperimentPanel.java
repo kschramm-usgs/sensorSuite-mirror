@@ -36,57 +36,9 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
  
   private static final long serialVersionUID = -5591522915365766604L;
 
-  /**
-   * Defines the type of test results this panel's chart will display
-   * @param expT The type of experiment (refer to the enum for valid types)
-   * @param expR The experiment to be performed
-   * @return A chart displaying the data from the performed experiment
-   */
-  public JFreeChart populateChart(XYSeriesCollection data, boolean freqSpace) {
-    
-    String xTitle;
-    if (freqSpace) {
-      xTitle = expResult.getXTitle();
-    } else {
-      xTitle = expResult.getFreqTitle();
-    }
-    
-    JFreeChart chart = ChartFactory.createXYLineChart(
-        expType.getName(),
-        xTitle,
-        expResult.getYTitle(),
-        data,
-        PlotOrientation.VERTICAL,
-        true, // include legend
-        false, 
-        false);
-    
-    XYPlot xyPlot = chart.getXYPlot();
-    
-    String[] bold = expResult.getBoldSeriesNames();
-    XYItemRenderer xyir = xyPlot.getRenderer();
-    for (String series : bold) {
-      int seriesIdx = data.getSeriesIndex(series);
-      BasicStroke stroke = (BasicStroke) xyir.getBaseStroke();
-      stroke = new BasicStroke( stroke.getLineWidth()*2 );
-      xyir.setSeriesStroke(seriesIdx, stroke);
-      xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
-    }
-    
-    if (freqSpace) {
-      xyPlot.setDomainAxis(expResult.getFreqAxis());
-    } else {
-      xyPlot.setDomainAxis(expResult.getXAxis());
-
-    }
-    xyPlot.setRangeAxis(expResult.getYAxis());
-    
-    return chart;
-  }
-  
   protected JButton save;
-  protected JFreeChart chart; // replace with plot object
   
+  protected JFreeChart chart; // replace with plot object
   protected ChartPanel chartPanel;
   
   protected JFileChooser fc; // save image when image save button clicked
@@ -111,10 +63,6 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     save = new JButton("Save Plot (PNG)");
     save.addActionListener(this);
-  }
-  
-  public boolean isTwoInput() {
-    return expType.isTwoInput();
   }
   
   /**
@@ -143,7 +91,19 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
       }
     }
   }
-
+  
+  public void displayErrorMessage(String errMsg) {
+    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
+    TextTitle result = new TextTitle();
+    result.setText(errMsg);
+    result.setBackgroundPaint(Color.red);
+    result.setPaint(Color.white);
+    XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
+        RectangleAnchor.CENTER);
+    xyp.clearAnnotations();
+    xyp.addAnnotation(xyt);
+  }
+  
   /**
    * Return image of this chart with specified dimensions
    * Used to compile PNG image of all currently-displayed charts
@@ -167,17 +127,47 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
 
     return bi;
   }
+
+  public boolean isTwoInput() {
+    return expType.isTwoInput();
+  }
   
-  public void displayErrorMessage(String errMsg) {
-    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
-    TextTitle result = new TextTitle();
-    result.setText(errMsg);
-    result.setBackgroundPaint(Color.red);
-    result.setPaint(Color.white);
-    XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
-        RectangleAnchor.CENTER);
-    xyp.clearAnnotations();
-    xyp.addAnnotation(xyt);
+  /**
+   * Defines the type of test results this panel's chart will display
+   * @param expT The type of experiment (refer to the enum for valid types)
+   * @param expR The experiment to be performed
+   * @return A chart displaying the data from the performed experiment
+   */
+  public JFreeChart populateChart(XYSeriesCollection data) {
+    
+    String xTitle = expResult.getXTitle();
+    
+    JFreeChart chart = ChartFactory.createXYLineChart(
+        expType.getName(),
+        xTitle,
+        expResult.getYTitle(),
+        data,
+        PlotOrientation.VERTICAL,
+        true, // include legend
+        false, 
+        false);
+    
+    // apply bolding to the components that require it (i.e., NLNM time series)
+    XYPlot xyPlot = chart.getXYPlot();
+    String[] bold = expResult.getBoldSeriesNames();
+    XYItemRenderer xyir = xyPlot.getRenderer();
+    for (String series : bold) {
+      int seriesIdx = data.getSeriesIndex(series);
+      BasicStroke stroke = (BasicStroke) xyir.getBaseStroke();
+      stroke = new BasicStroke( stroke.getLineWidth()*2 );
+      xyir.setSeriesStroke(seriesIdx, stroke);
+      xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
+    }
+    
+    xyPlot.setDomainAxis( expResult.getXAxis() );
+    xyPlot.setRangeAxis( expResult.getYAxis() );
+    
+    return chart;
   }
   
   public abstract void updateData(DataStore ds, FFTResult[] psd);

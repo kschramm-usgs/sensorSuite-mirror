@@ -5,6 +5,7 @@ import java.awt.Font;
 import org.apache.commons.math3.complex.Complex;
 import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.data.xy.XYSeries;
 
 /**
@@ -15,6 +16,9 @@ import org.jfree.data.xy.XYSeries;
  *
  */
 public class NoiseExperiment extends Experiment {
+  
+  private NumberAxis freqAxis;
+  private String freqAxisTitle;
   
   /**
    * Instantiates a noise experiment -- axis titles and scales
@@ -32,6 +36,31 @@ public class NoiseExperiment extends Experiment {
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);
+    freqAxis.setLabelFont(bold);
+  }
+  
+  @Override
+  public ValueAxis getXAxis() {
+    return getXAxis(false);
+  }
+  
+  @Override
+  public String getXTitle() {
+    return getXTitle(false);
+  }
+  
+  public ValueAxis getXAxis(boolean freqSpace) {
+    if (freqSpace) {
+      return freqAxis;
+    }
+    return xAxis;
+  }
+  
+  public String getXTitle(boolean freqSpace) {
+    if (freqSpace) {
+      return freqAxisTitle; 
+    }
+    return xAxisTitle;
   }
   
   @Override
