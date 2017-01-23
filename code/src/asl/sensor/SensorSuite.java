@@ -327,18 +327,19 @@ public class SensorSuite extends JPanel implements ActionListener {
           
           seedFileNames[i].setText("LOADING: " + file.getName());
 
+          final File immutableFile = file;
           
           // create swingworker to load large files in the background
           SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
             @Override
             public Integer doInBackground() {
               generate.setEnabled(false);
-              dataBox.setData( idx, file.getAbsolutePath() );
+              dataBox.setData( idx, immutableFile.getAbsolutePath() );
               return 0;
             }
             
             public void done() {
-              seedFileNames[idx].setText( file.getName() );
+              seedFileNames[idx].setText( immutableFile.getName() );
               generate.setEnabled(true);
             }
           };

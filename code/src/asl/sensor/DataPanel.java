@@ -179,11 +179,14 @@ implements ActionListener, ChangeListener {
       }
       this.resetPlotZoom(i);
     }
+    
+    final String pathFinal = filepath;
+    final int index = idx;
 
     SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
       @Override
       public Integer doInBackground() { 
-        XYSeries ts = ds.setData(idx, filepath);
+        XYSeries ts = ds.setData(index, pathFinal);
         try {
           JFreeChart chart = ChartFactory.createXYLineChart(
               ts.getKey().toString(),
@@ -203,13 +206,13 @@ implements ActionListener, ChangeListener {
           da.setLabelFont(bold);
           da.setDateFormatOverride(sdf);
           xyp.setDomainAxis(da);
-          xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+          xyp.getRenderer().setSeriesPaint(0, defaultColor[index]);
 
 
-          chartPanels[idx].setChart(chart);
-          chartPanels[idx].setMouseZoomable(true);
+          chartPanels[index].setChart(chart);
+          chartPanels[index].setMouseZoomable(true);
 
-          set[idx] = true;
+          set[index] = true;
 
           zoomIn.setEnabled(true);
           leftSlider.setEnabled(true);
