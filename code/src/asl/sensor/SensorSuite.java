@@ -62,7 +62,7 @@ public class SensorSuite extends JPanel implements ActionListener {
   // used to store current directory locations
   private String seedDirectory = "data";
   private String respDirectory = "responses";
-  private String saveDirectory = "";
+  private String saveDirectory = System.getProperty("user.home");
 
 
   private void resetTabPlots() {

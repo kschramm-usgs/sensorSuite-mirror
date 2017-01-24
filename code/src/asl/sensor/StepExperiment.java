@@ -68,7 +68,7 @@ public class StepExperiment extends Experiment {
     FFTResult fft = FFTResult.simpleFFT(db);
     
     // term inside the square root in the calculations of p1, p2
-    Complex tempResult = new Complex( 1 - Math.pow(h, 2) );
+    Complex tempResult = new Complex( Math.pow(h, 2) - 1 );
     
     double omega = 2 * Math.PI * f; // omega_0
     
@@ -90,12 +90,13 @@ public class StepExperiment extends Experiment {
     */
     
     Complex[] fftValues = fft.getFFT();
+    double[] freqs = fft.getFreqs();
     
     Complex[] correctedValues = new Complex[fftValues.length];
     // don't let denominator be zero
     correctedValues[0] = Complex.ONE;
     for (int i = 1; i < correctedValues.length; ++i) {
-      Complex factor = new Complex(0, omega); // 2*pi*i*f
+      Complex factor = new Complex(0, 2*Math.PI*freqs[i]); // 2*pi*i*f
       
       // fft*(2*pi*i*f-0)
       Complex numer = fftValues[i].multiply(factor);
