@@ -207,10 +207,6 @@ public class FFTResult {
     return timeSeries;
   }
   
-  // TODO: move these signal processing functions into their own
-  // class -- or possibly even a new package that can be easily libraried?
-  // along with the DataSeriesHelper code
-  
   public static FFTResult simpleFFT(DataBlock db) {
     ArrayList<Number> list1 = new ArrayList<Number>( db.getData() );
         

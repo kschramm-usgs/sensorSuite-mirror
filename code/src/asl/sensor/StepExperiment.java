@@ -60,14 +60,26 @@ public class StepExperiment extends Experiment {
     
     f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
-    Unit respUnit = ir.getUnits();
-    List<Double> gain = ir.getGain();
-    InstrumentResponse appxResp = new InstrumentResponse(f, h, respUnit, gain);
+    //Unit respUnit = ir.getUnits();
+    //List<Double> gain = ir.getGain();
+    //InstrumentResponse apxResp = new InstrumentResponse(f, h, respUnit, gain);
     
     // get FFT of datablock timeseries, apply response to input
     FFTResult fft = FFTResult.simpleFFT(db);
     
-    Complex[] respValues = appxResp.applyResponseToInput( fft.getFreqs() );
+    // term inside the square root in the calculations of p1, p2
+    Complex tempResult = new Complex( 1 - Math.pow(h, 2) );
+    
+    double omega = 2 * Math.PI * f; // omega_0
+    
+    Complex pole1 = tempResult.sqrt().add(h).multiply(-1);
+    pole1.multiply(omega);
+    
+    Complex pole2 = tempResult.sqrt().subtract(h).multiply(-1);
+    pole2.multiply(omega);
+    
+    /*
+    Complex[] respValues = apxResp.applyResponseToInput( fft.getFreqs() );
     
     Complex maxVal = Complex.ZERO; // negative infinity
     for (Complex respVal : respValues) {
@@ -75,36 +87,44 @@ public class StepExperiment extends Experiment {
         maxVal = respVal;
       }
     }
+    */
     
     Complex[] fftValues = fft.getFFT();
     
     Complex[] correctedValues = new Complex[fftValues.length];
     // don't let denominator be zero
-    System.out.println(fftValues[0]);
-    System.out.println(respValues[0]);
-    System.out.println(maxVal.multiply(0.008));
     correctedValues[0] = Complex.ONE;
     for (int i = 1; i < correctedValues.length; ++i) {
-      Complex numer = fftValues[i].multiply( respValues[i].conjugate() );
-      Complex denom = respValues[i].multiply( respValues[i].conjugate() );
-      if ( denom.abs() == 0. ) {
-        denom = denom.add( maxVal.abs() * 0.008 );
-      }
+      Complex factor = new Complex(0, omega); // 2*pi*i*f
+      
+      // fft*(2*pi*i*f-0)
+      Complex numer = fftValues[i].multiply(factor);
+
+      // (2*pi*i*f-p1)*(2*pi*i*f-p2)
+      Complex denom = factor.subtract(pole1);
+      denom = denom.multiply( factor.subtract(pole2) );
+      
       correctedValues[i] = numer.divide(denom);
     }
     
     double[] toPlot = FFTResult.inverseFFT(correctedValues);
     long now = db.getStartTime();
-    
+    long start = now;
     XYSeries xys = new XYSeries( db.getName() );
+    XYSeries scs = new XYSeries( stepCalRaw.getName() ); 
     for (double point : toPlot) {
       xys.add(now/1000, point);
+      now += interval;
+    }
+    now = start;
+    for (Number point : stepCalRaw.getData() ) {
+      scs.add(now/1000, point);
       now += interval;
     }
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
-    
+    // xySeriesData.addSeries(scs);
     xySeriesData.addSeries(xys);
     
   }

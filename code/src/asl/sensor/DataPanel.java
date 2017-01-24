@@ -163,6 +163,7 @@ implements ActionListener, ChangeListener {
     
   }
   
+  
   /**
    * Takes a loaded and converted miniSEED time series and plots it
    * by calling the underlying DataStore
@@ -225,9 +226,17 @@ implements ActionListener, ChangeListener {
         // drawing the chart generally takes longer than reading in the data
         // which can be very fast if we don't use the error checking read-in
         // so threading here may not be necessary
+        
+        if (chart == null) {
+          set[index] = false;
+          return;
+        }
+        
         chartPanels[index].setChart(chart);
         chartPanels[index].setMouseZoomable(true);
 
+        showRegionForGeneration();
+        
         set[index] = true;
 
         zoomIn.setEnabled(true);
