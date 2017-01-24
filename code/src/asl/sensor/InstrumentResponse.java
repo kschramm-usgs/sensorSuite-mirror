@@ -62,7 +62,12 @@ public class InstrumentResponse {
    * @param corner Corner frequency (Hz)
    * @param damping Damping factor
    */
-  public InstrumentResponse(double corner, double damping, Unit unit) {
+  public InstrumentResponse(
+      double corner, 
+      double damping, 
+      Unit unit, 
+      List<Double> gainIn) {
+    
     double omega = 2 * Math.PI * corner; // omega_0
     
     Complex tempResult = new Complex( 1 - Math.pow(damping, 2) );
@@ -75,15 +80,16 @@ public class InstrumentResponse {
     Complex pole2 = tempResult.sqrt().subtract(damping).multiply(-1);
     pole2.multiply(omega);
     
-    // reset the values of poles 1 and two FOR DEBUGGING (TODO: remove these)
-    pole1 = new Complex(0.);
-    pole2 = new Complex(0.);
+    // reset the values of poles 1 and two FOR DEBUGGING
+    // pole1 = new Complex(0.);
+    // pole2 = new Complex(0.);
     
     poles = new ArrayList<Complex>();
     poles.add(pole1);
     poles.add(pole2);
-    gain = Arrays.asList(new Double[]{10.0, 1.0, 10.0}); 
-      // arbitrary choice of 10.0 sens.
+    //gain = Arrays.asList(new Double[]{10.0, 1.0, 10.0}); 
+    // setting this to 1.0 for now to get same in as out for 0.0 pole values
+    gain = gainIn;
     
     zeros = new ArrayList<Complex>();
     zeros.add( new Complex(0.0) ); // calculated response zero is at 0

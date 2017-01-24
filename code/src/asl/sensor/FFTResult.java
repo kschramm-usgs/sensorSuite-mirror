@@ -27,38 +27,30 @@ public class FFTResult {
    */
   private static final double TAPER_WIDTH = 0.10;
   
-  private Complex[] transform;
-  private double[] freqs;
-  
   /**
-   * Instantiate the structure holding an FFT and its frequency range
-   * (Used to return data from the spectral density calculations)
-   * Holds results of an FFT calculation already performed, usable in return
-   * statements
-   * @param inPSD Precalculated FFT result for some timeseries
-   * @param inFreq Frequencies matched up to each FFT value
+   * Calculates and performs an in-place cosine taper on an incoming data set.
+   * Used for windowing for performing FFT.
+   * @param dataSet The dataset to have the taper applied to.
+   * @return Value corresponding to power loss from application of taper.
    */
-  public FFTResult(Complex[] inPSD, double[] inFreq) {
-    transform = inPSD;
-    freqs = inFreq;
+  public static double cosineTaper(List<Number> dataSet, double taperW) {
+    
+    double ramp = taperW * dataSet.size();
+    double taper;
+    double Wss = 0.0; // represents power loss
+    
+    for (int i = 0; i < ramp; i++) {
+      taper = 0.5 * (1.0 - Math.cos( (double) i * Math.PI / ramp) );
+      dataSet.set(i, dataSet.get(i).doubleValue() * taper);
+      int idx = dataSet.size()-i-1;
+      dataSet.set(idx, dataSet.get(idx).doubleValue() * taper );
+      Wss += 2.0 * taper * taper;
+    }
+    
+    Wss += ( dataSet.size() - (2*ramp) );
+    
+    return Wss;
   }
-  
-  /**
-   * Get the frequency range for the (previously calculated) FFT
-   * @return Array of frequencies (doubles), matching index to each FFT point
-   */
-  public double[] getFreqs() {
-    return freqs;
-  }
-  
-  /**
-   * Get the FFT for some sort of previously calculated data
-   * @return Array of FFT results, as complex numbers
-   */
-  public Complex[] getFFT() {
-    return transform;
-  }
-  
   /**
    * Root funtion for calculating crosspower. Gets spectral calculation of data
    * from inputted data series by calling the spectralCalc function, and then
@@ -98,9 +90,162 @@ public class FFTResult {
     
   }
   
+  /**
+   * In-place subtraction of mean from each point in an incoming data set.
+   * This is a necessary step in calculating the power-spectral density.
+   * @param dataSet The data to have the mean removed from.
+   */
+  public static void demean(List<Number> dataSet) {
+    
+    // I'm always getting the demeaning tasks, huh?
+    
+    if(dataSet.size() == 0) return; // shouldn't happen but just in case
+    
+    double mean = 0.0;
+    
+    for(Number data : dataSet) {
+      mean += data.doubleValue();
+    }
+    
+    mean /= dataSet.size();
+    
+    for(int i = 0; i < dataSet.size(); ++i) {
+      // iterate over index rather than for-each cuz we must replace data
+      // ugly syntax because numeric data types are immutable
+      dataSet.set(i, dataSet.get(i).doubleValue() - mean);
+    }
+    
+    // test shows this works as in-place method
+  }
+  
+  /**
+   * In-place subtraction of trend from each point in an incoming data set.
+   * This is a necessary step in calculating the power-spectral density.
+   * @param dataSet The data to have the trend removed from.
+   */
+  public static void detrend(List<Number> dataSet) {
+    
+    double sumX = 0.0;
+    double sumY = 0.0;
+    double sumXSqd = 0.0;
+    double sumXY = 0.0;
+    
+    for (int i = 0; i < dataSet.size(); ++i) {
+      sumX += (double) i;
+      sumXSqd += (double) i * (double) i;
+      double value = dataSet.get(i).doubleValue();
+      sumXY += value * (double) i;
+      sumY += value;
+    }
+    
+    // brackets here so you don't get confused thinking this should be
+    // algebraic division (in which case we'd just factor out the size term)
+    // 
+    
+    double del = sumXSqd - ( sumX * sumX / dataSet.size() );
+    
+    double slope = sumXY - ( sumX * sumY / dataSet.size() );
+    slope /= del;
+    
+    double yOffset = (sumXSqd * sumY) - (sumX * sumXY);
+    yOffset /= del * dataSet.size();
+    
+    for (int i = 0; i < dataSet.size(); ++i) {
+      dataSet.set(i, dataSet.get(i).doubleValue() - ( (slope * i) + yOffset) );
+    }
+    
+  }
+  
+  /**
+   * Collects the data points in the Peterson new low noise model to be plotted
+   * Assumes that there is a text file in the data folder that contains the
+   * NLNM data points for given input frequencies.
+   * @return Plottable data series representing the NLNM
+   */
+  public static XYSeries getLowNoiseModel(boolean freqSpace, Experiment exp) {
+    // TODO: define NLNM as an array or something in a different class
+    XYSeries xys = new XYSeries("NLNM");
+    try {
+      BufferedReader fr = new BufferedReader(
+                            new FileReader(
+                              new File(".resources/NLNM.txt") ) );
+      String str = fr.readLine();
+      while (str != null) {
+        String[] values = str.split("\\s+");
+        double x = Double.parseDouble(values[0]); // period, in seconds
+        if (x > 1.0E3) {
+          break;
+        }
+        double y = Double.parseDouble(values[3]);
+        if (freqSpace) {
+          xys.add(1/x, y);
+        } else {
+          xys.add(x, y);
+        }
+        
+        str = fr.readLine();
+      }
+      fr.close();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return xys;
+  }
+  
+  public static double[] inverseFFT(Complex[] freqDomn) {
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.STANDARD);
+    
+    Complex[] timeSeriesCpx = fft.transform(freqDomn, TransformType.INVERSE);
+    double[] timeSeries = new double[timeSeriesCpx.length];
+    for (int i = 0; i < timeSeries.length; ++i) {
+      timeSeries[i] = timeSeriesCpx[i].getReal();
+    }
+    
+    return timeSeries;
+  }
+  
   // TODO: move these signal processing functions into their own
   // class -- or possibly even a new package that can be easily libraried?
   // along with the DataSeriesHelper code
+  
+  public static FFTResult simpleFFT(DataBlock db) {
+    ArrayList<Number> list1 = new ArrayList<Number>( db.getData() );
+        
+    int padding = 2;
+    while ( padding < list1.size() ) {
+      padding *= 2;
+    }
+    
+    double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
+    period *= db.getInterval();
+    double deltaFrq = 1. / (period * padding);
+    
+    // detrend(list1);
+    // demean(list1);
+    // double wss = cosineTaper(list1, TAPER_WIDTH);
+   
+    double[] toFFT = new double[padding];
+    
+    for (int i = 0; i < list1.size(); ++i) {
+      toFFT[i] = list1.get(i).doubleValue();
+    }
+    
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.STANDARD);
+    
+    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+    
+    double[] frequencies = new double[toFFT.length];
+    
+    for (int i = 0; i < frequencies.length; ++i) {
+      frequencies[i] = i * deltaFrq;
+    }
+    
+    return new FFTResult(frqDomn, frequencies);
+  }
   
   /**
    * Helper function to calculate power spectral density / crosspower.
@@ -294,182 +439,37 @@ public class FFTResult {
     
   }
   
-  /**
-   * In-place subtraction of mean from each point in an incoming data set.
-   * This is a necessary step in calculating the power-spectral density.
-   * @param dataSet The data to have the mean removed from.
-   */
-  public static void demean(List<Number> dataSet) {
-    
-    // I'm always getting the demeaning tasks, huh?
-    
-    if(dataSet.size() == 0) return; // shouldn't happen but just in case
-    
-    double mean = 0.0;
-    
-    for(Number data : dataSet) {
-      mean += data.doubleValue();
-    }
-    
-    mean /= dataSet.size();
-    
-    for(int i = 0; i < dataSet.size(); ++i) {
-      // iterate over index rather than for-each cuz we must replace data
-      // ugly syntax because numeric data types are immutable
-      dataSet.set(i, dataSet.get(i).doubleValue() - mean);
-    }
-    
-    // test shows this works as in-place method
-  }
+  private Complex[] transform;
   
-  public static FFTResult simpleFFT(DataBlock db) {
-    ArrayList<Number> list1 = new ArrayList<Number>( db.getData() );
-        
-    int padding = 2;
-    while ( padding < list1.size() ) {
-      padding *= 2;
-    }
-    
-    double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
-    period *= db.getInterval();
-    double deltaFrq = 1. / (period * padding);
-    
-    detrend(list1);
-    demean(list1);
-    double wss = cosineTaper(list1, TAPER_WIDTH);
-   
-    double[] toFFT = new double[padding];
-    
-    for (int i = 0; i < list1.size(); ++i) {
-      toFFT[i] = list1.get(i).doubleValue();
-    }
-    
-    FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.STANDARD);
-    
-    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-    
-    double[] frequencies = new double[toFFT.length];
-    
-    for (int i = 0; i < frequencies.length; ++i) {
-      frequencies[i] = i * deltaFrq;
-    }
-    
-    return new FFTResult(frqDomn, frequencies);
-  }
-  
-  public static double[] inverseFFT(Complex[] freqDomn) {
-    FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.STANDARD);
-    
-    Complex[] timeSeriesCpx = fft.transform(freqDomn, TransformType.INVERSE);
-    double[] timeSeries = new double[timeSeriesCpx.length];
-    for (int i = 0; i < timeSeries.length; ++i) {
-      timeSeries[i] = timeSeriesCpx[i].getReal();
-    }
-    
-    return timeSeries;
-  }
+  private double[] freqs;
   
   /**
-   * In-place subtraction of trend from each point in an incoming data set.
-   * This is a necessary step in calculating the power-spectral density.
-   * @param dataSet The data to have the trend removed from.
+   * Instantiate the structure holding an FFT and its frequency range
+   * (Used to return data from the spectral density calculations)
+   * Holds results of an FFT calculation already performed, usable in return
+   * statements
+   * @param inPSD Precalculated FFT result for some timeseries
+   * @param inFreq Frequencies matched up to each FFT value
    */
-  public static void detrend(List<Number> dataSet) {
-    
-    double sumX = 0.0;
-    double sumY = 0.0;
-    double sumXSqd = 0.0;
-    double sumXY = 0.0;
-    
-    for (int i = 0; i < dataSet.size(); ++i) {
-      sumX += (double) i;
-      sumXSqd += (double) i * (double) i;
-      double value = dataSet.get(i).doubleValue();
-      sumXY += value * (double) i;
-      sumY += value;
-    }
-    
-    // brackets here so you don't get confused thinking this should be
-    // algebraic division (in which case we'd just factor out the size term)
-    // 
-    
-    double del = sumXSqd - ( sumX * sumX / dataSet.size() );
-    
-    double slope = sumXY - ( sumX * sumY / dataSet.size() );
-    slope /= del;
-    
-    double yOffset = (sumXSqd * sumY) - (sumX * sumXY);
-    yOffset /= del * dataSet.size();
-    
-    for (int i = 0; i < dataSet.size(); ++i) {
-      dataSet.set(i, dataSet.get(i).doubleValue() - ( (slope * i) + yOffset) );
-    }
-    
+  public FFTResult(Complex[] inPSD, double[] inFreq) {
+    transform = inPSD;
+    freqs = inFreq;
   }
 
   /**
-   * Calculates and performs an in-place cosine taper on an incoming data set.
-   * Used for windowing for performing FFT.
-   * @param dataSet The dataset to have the taper applied to.
-   * @return Value corresponding to power loss from application of taper.
+   * Get the FFT for some sort of previously calculated data
+   * @return Array of FFT results, as complex numbers
    */
-  public static double cosineTaper(List<Number> dataSet, double taperW) {
-    
-    double ramp = taperW * dataSet.size();
-    double taper;
-    double Wss = 0.0; // represents power loss
-    
-    for (int i = 0; i < ramp; i++) {
-      taper = 0.5 * (1.0 - Math.cos( (double) i * Math.PI / ramp) );
-      dataSet.set(i, dataSet.get(i).doubleValue() * taper);
-      int idx = dataSet.size()-i-1;
-      dataSet.set(idx, dataSet.get(idx).doubleValue() * taper );
-      Wss += 2.0 * taper * taper;
-    }
-    
-    Wss += ( dataSet.size() - (2*ramp) );
-    
-    return Wss;
+  public Complex[] getFFT() {
+    return transform;
   }
   
   /**
-   * Collects the data points in the Peterson new low noise model to be plotted
-   * Assumes that there is a text file in the data folder that contains the
-   * NLNM data points for given input frequencies.
-   * @return Plottable data series representing the NLNM
+   * Get the frequency range for the (previously calculated) FFT
+   * @return Array of frequencies (doubles), matching index to each FFT point
    */
-  public static XYSeries getLowNoiseModel(boolean freqSpace, Experiment exp) {
-    // TODO: define NLNM as an array or something in a different class
-    XYSeries xys = new XYSeries("NLNM");
-    try {
-      BufferedReader fr = new BufferedReader(
-                            new FileReader(
-                              new File(".resources/NLNM.txt") ) );
-      String str = fr.readLine();
-      while (str != null) {
-        String[] values = str.split("\\s+");
-        double x = Double.parseDouble(values[0]); // period, in seconds
-        if (x > 1.0E3) {
-          break;
-        }
-        double y = Double.parseDouble(values[3]);
-        if (freqSpace) {
-          xys.add(1/x, y);
-        } else {
-          xys.add(x, y);
-        }
-        
-        str = fr.readLine();
-      }
-      fr.close();
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return xys;
+  public double[] getFreqs() {
+    return freqs;
   }
   
   

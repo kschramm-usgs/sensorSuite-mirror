@@ -2,6 +2,7 @@ package asl.sensor;
 
 import java.awt.Font;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.TimeZone;
 
 import org.apache.commons.math3.complex.Complex;
@@ -60,18 +61,18 @@ public class StepExperiment extends Experiment {
     f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
     Unit respUnit = ir.getUnits();
-    
-    InstrumentResponse appxResp = new InstrumentResponse(f, h, respUnit);
+    List<Double> gain = ir.getGain();
+    InstrumentResponse appxResp = new InstrumentResponse(f, h, respUnit, gain);
     
     // get FFT of datablock timeseries, apply response to input
     FFTResult fft = FFTResult.simpleFFT(db);
     
     Complex[] respValues = appxResp.applyResponseToInput( fft.getFreqs() );
     
-    double maxVal = Double.NEGATIVE_INFINITY;
+    Complex maxVal = Complex.ZERO; // negative infinity
     for (Complex respVal : respValues) {
-      if ( respVal.abs()  > maxVal  && respVal.abs() != Double.NaN) {
-        maxVal = respVal.abs();
+      if ( respVal.abs()  > maxVal.abs()  && respVal.abs() != Double.NaN) {
+        maxVal = respVal;
       }
     }
     
@@ -81,12 +82,14 @@ public class StepExperiment extends Experiment {
     // don't let denominator be zero
     System.out.println(fftValues[0]);
     System.out.println(respValues[0]);
-    System.out.println(0.008 * maxVal);
+    System.out.println(maxVal.multiply(0.008));
     correctedValues[0] = Complex.ONE;
     for (int i = 1; i < correctedValues.length; ++i) {
       Complex numer = fftValues[i].multiply( respValues[i].conjugate() );
       Complex denom = respValues[i].multiply( respValues[i].conjugate() );
-      denom = denom.add(0.008 * maxVal);
+      if ( denom.abs() == 0. ) {
+        denom = denom.add( maxVal.abs() * 0.008 );
+      }
       correctedValues[i] = numer.divide(denom);
     }
     
