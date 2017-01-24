@@ -109,8 +109,9 @@ public class StepExperiment extends Experiment {
     }
     
     double[] toPlot = FFTResult.inverseFFT(correctedValues);
-    long now = db.getStartTime();
-    long start = now;
+    long start = db.getStartTime();
+    System.out.println("start time: " + start);
+    long now = start;
     XYSeries xys = new XYSeries( db.getName() );
     XYSeries scs = new XYSeries( stepCalRaw.getName() ); 
     for (double point : toPlot) {

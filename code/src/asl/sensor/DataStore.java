@@ -147,6 +147,7 @@ public class DataStore {
     dataBlockArray[idx] = xy;
     
     if (numberOfBlocksLoaded() > 1) {
+      System.out.println(numberOfBlocksLoaded());
       // loading in multiple series of data? trim to common time now
       trimToCommonTime();
     }
@@ -189,6 +190,10 @@ public class DataStore {
   public void trimToCommonTime() {
     // trims the data to only plot the overlapping time of each input set
     
+    if ( numberOfBlocksLoaded() <= 1 ) {
+      return;
+    }
+    
     long lastStartTime = Long.MIN_VALUE;
     long firstEndTime = Long.MAX_VALUE;
     
@@ -214,6 +219,8 @@ public class DataStore {
       }
       data.trim(lastStartTime, firstEndTime);
     }
+    
+    System.out.println("TRIMMED TO: " + lastStartTime);
     
   }
   

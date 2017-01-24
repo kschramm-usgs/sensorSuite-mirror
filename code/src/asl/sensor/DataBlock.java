@@ -100,7 +100,7 @@ public class DataBlock {
     
     
     XYSeries out = new XYSeries(name);
-    long thisTime = getStartTime();
+    long thisTime = startTime;
     for (int i = 0; i < data.size(); i+=skipFactor) {
       Number point = data.get(i);
       out.add(thisTime/1000, point); // microseconds to nanoseconds

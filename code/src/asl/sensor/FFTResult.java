@@ -198,9 +198,25 @@ public class FFTResult {
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
     
-    Complex[] timeSeriesCpx = fft.transform(freqDomn, TransformType.INVERSE);
-    double[] timeSeries = new double[timeSeriesCpx.length];
-    for (int i = 0; i < timeSeries.length; ++i) {
+    int padding = 2;
+    while ( padding < freqDomn.length ) {
+      padding *= 2;
+    }
+    
+    Complex[] paddedFreqDomn = new Complex[padding];
+    for (int i = 0; i < freqDomn.length; ++i) {
+      paddedFreqDomn[i] = freqDomn[i];
+
+      paddedFreqDomn[paddedFreqDomn.length - (i + 1)] = freqDomn[i];
+    }
+    
+    Complex[] timeSeriesCpx = 
+        fft.transform(paddedFreqDomn, TransformType.INVERSE);
+    
+    int singleSide = padding / 2 + 1;
+    
+    double[] timeSeries = new double[singleSide];
+    for (int i = 0; i < singleSide; ++i) {
       timeSeries[i] = timeSeriesCpx[i].getReal();
     }
     
@@ -214,6 +230,8 @@ public class FFTResult {
     while ( padding < list1.size() ) {
       padding *= 2;
     }
+    
+    int singleSide = padding/2+1;
     
     double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
     period *= db.getInterval();
@@ -234,13 +252,15 @@ public class FFTResult {
     
     Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
     
-    double[] frequencies = new double[toFFT.length];
+    Complex[] fftOut = new Complex[singleSide];
+    double[] frequencies = new double[singleSide];
     
-    for (int i = 0; i < frequencies.length; ++i) {
+    for (int i = 0; i < singleSide; ++i) {
+      fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
     }
     
-    return new FFTResult(frqDomn, frequencies);
+    return new FFTResult(fftOut, frequencies);
   }
   
   /**
