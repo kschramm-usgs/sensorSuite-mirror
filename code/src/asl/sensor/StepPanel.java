@@ -21,6 +21,8 @@ public class StepPanel extends ExperimentPanel {
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     
     this.add(chartPanel);
+    this.add(save);
+    save.setAlignmentX(CENTER_ALIGNMENT);
     
   }
 

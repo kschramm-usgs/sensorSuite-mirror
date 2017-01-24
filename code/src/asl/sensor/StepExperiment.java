@@ -21,10 +21,10 @@ public class StepExperiment extends Experiment {
     super();
     xAxisTitle = "Time (s)";
     yAxisTitle = "Counts (normalized)";
-    xAxis = new DateAxis(xAxisTitle);
-    SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-    sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-    xAxis.setLabel("UTC Time");
+    xAxis = new NumberAxis(xAxisTitle);
+    //SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+    //sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+    //xAxis.setLabel("UTC Time");
     yAxis = new NumberAxis(yAxisTitle);
     yAxis.setAutoRange(true);
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
@@ -109,13 +109,14 @@ public class StepExperiment extends Experiment {
     }
     
     double[] toPlot = FFTResult.inverseFFT(correctedValues);
-    long start = db.getStartTime();
+    long start = 0L; // was db.startTime();
     System.out.println("start time: " + start);
     long now = start;
     XYSeries xys = new XYSeries( db.getName() );
     XYSeries scs = new XYSeries( stepCalRaw.getName() ); 
     for (double point : toPlot) {
-      xys.add(now/1000, point);
+      double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
+      xys.add( seconds, point );
       now += interval;
     }
     now = start;

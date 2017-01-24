@@ -261,7 +261,7 @@ implements ActionListener, ChangeListener {
    */
   public void setVerticalBars() {
     
-    zooms.trimToCommonTime();
+    // zooms.trimToCommonTime();
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( null == ds.getBlock(i) ) {

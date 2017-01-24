@@ -220,8 +220,6 @@ public class DataStore {
       data.trim(lastStartTime, firstEndTime);
     }
     
-    System.out.println("TRIMMED TO: " + lastStartTime);
-    
   }
   
   /**
