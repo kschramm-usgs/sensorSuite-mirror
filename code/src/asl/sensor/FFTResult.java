@@ -194,7 +194,7 @@ public class FFTResult {
     return xys;
   }
   
-  public static double[] inverseFFT(Complex[] freqDomn) {
+  public static double[] inverseFFT(Complex[] freqDomn, int trimLength) {
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
     
@@ -213,10 +213,8 @@ public class FFTResult {
     Complex[] timeSeriesCpx = 
         fft.transform(paddedFreqDomn, TransformType.INVERSE);
     
-    int singleSide = padding / 2 + 1;
-    
-    double[] timeSeries = new double[singleSide];
-    for (int i = 0; i < singleSide; ++i) {
+    double[] timeSeries = new double[trimLength];
+    for (int i = 0; i < trimLength; ++i) {
       timeSeries[i] = timeSeriesCpx[i].getReal();
     }
     

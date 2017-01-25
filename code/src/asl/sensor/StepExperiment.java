@@ -52,7 +52,10 @@ public class StepExperiment extends Experiment {
       outIdx = ds.getXthFullyLoadedIndex(2);
     }
     
+    // resulting inverse fft should be this length
+    int trimLength = stepCalRaw.getData().size();
 
+    // get data of the result of the step calibration
     DataBlock db = ds.getBlock(outIdx);
     long interval = db.getInterval();
     InstrumentResponse ir = ds.getResponse(outIdx);
@@ -68,23 +71,28 @@ public class StepExperiment extends Experiment {
     FFTResult fft = FFTResult.simpleFFT(db);
     
     // term inside the square root in the calculations of p1, p2
+    // (h^2-1)
     Complex tempResult = new Complex( Math.pow(h, 2) - 1 );
     
     double omega = 2 * Math.PI * f; // omega_0
     
-    Complex pole1 = tempResult.sqrt().add(h).multiply(-1);
+    // - (h + sqrt(h^2-1))
+    Complex hCast = new Complex(h);
+    Complex pole1 = hCast.add( tempResult.sqrt() ).multiply(-1);
     pole1.multiply(omega);
     
-    Complex pole2 = tempResult.sqrt().subtract(h).multiply(-1);
+    // - (h - sqrt(h^2-1))
+    Complex pole2 = hCast.subtract( tempResult.sqrt() ).multiply(-1);
     pole2.multiply(omega);
     
     Complex[] fftValues = fft.getFFT();
     double[] freqs = fft.getFreqs();
     
-    Complex[] correctedValues = new Complex[fftValues.length];
+    Complex[] respPerFreq = new Complex[fftValues.length];
+    double max = 0.0;
     // don't let denominator be zero
-    correctedValues[0] = Complex.ONE;
-    for (int i = 1; i < correctedValues.length; ++i) {
+    respPerFreq[0] = Complex.ONE;
+    for (int i = 1; i < respPerFreq.length; ++i) {
       Complex factor = new Complex(0, 2*Math.PI*freqs[i]); // 2*pi*i*f
       
       // (2*pi*i*f - p1) * (2*pi*f*i - p2)
@@ -92,24 +100,32 @@ public class StepExperiment extends Experiment {
       
       Complex resp = factor.divide(denom);
       
-      // fft * conj(resp) / (resp * conj(resp) )
-      correctedValues[i] = 
+      // RESP = fft * conj(resp) / (resp * conj(resp) )
+      respPerFreq[i] = 
           fftValues[i].multiply( resp.conjugate() )
            .divide( resp.multiply( resp.conjugate() ) );
       
-      /*
-      // fft*(2*pi*i*f-0)
-      Complex numer = fftValues[i].divide(factor);
-
-      // (2*pi*i*f-p1)*(2*pi*i*f-p2)
-      Complex denom = factor.subtract(pole1);
-      denom = denom.multiply( factor.subtract(pole2) );
+      if (respPerFreq[i].abs() > max) {
+        max = respPerFreq[i].abs();
+      }
       
-      correctedValues[i] = numer.multiply(denom);
-      */
     }
     
-    double[] toPlot = FFTResult.inverseFFT(correctedValues);
+    Complex[] stepFFT = FFTResult.simpleFFT(stepCalRaw).getFFT();
+    Complex[] correctedValues = new Complex[stepFFT.length];
+    
+    for (int i = 0; i < stepFFT.length; ++i) {
+      Complex conjResp = respPerFreq[i].conjugate();
+      double aboveZero = 0.008*max;  // term to keep the denominator above 0
+      
+      // resp * conj(resp) + 0.008(max(|resp|))
+      Complex denom = respPerFreq[i].multiply(conjResp).add(aboveZero);
+      
+      // fft * conj(resp) / (resp * conjResp)+0.008(max(|resp|))
+      correctedValues[i] = stepFFT[i].multiply(conjResp).divide(denom);
+    }
+    
+    double[] toPlot = FFTResult.inverseFFT(correctedValues, trimLength);
     long start = 0L; // was db.startTime();
     System.out.println("start time: " + start);
     long now = start;
