@@ -448,6 +448,10 @@ implements ActionListener, ChangeListener {
     return IMAGE_HEIGHT * ds.numberOfBlocksLoaded();
   }
   
+  public int getImageWidth()  {
+    return allCharts.getWidth();
+  }
+  
   /**
    * Return this panel's charts as a single buffered image
    * @return Buffered image of the plots, writeable to file
@@ -472,7 +476,7 @@ implements ActionListener, ChangeListener {
     
     // int shownHeight = allCharts.getHeight();
     
-    width = Math.max( width, chartPanels[0].getWidth() );
+    width = Math.min( width, chartPanels[0].getWidth() );
     // height = Math.max( height, shownHeight );
     
     int loaded = ds.numberOfBlocksLoaded();

@@ -78,17 +78,6 @@ public class StepExperiment extends Experiment {
     Complex pole2 = tempResult.sqrt().subtract(h).multiply(-1);
     pole2.multiply(omega);
     
-    /*
-    Complex[] respValues = apxResp.applyResponseToInput( fft.getFreqs() );
-    
-    Complex maxVal = Complex.ZERO; // negative infinity
-    for (Complex respVal : respValues) {
-      if ( respVal.abs()  > maxVal.abs()  && respVal.abs() != Double.NaN) {
-        maxVal = respVal;
-      }
-    }
-    */
-    
     Complex[] fftValues = fft.getFFT();
     double[] freqs = fft.getFreqs();
     
@@ -98,14 +87,26 @@ public class StepExperiment extends Experiment {
     for (int i = 1; i < correctedValues.length; ++i) {
       Complex factor = new Complex(0, 2*Math.PI*freqs[i]); // 2*pi*i*f
       
+      // (2*pi*i*f - p1) * (2*pi*f*i - p2)
+      Complex denom = factor.subtract(pole1).multiply( factor.subtract(pole2) );
+      
+      Complex resp = factor.divide(denom);
+      
+      // fft * conj(resp) / (resp * conj(resp) )
+      correctedValues[i] = 
+          fftValues[i].multiply( resp.conjugate() )
+           .divide( resp.multiply( resp.conjugate() ) );
+      
+      /*
       // fft*(2*pi*i*f-0)
-      Complex numer = fftValues[i].multiply(factor);
+      Complex numer = fftValues[i].divide(factor);
 
       // (2*pi*i*f-p1)*(2*pi*i*f-p2)
       Complex denom = factor.subtract(pole1);
       denom = denom.multiply( factor.subtract(pole2) );
       
-      correctedValues[i] = numer.divide(denom);
+      correctedValues[i] = numer.multiply(denom);
+      */
     }
     
     double[] toPlot = FFTResult.inverseFFT(correctedValues);

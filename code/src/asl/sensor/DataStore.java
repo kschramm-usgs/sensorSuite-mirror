@@ -147,7 +147,6 @@ public class DataStore {
     dataBlockArray[idx] = xy;
     
     if (numberOfBlocksLoaded() > 1) {
-      System.out.println(numberOfBlocksLoaded());
       // loading in multiple series of data? trim to common time now
       trimToCommonTime();
     }
