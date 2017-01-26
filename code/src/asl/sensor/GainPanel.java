@@ -144,9 +144,12 @@ implements ChangeListener {
       // don't allow the same value for the two indices (plot behaves badly)
       // assume the user is setting firstSeries selection correctly,
       // and thus make sure that the secondSeries doesn't have a collision
+      // we disable the combo box to prevent a second event from triggering
       if (idx0 == idx1) {
+        secondSeries.setEnabled(false);
         idx1 = (idx1 + 1) % secondSeries.getItemCount();
         secondSeries.setSelectedIndex(idx1);
+        secondSeries.setEnabled(true);
       }
       
     } else if ( e.getSource() == secondSeries ) {      
@@ -158,8 +161,10 @@ implements ChangeListener {
       
       // same as with the above, but assume secondSeries selection intentional
       if (idx0 == idx1) {
+        firstSeries.setEnabled(false);
         idx0 = (idx0 + 1) % firstSeries.getItemCount();
         firstSeries.setSelectedIndex(idx0);
+        firstSeries.setEnabled(true);
       }
       
     }
@@ -349,6 +354,7 @@ implements ChangeListener {
     
     final int idx0 = index0;
     final int idx1 = index1;
+                                          
     
     SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
       
@@ -376,7 +382,7 @@ implements ChangeListener {
         freqRange = 
             ( (GainExperiment) expResult).getOctaveCenteredAtPeak(idx0);
         
-        // get the locations (x-axis values) of frequency range in 
+        // get the locations (x-axis values) of frequency range as intervals
         lowPrd = Math.min(1/freqRange[0], 1/freqRange[1]);
         highPrd = Math.max(1/freqRange[0], 1/freqRange[1]);
         

@@ -255,11 +255,9 @@ public class GainExperiment extends Experiment {
       int lowBnd, int higBnd) {
     
     // make sure lowInd really is the lower index
-    if (lowBnd > higBnd) {
-      int temp = higBnd;
-      higBnd = lowBnd;
-      lowBnd = temp;
-    }
+    int temp = Math.min(lowBnd, higBnd);
+    higBnd = Math.max(lowBnd, higBnd);
+    lowBnd = temp;
     
     FFTResult plot0 = fftResults.get(idx0);
     FFTResult plot1 = fftResults.get(idx1);
@@ -269,7 +267,7 @@ public class GainExperiment extends Experiment {
     double mean1 = mean(plot1, lowBnd, higBnd);
     
     // double MIN_VALUE field is effectively java's machine epsilon
-    
+    // calculate ratio and sigma over the range
     ratio = (mean0+Double.MIN_VALUE) / (mean1+Double.MIN_VALUE); 
       // prevent division by 0
     
@@ -277,8 +275,6 @@ public class GainExperiment extends Experiment {
     
     double gain1 = gainStage1[idx0];
     double gain2 = gainStage1[idx1]/Math.sqrt(ratio);
-    
-    // calculate ratio and sigma over the range
     
     return new double[]{ratio, sigma, gain1, gain2};
   }
