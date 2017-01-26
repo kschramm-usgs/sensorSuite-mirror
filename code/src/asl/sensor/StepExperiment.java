@@ -76,8 +76,11 @@ public class StepExperiment extends Experiment {
     
     double omega = 2 * Math.PI * f; // omega_0
     
-    // - (h + sqrt(h^2-1))
+
+    // casting h as a complex number to enable these calculations
     Complex hCast = new Complex(h);
+    
+    // - (h + sqrt(h^2-1))
     Complex pole1 = hCast.add( tempResult.sqrt() ).multiply(-1);
     pole1.multiply(omega);
     
@@ -88,7 +91,7 @@ public class StepExperiment extends Experiment {
     Complex[] fftValues = fft.getFFT();
     double[] freqs = fft.getFreqs();
     
-    Complex[] respPerFreq = new Complex[fftValues.length];
+    Complex[] respPerFreq = new Complex[fftValues.length]; // array of resps
     double max = 0.0;
     // don't let denominator be zero
     respPerFreq[0] = Complex.ONE;
