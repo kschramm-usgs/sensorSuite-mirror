@@ -68,7 +68,7 @@ public class StepExperiment extends Experiment {
     //InstrumentResponse apxResp = new InstrumentResponse(f, h, respUnit, gain);
     
     // get FFT of datablock timeseries, apply response to input
-    FFTResult fft = FFTResult.simpleFFT(db);
+    FFTResult fft = FFTResult.simpleFFT(stepCalRaw);
     
     // term inside the square root in the calculations of p1, p2
     // (h^2-1)
@@ -93,17 +93,19 @@ public class StepExperiment extends Experiment {
     // don't let denominator be zero
     respPerFreq[0] = Complex.ONE;
     for (int i = 1; i < respPerFreq.length; ++i) {
-      Complex factor = new Complex(0, 2*Math.PI*freqs[i]); // 2*pi*i*f
+      
+      // 2*pi*i*f
+      Complex factor = new Complex(0, 2*Math.PI*freqs[i]); 
       
       // (2*pi*i*f - p1) * (2*pi*f*i - p2)
       Complex denom = factor.subtract(pole1).multiply( factor.subtract(pole2) );
       
       Complex resp = factor.divide(denom);
       
-      // RESP = fft * conj(resp) / (resp * conj(resp) )
+      // RESP = fft(x)*k / ((k-p1)(k-p2))
+      // where k = 2*pi*i*f, x is the input signal, f is FFT frequencies
       respPerFreq[i] = 
-          fftValues[i].multiply( resp.conjugate() )
-           .divide( resp.multiply( resp.conjugate() ) );
+          fftValues[i].multiply(resp);
       
       if (respPerFreq[i].abs() > max) {
         max = respPerFreq[i].abs();
@@ -111,34 +113,44 @@ public class StepExperiment extends Experiment {
       
     }
     
-    Complex[] stepFFT = FFTResult.simpleFFT(stepCalRaw).getFFT();
+    Complex[] stepFFT = FFTResult.simpleFFT(db).getFFT();
     Complex[] correctedValues = new Complex[stepFFT.length];
     
     for (int i = 0; i < stepFFT.length; ++i) {
+      // the conjugate of the response, used twice in deconvolve function
       Complex conjResp = respPerFreq[i].conjugate();
       double aboveZero = 0.008*max;  // term to keep the denominator above 0
       
       // resp * conj(resp) + 0.008(max(|resp|))
       Complex denom = respPerFreq[i].multiply(conjResp).add(aboveZero);
       
+      // deconvolving the response
       // fft * conj(resp) / (resp * conjResp)+0.008(max(|resp|))
       correctedValues[i] = stepFFT[i].multiply(conjResp).divide(denom);
     }
     
     double[] toPlot = FFTResult.inverseFFT(correctedValues, trimLength);
+    
+    /*
+    toPlot = new double[stepFFT.length];
+    for (int i = 0; i < correctedValues.length; ++i) {
+      toPlot[i] = correctedValues[i].getReal();
+    }
+    */
+    
     long start = 0L; // was db.startTime();
-    System.out.println("start time: " + start);
     long now = start;
-    XYSeries xys = new XYSeries( db.getName() );
+    XYSeries xys = new XYSeries("FFT(STEP)/RESP");
     XYSeries scs = new XYSeries( stepCalRaw.getName() ); 
     for (double point : toPlot) {
       double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
-      xys.add( seconds, point );
+      xys.add(seconds, point);
       now += interval;
     }
     now = start;
     for (Number point : stepCalRaw.getData() ) {
-      scs.add(now/1000, point);
+      double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
+      scs.add(seconds, point);
       now += interval;
     }
     

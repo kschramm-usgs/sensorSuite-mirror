@@ -122,6 +122,7 @@ public class GainExperiment extends Experiment {
     xAxis = new LogarithmicAxis(xAxisTitle);
     yAxis = new NumberAxis(yAxisTitle);
     yAxis.setAutoRange(true);
+    ( (NumberAxis) yAxis).setAutoRangeIncludesZero(false);
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);

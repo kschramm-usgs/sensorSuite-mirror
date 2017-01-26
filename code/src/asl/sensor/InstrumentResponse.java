@@ -58,50 +58,6 @@ public class InstrumentResponse {
   }
   
   /**
-   * Create a response file from a corner frequency and damping factor
-   * @param corner Corner frequency (Hz)
-   * @param damping Damping factor
-   */
-  public InstrumentResponse(
-      double corner, 
-      double damping, 
-      Unit unit, 
-      List<Double> gainIn) {
-    
-    double omega = 2 * Math.PI * corner; // omega_0
-    
-    Complex tempResult = new Complex( 1 - Math.pow(damping, 2) );
-    
-    Complex pole1 = tempResult.sqrt().add(damping).multiply(-1);
-    pole1.multiply(omega);
-    // double pole1 = -( damping + Complex.sqrt( Math.pow(damping,2) - 1 ) );
-    // pole1 *= omega;
-    
-    Complex pole2 = tempResult.sqrt().subtract(damping).multiply(-1);
-    pole2.multiply(omega);
-    
-    // reset the values of poles 1 and two FOR DEBUGGING
-    // pole1 = new Complex(0.);
-    // pole2 = new Complex(0.);
-    
-    poles = new ArrayList<Complex>();
-    poles.add(pole1);
-    poles.add(pole2);
-    //gain = Arrays.asList(new Double[]{10.0, 1.0, 10.0}); 
-    // setting this to 1.0 for now to get same in as out for 0.0 pole values
-    gain = gainIn;
-    
-    zeros = new ArrayList<Complex>();
-    zeros.add( new Complex(0.0) ); // calculated response zero is at 0
-    
-    unitType = unit;
-    transferType = TransferFunction.LAPLACIAN;
-    
-    normalization = 1.0; // TODO: check if correct
-    
-  }
-  
-  /**
    * Get the transfer function of this response file (laplacian, linear)
    * @return
    */
