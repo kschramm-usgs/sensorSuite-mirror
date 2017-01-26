@@ -56,8 +56,8 @@ public class StepExperiment extends Experiment {
     int trimLength = stepCalRaw.getData().size();
 
     // get data of the result of the step calibration
-    DataBlock db = ds.getBlock(outIdx);
-    long interval = db.getInterval();
+    DataBlock sensorOutput = ds.getBlock(outIdx);
+    long interval = sensorOutput.getInterval();
     InstrumentResponse ir = ds.getResponse(outIdx);
     Complex pole = ir.getPoles().get(0);
     
@@ -113,7 +113,7 @@ public class StepExperiment extends Experiment {
       
     }
     
-    Complex[] stepFFT = FFTResult.simpleFFT(db).getFFT();
+    Complex[] stepFFT = FFTResult.simpleFFT(sensorOutput).getFFT();
     Complex[] correctedValues = new Complex[stepFFT.length];
     
     for (int i = 0; i < stepFFT.length; ++i) {
