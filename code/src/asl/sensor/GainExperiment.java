@@ -274,7 +274,7 @@ public class GainExperiment extends Experiment {
     sigma = sdev(plot0, plot1, ratio, lowBnd, higBnd);
     
     double gain1 = gainStage1[idx0];
-    double gain2 = gainStage1[idx1]/Math.sqrt(ratio);
+    double gain2 = gainStage1[idx0]/Math.sqrt(ratio);
     
     return new double[]{ratio, sigma, gain1, gain2};
   }

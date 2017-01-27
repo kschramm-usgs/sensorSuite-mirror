@@ -103,7 +103,8 @@ public class DataBlock {
     long thisTime = startTime;
     for (int i = 0; i < data.size(); i+=skipFactor) {
       Number point = data.get(i);
-      out.add(thisTime/1000, point); // microseconds to nanoseconds
+      double xTime = (double) thisTime / TimeSeriesUtils.ONE_HZ_INTERVAL;
+      out.add(xTime*1000, point); // seconds to milliseconds
       thisTime += skipFactor*interval;
     }
     

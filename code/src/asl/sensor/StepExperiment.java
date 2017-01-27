@@ -1,16 +1,10 @@
 package asl.sensor;
 
 import java.awt.Font;
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.TimeZone;
 
 import org.apache.commons.math3.complex.Complex;
-import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.ValueAxis;
 import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 
 public class StepExperiment extends Experiment {
 
@@ -22,11 +16,12 @@ public class StepExperiment extends Experiment {
     xAxisTitle = "Time (s)";
     yAxisTitle = "Counts (normalized)";
     xAxis = new NumberAxis(xAxisTitle);
+    xAxis.setAutoRange(true);
     //SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
     //sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
     //xAxis.setLabel("UTC Time");
     yAxis = new NumberAxis(yAxisTitle);
-    yAxis.setAutoRange(true);
+    // yAxis.setAutoRange(true);
     Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
     xAxis.setLabelFont(bold);
     yAxis.setLabelFont(bold);
@@ -63,12 +58,8 @@ public class StepExperiment extends Experiment {
     
     f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
-    //Unit respUnit = ir.getUnits();
-    //List<Double> gain = ir.getGain();
-    //InstrumentResponse apxResp = new InstrumentResponse(f, h, respUnit, gain);
     
-    // get FFT of datablock timeseries, apply response to input
-    FFTResult fft = FFTResult.simpleFFT(stepCalRaw);
+    // use these terms to calculate the poles
     
     // term inside the square root in the calculations of p1, p2
     // (h^2-1)
@@ -76,7 +67,6 @@ public class StepExperiment extends Experiment {
     
     double omega = 2 * Math.PI * f; // omega_0
     
-
     // casting h as a complex number to enable these calculations
     Complex hCast = new Complex(h);
     
@@ -88,58 +78,78 @@ public class StepExperiment extends Experiment {
     Complex pole2 = hCast.subtract( tempResult.sqrt() ).multiply(-1);
     pole2.multiply(omega);
     
-    Complex[] fftValues = fft.getFFT();
-    double[] freqs = fft.getFreqs();
+    // get FFT of datablock timeseries, deconvolve with response
+    FFTResult sensorsFFT = FFTResult.simpleFFT(sensorOutput);
+    Complex[] fftValues = sensorsFFT.getFFT();
+    double[] freqs = sensorsFFT.getFreqs();
     
-    Complex[] respPerFreq = new Complex[fftValues.length]; // array of resps
+    // check if the freqs need to be integrated or differentiated
+    int integrations = Unit.ACCELERATION.getDifferentiations( ir.getUnits() );
+    //integrations *= -1;
+    // unlike s (see below) this is always 2Pi
+    double integConstant = 2*Math.PI;
+    
+      
+    // calculate the FFT of the response
+    Complex[] respFFT = new Complex[fftValues.length]; // array of resps
     double max = 0.0;
     // don't let denominator be zero
-    respPerFreq[0] = Complex.ONE;
-    for (int i = 1; i < respPerFreq.length; ++i) {
+    respFFT[0] = Complex.ONE;
+    for (int i = 1; i < respFFT.length; ++i) {
       
+      double deltaFrq = freqs[i];
+      // replaced freqs[i] with 
       // 2*pi*i*f
       Complex factor = new Complex(0, 2*Math.PI*freqs[i]); 
       
       // (2*pi*i*f - p1) * (2*pi*f*i - p2)
       Complex denom = factor.subtract(pole1).multiply( factor.subtract(pole2) );
       
-      Complex resp = factor.divide(denom);
+      respFFT[i] = factor.divide(denom);
       
-      // RESP = fft(x)*k / ((k-p1)(k-p2))
-      // where k = 2*pi*i*f, x is the input signal, f is FFT frequencies
-      respPerFreq[i] = 
-          fftValues[i].multiply(resp);
       
-      if (respPerFreq[i].abs() > max) {
-        max = respPerFreq[i].abs();
+      if (respFFT[i].abs() > max) {
+        max = respFFT[i].abs();
+      }
+      
+      if (integrations > 0) {
+        // i*omega; integration is I(w) x (iw)^n
+        Complex iw = new Complex(0.0, integConstant*deltaFrq);
+        for (int j = 1; j < Math.abs(integrations); j++){
+          iw = iw.multiply(iw);
+        }
+        respFFT[i] = respFFT[i].multiply(iw);
+      } else if (integrations < 0) { 
+        // a negative number of integrations 
+        // is a positive number of differentiations
+        // differentiation is I(w) / (-i/w)^n
+        Complex iw = new Complex(0.0, -1.0 / (integConstant*deltaFrq) );
+        for (int j = 1; j < Math.abs(integrations); j++){
+          iw = iw.multiply(iw);
+        }
+        respFFT[i] = iw.multiply(respFFT[i]);
       }
       
     }
     
-    Complex[] stepFFT = FFTResult.simpleFFT(sensorOutput).getFFT();
-    Complex[] correctedValues = new Complex[stepFFT.length];
+    Complex[] correctedValues = new Complex[fftValues.length];
     
-    for (int i = 0; i < stepFFT.length; ++i) {
-      // the conjugate of the response, used twice in deconvolve function
-      Complex conjResp = respPerFreq[i].conjugate();
+    // deconvolving response is dividing fft(signal) by fft(response)
+    
+    for (int i = 0; i < fftValues.length; ++i) {
+      // the conjugate of the response, used twice in deconvolution
+      Complex conjResp = respFFT[i].conjugate();
       double aboveZero = 0.008*max;  // term to keep the denominator above 0
       
       // resp * conj(resp) + 0.008(max(|resp|))
-      Complex denom = respPerFreq[i].multiply(conjResp).add(aboveZero);
+      Complex denom = respFFT[i].multiply(conjResp).add(aboveZero);
       
-      // deconvolving the response
+      // deconvolving the response from output
       // fft * conj(resp) / (resp * conjResp)+0.008(max(|resp|))
-      correctedValues[i] = stepFFT[i].multiply(conjResp).divide(denom);
+      correctedValues[i] = fftValues[i].multiply(conjResp).divide(denom);
     }
     
     double[] toPlot = FFTResult.inverseFFT(correctedValues, trimLength);
-    
-    /*
-    toPlot = new double[stepFFT.length];
-    for (int i = 0; i < correctedValues.length; ++i) {
-      toPlot[i] = correctedValues[i].getReal();
-    }
-    */
     
     long start = 0L; // was db.startTime();
     long now = start;
