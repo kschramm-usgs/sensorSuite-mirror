@@ -197,21 +197,11 @@ public class FFTResult {
   public static double[] inverseFFT(Complex[] freqDomn, int trimLength) {
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
-    
-    int padding = 2;
-    while ( padding < freqDomn.length ) {
-      padding *= 2;
-    }
-    
-    Complex[] paddedFreqDomn = new Complex[padding];
-    for (int i = 0; i < freqDomn.length; ++i) {
-      paddedFreqDomn[i] = freqDomn[i];
-
-      paddedFreqDomn[paddedFreqDomn.length - (i + 1)] = freqDomn[i];
-    }
+   
+    // we're going to assume the data coming in is a power of 2 (and symmetric)
     
     Complex[] timeSeriesCpx = 
-        fft.transform(paddedFreqDomn, TransformType.INVERSE);
+        fft.transform(freqDomn, TransformType.INVERSE);
     
     double[] timeSeries = new double[trimLength];
     for (int i = 0; i < trimLength; ++i) {
@@ -229,7 +219,7 @@ public class FFTResult {
       padding *= 2;
     }
     
-    int singleSide = padding/2+1;
+    int singleSide = padding/2;
     
     double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
     period *= db.getInterval();
@@ -250,15 +240,27 @@ public class FFTResult {
     
     Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
     
-    Complex[] fftOut = new Complex[singleSide];
-    double[] frequencies = new double[singleSide];
+    // Complex[] fftOut = new Complex[singleSide];
+    double[] frequencies = new double[frqDomn.length];
     
-    for (int i = 0; i < singleSide; ++i) {
-      fftOut[i] = frqDomn[i];
+    for (int i = 0; i <= singleSide; ++i) {
+      // fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
     }
     
-    return new FFTResult(fftOut, frequencies);
+    //frequencies[singleSide] = (singleSide-1) * deltaFrq;
+    
+    for (int i = 1; i < frqDomn.length-singleSide; ++i) {
+      frequencies[frequencies.length - i] = frequencies[i];
+    }
+    
+    System.out.println(frequencies[singleSide-1]);
+    System.out.println(frequencies[frequencies.length/2]);
+    System.out.println(frequencies.length/2 - singleSide);
+    System.out.println(frequencies[singleSide]); // max of output frequency
+    System.out.println(frequencies[singleSide+1]);
+    
+    return new FFTResult(frqDomn, frequencies);
   }
   
   /**

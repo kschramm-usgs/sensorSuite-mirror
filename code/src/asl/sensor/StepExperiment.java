@@ -83,21 +83,13 @@ public class StepExperiment extends Experiment {
     Complex[] fftValues = sensorsFFT.getFFT();
     double[] freqs = sensorsFFT.getFreqs();
     
-    // check if the freqs need to be integrated or differentiated
-    int integrations = Unit.ACCELERATION.getDifferentiations( ir.getUnits() );
-    //integrations *= -1;
-    // unlike s (see below) this is always 2Pi
-    double integConstant = 2*Math.PI;
-    
-      
     // calculate the FFT of the response
     Complex[] respFFT = new Complex[fftValues.length]; // array of resps
     double max = 0.0;
     // don't let denominator be zero
     respFFT[0] = Complex.ONE;
     for (int i = 1; i < respFFT.length; ++i) {
-      
-      double deltaFrq = freqs[i];
+
       // replaced freqs[i] with 
       // 2*pi*i*f
       Complex factor = new Complex(0, 2*Math.PI*freqs[i]); 
@@ -110,24 +102,6 @@ public class StepExperiment extends Experiment {
       
       if (respFFT[i].abs() > max) {
         max = respFFT[i].abs();
-      }
-      
-      if (integrations > 0) {
-        // i*omega; integration is I(w) x (iw)^n
-        Complex iw = new Complex(0.0, integConstant*deltaFrq);
-        for (int j = 1; j < Math.abs(integrations); j++){
-          iw = iw.multiply(iw);
-        }
-        respFFT[i] = respFFT[i].multiply(iw);
-      } else if (integrations < 0) { 
-        // a negative number of integrations 
-        // is a positive number of differentiations
-        // differentiation is I(w) / (-i/w)^n
-        Complex iw = new Complex(0.0, -1.0 / (integConstant*deltaFrq) );
-        for (int j = 1; j < Math.abs(integrations); j++){
-          iw = iw.multiply(iw);
-        }
-        respFFT[i] = iw.multiply(respFFT[i]);
       }
       
     }
