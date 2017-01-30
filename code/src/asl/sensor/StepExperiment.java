@@ -72,11 +72,11 @@ public class StepExperiment extends Experiment {
     
     // - (h + sqrt(h^2-1))
     Complex pole1 = hCast.add( tempResult.sqrt() ).multiply(-1);
-    pole1.multiply(omega);
+    pole1 = pole1.multiply(omega);
     
     // - (h - sqrt(h^2-1))
     Complex pole2 = hCast.subtract( tempResult.sqrt() ).multiply(-1);
-    pole2.multiply(omega);
+    pole2 = pole2.multiply(omega);
     
     // get FFT of datablock timeseries, deconvolve with response
     FFTResult sensorsFFT = FFTResult.simpleFFT(sensorOutput);
@@ -143,7 +143,7 @@ public class StepExperiment extends Experiment {
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
-    // xySeriesData.addSeries(scs);
+    xySeriesData.addSeries(scs);
     xySeriesData.addSeries(xys);
     
   }
