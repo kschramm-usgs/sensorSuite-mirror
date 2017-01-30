@@ -61,7 +61,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     fc = new JFileChooser();
     
-    save = new JButton("Save Plot (PNG)");
+    save = new JButton("Save plot (PNG)");
     save.addActionListener(this);
   }
   

@@ -72,7 +72,8 @@ public class StepExperiment extends Experiment {
     
     // - (h + sqrt(h^2-1))
     Complex pole1 = hCast.add( tempResult.sqrt() ).multiply(-1);
-    pole1 = pole1.multiply(omega);
+    pole1 = pole1.multiply(omega); 
+      // cannot modify complex numbers "in-place"; they MUST be (re)assigned
     
     // - (h - sqrt(h^2-1))
     Complex pole2 = hCast.subtract( tempResult.sqrt() ).multiply(-1);
@@ -104,6 +105,13 @@ public class StepExperiment extends Experiment {
         max = respFFT[i].abs();
       }
       
+    }
+    
+    XYSeries freqTestPlot = new XYSeries("Freq plot");
+    XYSeries respTestPlot = new XYSeries("Resp-applied plot");
+    for (int i = 5000; i < 61000; ++i) {
+      freqTestPlot.add(i, freqs[i]);
+      respTestPlot.add(i, respFFT[i].abs());
     }
     
     Complex[] correctedValues = new Complex[fftValues.length];
@@ -143,8 +151,10 @@ public class StepExperiment extends Experiment {
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
-    xySeriesData.addSeries(scs);
-    xySeriesData.addSeries(xys);
+    //xySeriesData.addSeries(freqTestPlot);
+    xySeriesData.addSeries(respTestPlot);
+    //xySeriesData.addSeries(scs);
+    //xySeriesData.addSeries(xys);
     
   }
 

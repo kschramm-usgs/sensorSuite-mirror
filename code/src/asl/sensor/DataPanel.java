@@ -143,12 +143,12 @@ implements ActionListener, ChangeListener {
     JPanel buttons = new JPanel();
     buttons.setLayout( new BoxLayout(buttons, BoxLayout.X_AXIS) );
     
-    zoomIn = new JButton("Zoom on Selection");
+    zoomIn = new JButton("Zoom on selection");
     buttons.add(zoomIn);
     zoomIn.addActionListener(this);
     zoomIn.setEnabled(false);
     
-    save = new JButton("Save Timeseries Plots (PNG)");
+    save = new JButton("Save timeseries plots (PNG)");
     buttons.add(save);
     save.addActionListener(this);
     

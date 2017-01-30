@@ -151,11 +151,11 @@ public class SensorSuite extends JPanel implements ActionListener {
     rpc.fill = GridBagConstraints.NONE;
 
     for (int i = 0; i < seedLoaders.length; i++){
-      seedLoaders[i] = new JButton("Load SEED File " + (i+1) );
+      seedLoaders[i] = new JButton("Load SEED file " + (i+1) );
       seedLoaders[i].addActionListener(this);
       seedFileNames[i] = new JTextField();
 
-      respLoaders[i] = new JButton("Load Response " + (i+1) );
+      respLoaders[i] = new JButton("Load response " + (i+1) );
       respLoaders[i].addActionListener(this);
       respFileNames[i] = new JTextField();
 
