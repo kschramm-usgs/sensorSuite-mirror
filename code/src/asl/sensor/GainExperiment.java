@@ -104,7 +104,8 @@ public class GainExperiment extends Experiment {
     return Math.sqrt(sigma);
   }
   
-  private Double[] gainStage1;
+  private List<Double> gainStage1;
+  private List<Double> otherGainStages; // product of gain stages 2 and up
   
   private List<FFTResult> fftResults;
   
@@ -134,7 +135,9 @@ public class GainExperiment extends Experiment {
   @Override
   void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
     
-    ArrayList<Double> gainArray = new ArrayList<Double>();
+    // 
+    gainStage1 = new ArrayList<Double>();
+    otherGainStages = new ArrayList<Double>();
     
     InstrumentResponse[] resps = ds.getResponses();
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
@@ -142,10 +145,13 @@ public class GainExperiment extends Experiment {
         continue;
       }
       List<Double> gains = resps[i].getGain();
-      gainArray.add( gains.get(1) );
+      gainStage1.add( gains.get(1) );
+      double accumulator = 1.0;
+      for (int j = 2; j < gains.size(); ++j) {
+        accumulator *= gains.get(j);
+      }
+      otherGainStages.add(accumulator);
     }
-    
-    gainStage1 = gainArray.toArray(new Double[0]);
     
     fftResults = new ArrayList<FFTResult>();
     ArrayList<DataBlock> blocksPlotting = new ArrayList<DataBlock>();
@@ -269,14 +275,16 @@ public class GainExperiment extends Experiment {
     // double MIN_VALUE field is effectively java's machine epsilon
     // calculate ratio and sigma over the range
     ratio = (mean0+Double.MIN_VALUE) / (mean1+Double.MIN_VALUE); 
-      // prevent division by 0
+      // added terms exist to prevent division by 0
     
     sigma = sdev(plot0, plot1, ratio, lowBnd, higBnd);
     
-    double gain1 = gainStage1[idx0];
-    double gain2 = gainStage1[idx1]/Math.sqrt(ratio);
     
-    return new double[]{ratio, sigma, gain1, gain2};
+    // TODO: replace this with what the actual calculation should be
+    double gain1 = gainStage1.get(idx0);
+    double gain2 = gainStage1.get(idx1)/Math.sqrt(ratio);
+    
+    return new double[]{Math.sqrt(ratio), sigma, gain1, gain2};
   }
   
   public double[] getStatsFromPeak(int idx0, int idx1) {

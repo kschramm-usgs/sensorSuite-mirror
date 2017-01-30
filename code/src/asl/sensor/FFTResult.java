@@ -163,7 +163,7 @@ public class FFTResult {
    * @return Plottable data series representing the NLNM
    */
   public static XYSeries getLowNoiseModel(boolean freqSpace, Experiment exp) {
-    // TODO: define NLNM as an array or something in a different class
+    // TODO: define NLNM as an array or something in a different class?
     XYSeries xys = new XYSeries("NLNM");
     try {
       BufferedReader fr = new BufferedReader(
@@ -194,6 +194,12 @@ public class FFTResult {
     return xys;
   }
   
+  /**
+   * Given a list representing the FFT of a timeseries, do the inverse FFT on it
+   * @param freqDomn Complex array (such as the result of a previous FFT calc)
+   * @param trimLength How long the original input data was
+   * @return A list of doubles representing the original timeseries of the FFT
+   */
   public static double[] inverseFFT(Complex[] freqDomn, int trimLength) {
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
@@ -211,6 +217,12 @@ public class FFTResult {
     return timeSeries;
   }
   
+  /**
+   * Calculate the forward FFT of a data block
+   * @param db DataBlock to have FFT computed from
+   * @return FFTResult containing the frequency data of the FFT and the
+   * corresponding frequency at each index
+   */
   public static FFTResult simpleFFT(DataBlock db) {
     ArrayList<Number> list1 = new ArrayList<Number>( db.getData() );
         
@@ -253,13 +265,7 @@ public class FFTResult {
     for (int i = 1; i < frqDomn.length-singleSide; ++i) {
       frequencies[frequencies.length - i] = frequencies[i];
     }
-    
-    System.out.println(frequencies[singleSide-1]);
-    System.out.println(frequencies[frequencies.length/2]);
-    System.out.println(frequencies.length/2 - singleSide);
-    System.out.println(frequencies[singleSide]); // max of output frequency
-    System.out.println(frequencies[singleSide+1]);
-    
+
     return new FFTResult(frqDomn, frequencies);
   }
   
@@ -455,9 +461,9 @@ public class FFTResult {
     
   }
   
-  private Complex[] transform;
+  private Complex[] transform; // the FFT data
   
-  private double[] freqs;
+  private double[] freqs; // array of frequencies matching the fft data
   
   /**
    * Instantiate the structure holding an FFT and its frequency range
