@@ -109,9 +109,11 @@ public class StepExperiment extends Experiment {
     
     XYSeries freqTestPlot = new XYSeries("Freq plot");
     XYSeries respTestPlot = new XYSeries("Resp-applied plot");
-    for (int i = 5000; i < 61000; ++i) {
+    XYSeries fftResPlot = new XYSeries("Forward FFT result (absval)");
+    for (int i = 2000; i <= freqs.length/2+10000; ++i) {
       freqTestPlot.add(i, freqs[i]);
       respTestPlot.add(i, respFFT[i].abs());
+      fftResPlot.add(i, fftValues[i].abs());
     }
     
     Complex[] correctedValues = new Complex[fftValues.length];
@@ -151,8 +153,9 @@ public class StepExperiment extends Experiment {
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
-    //xySeriesData.addSeries(freqTestPlot);
+    xySeriesData.addSeries(freqTestPlot);
     xySeriesData.addSeries(respTestPlot);
+    xySeriesData.addSeries(fftResPlot);
     //xySeriesData.addSeries(scs);
     //xySeriesData.addSeries(xys);
     

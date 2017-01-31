@@ -84,11 +84,7 @@ public class TimeSeriesUtils {
           for (Blockette blockette : blockettes) {
             if ( blockette.getType() == 1000 ) {
               Blockette1000 b1000 = (Blockette1000) blockette;
-              int exp = b1000.getDataRecordLength(); // expect either 9 or 12
-              byteSize = 1;
-              for (int i = 0; i <= exp; ++i) {
-                byteSize *= 2;
-              }
+              byteSize = b1000.getDataRecordLength(); // expect either 9 or 12
               return byteSize;
             }
           } // end of loop over blockettes

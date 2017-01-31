@@ -346,8 +346,7 @@ public class SensorSuite extends JPanel implements ActionListener {
                   "Multiplexed File Selection",
                   JOptionPane.PLAIN_MESSAGE,
                   null, names,
-                  names[0]);
-                  
+                  names[0]);     
             } else {
               filterName = new ArrayList<String>(nameSet).get(0);
             }
@@ -371,7 +370,8 @@ public class SensorSuite extends JPanel implements ActionListener {
             }
             
             public void done() {
-              seedFileNames[idx].setText( immutableFile.getName() );
+              seedFileNames[idx].setText( 
+                  immutableFile.getName() + ": " + immutableFilter);
               generate.setEnabled(true);
             }
           };
