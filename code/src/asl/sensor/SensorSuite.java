@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -338,7 +339,8 @@ public class SensorSuite extends JPanel implements ActionListener {
             
             if (nameSet.size() > 1) {
               // more than one series in the file? prompt user for it
-              Object[] names = nameSet.toArray();
+              String[] names = nameSet.toArray(new String[0]);
+              Arrays.sort(names);
               JDialog dialog = new JDialog();
               filterName = (String) JOptionPane.showInputDialog(
                   dialog,

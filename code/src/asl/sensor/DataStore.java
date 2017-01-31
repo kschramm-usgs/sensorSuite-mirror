@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -142,10 +143,15 @@ public class DataStore {
    */
   public void setData(int idx, String filepath, String nameFilter) {
     
-    DataBlock xy = TimeSeriesUtils.getTimeSeries(filepath, nameFilter);
-    thisBlockIsSet[idx] = true;
-    dataBlockArray[idx] = xy;
-    
+    try {
+      DataBlock xy = TimeSeriesUtils.getTimeSeries(filepath, nameFilter);
+      thisBlockIsSet[idx] = true;
+      dataBlockArray[idx] = xy;
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
     if (numberOfBlocksLoaded() > 1) {
       // loading in multiple series of data? trim to common time now
       trimToCommonTime();

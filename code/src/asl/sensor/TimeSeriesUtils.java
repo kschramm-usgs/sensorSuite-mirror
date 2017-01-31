@@ -85,6 +85,7 @@ public class TimeSeriesUtils {
             if ( blockette.getType() == 1000 ) {
               Blockette1000 b1000 = (Blockette1000) blockette;
               byteSize = b1000.getDataRecordLength(); // expect either 9 or 12
+              System.out.println(byteSize);
               return byteSize;
             }
           } // end of loop over blockettes
@@ -175,8 +176,10 @@ public class TimeSeriesUtils {
    * https://github.com/crotwell/seisFile/ for more
    * @param filename The full path to the file to be loaded in
    * @return A structure containing the time series and metadata for the file
+   * @throws FileNotFoundException If file cannot be read in
    */
-  public static DataBlock getTimeSeries(String filename, String filter) {
+  public static DataBlock getTimeSeries(String filename, String filter)
+      throws FileNotFoundException {
 
     // TODO: add gathering of data from step cal blockette (sep. function?)
     
@@ -185,6 +188,13 @@ public class TimeSeriesUtils {
     DataBlock db = null;
     Map<Long, Number> timeMap = new HashMap<Long, Number>();
 
+    int byteSize = 512;
+    try {
+      byteSize = getByteSize(filename);
+    } catch (FileNotFoundException e1) {
+      throw e1;
+    }
+    
     try {
       dis = new DataInputStream(  new FileInputStream(filename) );
 
@@ -192,7 +202,7 @@ public class TimeSeriesUtils {
 
         try {
           long interval = 0L;
-          SeedRecord sr = SeedRecord.read(dis,4096);
+          SeedRecord sr = SeedRecord.read(dis, byteSize);
           if (sr instanceof DataRecord) {
             DataRecord dr = (DataRecord)sr;
             DataHeader dh = dr.getHeader();
