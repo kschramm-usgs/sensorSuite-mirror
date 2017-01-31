@@ -85,6 +85,7 @@ public class TimeSeriesUtils {
             if ( blockette.getType() == 1000 ) {
               Blockette1000 b1000 = (Blockette1000) blockette;
               byteSize = b1000.getDataRecordLength(); // expect either 9 or 12
+              System.out.println(byteSize);
               return byteSize;
             }
           } // end of loop over blockettes
@@ -223,22 +224,12 @@ public class TimeSeriesUtils {
 
             Btime bt = dh.getStartBtime();
 
-            // convert Btime to microseconds
-            long start = 0L;
-            start += bt.jday * 864000000;
-            start += bt.hour * 36000000;
-            start += bt.min * 600000;
-            start += bt.sec * 10000;
-            start += (bt.tenthMilli / 10) * 10; 
-            // divided by 10 there to filter out sub-millisecond timing errors
-            if (bt.tenthMilli % 10 > 5) {
-              // rounding to nearest milli
-              start += 10; // 1 ms = 10 * (.1 ms)
-            }
+            // convert Btime to microseconds first as milliseconds
+            long start = bt.convertToCalendar().getTimeInMillis();
 
             start += correction;
             // .1 ms = 100 microseconds
-            start *= 100;
+            start *= 1000;
 
 
             int fact = dh.getSampleRateFactor();
