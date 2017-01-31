@@ -2,6 +2,9 @@ package asl.sensor.test;
 
 import static org.junit.Assert.*;
 
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+
 import org.junit.Test;
 
 import asl.sensor.DataBlock;
@@ -23,20 +26,34 @@ public class DataBlockTest {
     int left = 250;
     int right = 750;
     
-    DataBlock db = TimeSeriesUtils.getTimeSeries(filename1);
+    String name;
+    try {
+      name = new ArrayList<String>( 
+            TimeSeriesUtils.getMplexNameSet(filename1)
+          ).get(0);
+      
+      DataBlock db = TimeSeriesUtils.getTimeSeries(filename1, name);
 
-    int sizeOld = db.size();
+      int sizeOld = db.size();
+      
+      
+      // these get tested in DataPanelTest
+      long loc1 = DataPanel.getMarkerLocation(db, left);
+      long loc2 = DataPanel.getMarkerLocation(db, right);
+      
+      db.trim(loc1, loc2);
+      
+      
+      assertEquals( loc1, db.getStartTime() );
+      assertEquals( sizeOld/2, db.size() );
+      
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+      fail();
+    }
     
-    
-    // these get tested in DataPanelTest
-    long loc1 = DataPanel.getMarkerLocation(db, left);
-    long loc2 = DataPanel.getMarkerLocation(db, right);
-    
-    db.trim(loc1, loc2);
-    
-    
-    assertEquals( loc1, db.getStartTime() );
-    assertEquals( sizeOld/2, db.size() );
+
   }
   
 }

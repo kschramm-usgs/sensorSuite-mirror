@@ -8,9 +8,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,8 +21,10 @@ import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -326,15 +331,42 @@ public class SensorSuite extends JPanel implements ActionListener {
           seedDirectory = file.getParent();
           
           seedFileNames[i].setText("LOADING: " + file.getName());
+          final String filePath = file.getAbsolutePath();
+          String filterName = "";
+          try {
+            Set<String> nameSet = TimeSeriesUtils.getMplexNameSet(filePath);
+            
+            if (nameSet.size() > 1) {
+              // more than one series in the file? prompt user for it
+              Object[] names = nameSet.toArray();
+              JDialog dialog = new JDialog();
+              filterName = (String) JOptionPane.showInputDialog(
+                  dialog,
+                  "Select the subseries to load:",
+                  "Multiplexed File Selection",
+                  JOptionPane.PLAIN_MESSAGE,
+                  null, names,
+                  names[0]);
+                  
+            } else {
+              filterName = new ArrayList<String>(nameSet).get(0);
+            }
+            
+          } catch (FileNotFoundException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+            return;
+          }
 
           final File immutableFile = file;
+          final String immutableFilter = filterName;
           
           // create swingworker to load large files in the background
           SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
             @Override
             public Integer doInBackground() {
               generate.setEnabled(false);
-              dataBox.setData( idx, immutableFile.getAbsolutePath() );
+              dataBox.setData(idx, filePath, immutableFilter);
               return 0;
             }
             

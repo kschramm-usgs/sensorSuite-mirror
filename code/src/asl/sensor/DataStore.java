@@ -140,9 +140,9 @@ public class DataStore {
    * @param filepath Full address of file to be loaded in
    * @return The miniSEED data, in a plottable format
    */
-  public void setData(int idx, String filepath) {
+  public void setData(int idx, String filepath, String nameFilter) {
     
-    DataBlock xy = TimeSeriesUtils.getTimeSeriesWithErrorChecking(filepath);
+    DataBlock xy = TimeSeriesUtils.getTimeSeries(filepath, nameFilter);
     thisBlockIsSet[idx] = true;
     dataBlockArray[idx] = xy;
     

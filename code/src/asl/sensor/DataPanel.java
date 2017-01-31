@@ -169,8 +169,9 @@ implements ActionListener, ChangeListener {
    * by calling the underlying DataStore
    * @param idx Index of chart to be loaded to (0 to DataStore.FILE_COUNT)
    * @param filepath The full address of the file to be loaded in
+   * @param filterName The specific SNCL data to extract from the file
    */
-  public void setData(int idx, String filepath) { 
+  public void setData(int idx, String filepath, String filterName) { 
 
     // set all data to the same range first (zoom out)
     zooms = ds;
@@ -190,7 +191,7 @@ implements ActionListener, ChangeListener {
       
       @Override
       public Integer doInBackground() {
-        ds.setData(index, pathFinal);
+        ds.setData(index, pathFinal, filterName);
         XYSeries ts = ds.getBlock(index).toXYSeries();
         try {
           chart = ChartFactory.createXYLineChart(

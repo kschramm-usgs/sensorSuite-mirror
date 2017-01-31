@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedInputStream;
 import java.io.DataInput;
@@ -14,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -28,7 +30,7 @@ import edu.sc.seis.seisFile.mseed.DataRecord;
 import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
-public class DataBlockHelperTest {
+public class TimeSeriesUtilsTest {
 
   public String station = "TST5";
   public String location = "00";
@@ -45,6 +47,22 @@ public class DataBlockHelperTest {
       fis.close();
     } catch (Exception e) {
       assertNull(e);
+    }
+  }
+  
+  @Test
+  public void canGetMultiplexDataNames() {
+    String filename2 = "./data/cat.seed";
+    Set<String> names;
+    
+    try {
+      names = TimeSeriesUtils.getMplexNameSet(filename2);
+      assertTrue(names.contains("IU_ANMO_00_LH1"));
+      assertTrue(names.contains("IU_ANMO_00_LH2"));
+      assertTrue(names.contains("IU_ANMO_00_LHZ"));
+      assertEquals( names.size(), 3 );
+    } catch (FileNotFoundException e) {
+      fail();
     }
   }
   
@@ -232,7 +250,12 @@ public class DataBlockHelperTest {
         
       }
       
-      DataBlock testAgainst = TimeSeriesUtils.getTimeSeries(filename1);
+      // quickly get the one name in the list
+      Set<String> names = TimeSeriesUtils.getMplexNameSet(filename1);
+      List<String> nameList = new ArrayList<String>(names);
+      
+      DataBlock testAgainst = 
+          TimeSeriesUtils.getTimeSeries(filename1, nameList.get(0) );
       assertEquals( db.getData().size(), testAgainst.getData().size() );
       
     } catch (FileNotFoundException e) {

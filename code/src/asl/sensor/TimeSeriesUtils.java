@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;
 import edu.iris.dmc.seedcodec.UnsupportedCompressionType;
 import edu.sc.seis.seisFile.mseed.Blockette;
+import edu.sc.seis.seisFile.mseed.Blockette1000;
 import edu.sc.seis.seisFile.mseed.Btime;
 import edu.sc.seis.seisFile.mseed.DataHeader;
 import edu.sc.seis.seisFile.mseed.DataRecord;
@@ -30,7 +32,8 @@ import edu.sc.seis.seisFile.mseed.SeedFormatException;
 import edu.sc.seis.seisFile.mseed.SeedRecord;
 
 /**
- * Contains static methods for grabbing data from miniSEED files and
+ * Contains static methods for grabbing data from miniSEED files
+ * and some basic signal processing tools (i.e., decimation)
  * @author akearns
  *
  */
@@ -44,6 +47,124 @@ public class TimeSeriesUtils {
    * Sample rate of a 1 Hz sample, in Hz, as a double (that is, 1.0)
    */
   public final static double ONE_HZ = 1.0;
+  
+  private static String extractName(DataHeader dh) {
+    StringBuilder fileID = new StringBuilder();
+    String station = dh.getStationIdentifier();
+    // remove all whitespace from station name
+    station = station.replaceAll("\\s+","");;
+    fileID.append(dh.getNetworkCode() + "_");
+    fileID.append(station + "_");
+    fileID.append(dh.getLocationIdentifier() + "_");
+    fileID.append(dh.getChannelIdentifier());
+    return fileID.toString();
+  }
+  
+  /**
+   * Returns an int representing the number of bytes in a record for
+   * a miniSEED file
+   * @param filename Full path to the file to be read in
+   * @return number of bytes of a record (i.e., 512, 40096)
+   * @throws FileNotFoundException If file does not exist
+   */
+  public static int getByteSize(String filename) throws FileNotFoundException {
+    
+    DataInputStream dis; // used to read in input to get b1000
+    int byteSize;
+    try {
+      dis = new DataInputStream( new FileInputStream(filename) );
+      
+      while (true) {
+        
+        try {
+          SeedRecord sr = SeedRecord.read(dis, 4096);
+          
+          Blockette[] blockettes = sr.getBlockettes();
+          
+          for (Blockette blockette : blockettes) {
+            if ( blockette.getType() == 1000 ) {
+              Blockette1000 b1000 = (Blockette1000) blockette;
+              int exp = b1000.getDataRecordLength(); // expect either 9 or 12
+              byteSize = 1;
+              for (int i = 0; i <= exp; ++i) {
+                byteSize *= 2;
+              }
+              return byteSize;
+            }
+          } // end of loop over blockettes
+          
+        } catch (SeedFormatException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        } // end of try-catch blocks for parsing an individual record
+        
+      } // end of while loop for gotByteSize
+      
+    } catch (FileNotFoundException e) {
+      throw e;
+    } // end of try block for creating DataInputStream
+    
+  }
+  
+  /**
+   * Returns list of SNCL (station, network, channel, location) data for
+   * a multiplexed miniseed file as a set of strings
+   * @param filename miniseed file to be read in
+   * @return set of all (unique) SNCL strings
+   * @throws FileNotFoundException if file cannot be read
+   */
+  public static Set<String> getMplexNameSet(String filename) 
+      throws FileNotFoundException {
+    Set<String> dataNames = new HashSet<String>();
+    
+    int byteSize;
+    try {
+      byteSize = getByteSize(filename);
+    } catch (FileNotFoundException e1) {
+      throw e1;
+    }
+
+    DataInputStream dis;
+
+    try {
+      dis = new DataInputStream( new FileInputStream(filename) );
+      
+      while (true) {
+        // read in the current record, then get the SNCL data
+        try {
+          SeedRecord sr = SeedRecord.read(dis, byteSize);
+          
+          if (sr instanceof DataRecord) {
+            DataRecord dr = (DataRecord)sr;
+            DataHeader dh = dr.getHeader();
+            
+            String fileID = extractName(dh);
+            dataNames.add(fileID);
+          }
+          
+        } catch (EOFException e) {
+          // just break out of loop, this means we reached the file end
+          break;
+        }
+        
+      } // end loop until EOF exception
+      
+    } catch (FileNotFoundException e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    } catch (SeedFormatException e) {
+      // Auto-generated catch block
+      e.printStackTrace();
+    }
+    
+    return dataNames;
+  }
 
   /**
    * Reads in the time series data from a miniSEED file and produces it as a
@@ -59,7 +180,7 @@ public class TimeSeriesUtils {
    * @param filename The full path to the file to be loaded in
    * @return A structure containing the time series and metadata for the file
    */
-  public static DataBlock getTimeSeriesWithErrorChecking(String filename) {
+  public static DataBlock getTimeSeries(String filename, String filter) {
 
     // TODO: add gathering of data from step cal blockette (sep. function?)
     
@@ -76,15 +197,15 @@ public class TimeSeriesUtils {
         try {
           long interval = 0L;
           SeedRecord sr = SeedRecord.read(dis,4096);
-          if(sr instanceof DataRecord) {
+          if (sr instanceof DataRecord) {
             DataRecord dr = (DataRecord)sr;
             DataHeader dh = dr.getHeader();
-            if (db == null){
-              StringBuilder fileID = new StringBuilder();
-              fileID.append(dh.getStationIdentifier() + "_");
-              fileID.append(dh.getLocationIdentifier() + "_");
-              fileID.append(dh.getChannelIdentifier());
-              db = new DataBlock(null, interval, fileID.toString(), -1);
+            if (db == null){ // TODO: change this to reflect multiplex data
+              String fileID = extractName(dh);
+              if ( !fileID.equals(filter) ){
+                continue; // skip to next seedRecord
+              }
+              db = new DataBlock(null, interval, fileID, -1);
             }
 
 
@@ -194,164 +315,6 @@ public class TimeSeriesUtils {
 
 
       db.setData( Arrays.asList(sampleList) );
-
-    } catch (FileNotFoundException e) {
-      // Auto-generated catch block
-      e.printStackTrace();
-    } catch (IOException e) {
-      // Auto-generated catch block
-      e.printStackTrace();
-    } catch (SeedFormatException e) {
-      // Auto-generated catch block
-      e.printStackTrace();
-    } catch (UnsupportedCompressionType e) {
-      // Auto-generated catch block
-      e.printStackTrace();
-    } catch (CodecException e) {
-      // Auto-generated catch block
-      e.printStackTrace();
-    }
-
-    return db;
-  }
-
-  /**
-   * Reads in timeseries data from a miniseed file, plus identifiers
-   * More efficient than other read-in method as it does not keep track of the
-   * time of each sample taken, but assumes input data is continuous
-   * @param filename
-   * @return
-   */
-  public static DataBlock getTimeSeries(String filename) {
-
-    DataInputStream dis;
-    // XYSeries xys = null;
-    DataBlock db = null;
-    List<Number> timeList = new ArrayList<Number>();
-    ( (ArrayList<Number>) timeList).ensureCapacity(100000000);
-
-    long startTime = -1L;
-
-    try {
-      
-      dis = new DataInputStream( new FileInputStream(filename) );
-      while ( true ) {
-
-        try {
-          
-          long interval = 0L;
-          SeedRecord sr = SeedRecord.read(dis,4096);
-          if(sr instanceof DataRecord) {
-            DataRecord dr = (DataRecord)sr;
-            DataHeader dh = dr.getHeader();
-            if (db == null){
-              StringBuilder fileID = new StringBuilder();
-              fileID.append(dh.getStationIdentifier() + "_");
-              fileID.append(dh.getLocationIdentifier() + "_");
-              fileID.append(dh.getChannelIdentifier());
-              db = new DataBlock(null, interval, fileID.toString(), -1);
-            }
-
-            // TODO: move this loop into its own function, add to other check
-            for ( Blockette bk : dr.getBlockettes() ) {
-              if (bk.getType() == 300) {
-                // it's a step calibration
-                // TODO: write the code to collect data from step calibration
-              }
-            }
-            
-            byte af = dh.getActivityFlags();
-            byte correctionFlag = 0b00000010; // is there a time correction?
-            int correction = 0;
-            if ( (af & correctionFlag) != 0 ) {
-              correction = dh.getTimeCorrection();
-            }
-
-            Btime bt = dh.getStartBtime();
-
-            // convert Btime to microseconds
-            long blockStart = 0L;
-            blockStart += bt.jday * 864000000;
-            blockStart += bt.hour * 36000000;
-            blockStart += bt.min * 600000;
-            blockStart += bt.sec * 10000;
-            blockStart += (bt.tenthMilli / 10) * 10; 
-            // divided by 10 there to filter out sub-millisecond timing errors
-            if (bt.tenthMilli % 10 > 5) {
-              // rounding to nearest milli
-              blockStart += 10; // 1 ms = 10 * (.1 ms)
-            }
-
-            blockStart += correction;
-            // .1 ms = 100 microseconds
-            blockStart *= 100;
-
-            if (startTime == -1L) {
-              startTime = blockStart;
-            }
-
-            int fact = dh.getSampleRateFactor();
-            int mult = dh.getSampleRateMultiplier();
-
-            if( fact > 0 && mult > 0) {
-              interval = ONE_HZ_INTERVAL / (fact * mult);
-            } else if (fact > 0 && mult < 0) {
-              interval = Math.abs( (ONE_HZ_INTERVAL * mult) / fact);
-            } else if (fact < 0 && mult > 0) {
-              interval = Math.abs( (ONE_HZ_INTERVAL * fact) / mult);
-            } else {
-              interval = ONE_HZ_INTERVAL * fact * mult;
-            }
-
-            db.setInterval(interval);
-
-            DecompressedData decomp = dr.decompress();
-
-            // get the original datatype of the series (loads data faster)
-            // otherwise the decompressed data gets converted (cloned) as
-            // the other type instead
-            int dataType = decomp.getType();
-            long timeOfData = blockStart;
-
-            switch (dataType) {
-            case B1000Types.INTEGER:
-              int[] decomArrayInt = decomp.getAsInt();
-              for (int dataPoint : decomArrayInt ) {
-                timeList.add( (double) dataPoint );
-                timeOfData += interval;
-              }
-              break;
-            case B1000Types.FLOAT:
-              float[] decomArrayFlt = decomp.getAsFloat();
-              for (float dataPoint : decomArrayFlt ) {
-                timeList.add( (double) dataPoint );
-                timeOfData += interval;
-              }
-              break;
-            case B1000Types.SHORT:
-              short[] decomArrayShr = decomp.getAsShort();
-              for (short dataPoint : decomArrayShr ) {
-                timeList.add( (double) dataPoint );
-                timeOfData += interval;
-              }
-              break;
-            default:
-              double[] decomArrayDbl = decomp.getAsDouble();
-              for (double dataPoint : decomArrayDbl ) {
-                timeList.add(dataPoint);
-                timeOfData += interval;
-              }
-              break;
-            } // switch on data-type
-            
-          } // if statement on datarecord instanceof
-        } catch(EOFException e) {
-          break;
-        } // end of try block (read file until EOF)
-      } // end infinite while loop (read until EOF)
-      
-      db.setStartTime(startTime);     
-      db.setData( timeList );
 
     } catch (FileNotFoundException e) {
       // Auto-generated catch block
