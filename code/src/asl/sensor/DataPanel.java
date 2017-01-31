@@ -204,9 +204,9 @@ implements ActionListener, ChangeListener {
 
           XYPlot xyp = (XYPlot) chart.getPlot();
           DateAxis da = new DateAxis();
-          SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+          SimpleDateFormat sdf = new SimpleDateFormat("DDD.HH:mm");
           sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-          da.setLabel("UTC Time");
+          da.setLabel("UTC Time (D.H:m)");
           Font bold = da.getLabelFont();
           bold = bold.deriveFont(Font.BOLD);
           da.setLabelFont(bold);
