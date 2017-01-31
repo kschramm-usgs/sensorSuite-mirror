@@ -367,8 +367,7 @@ implements ActionListener, ChangeListener {
           selFile = new File( selFile.toString() + ext);
         }
         try {
-          // each chart gets displayed as 640x240 image; merge to one file
-          BufferedImage bi = getAsImage(640, IMAGE_HEIGHT);
+          BufferedImage bi = getAsImage( 640, getImageHeight() );
           
           ImageIO.write(bi,"png",selFile);
         } catch (IOException e1) {
@@ -459,10 +458,8 @@ implements ActionListener, ChangeListener {
    */
   public BufferedImage getAsImage() {
     // if all 3 plots are set, height of panel is height of image
-    int height = allCharts.getHeight();
+    int height = getImageHeight();
     // otherwise, we only use the height of images actually set
-    height /= DataStore.FILE_COUNT;
-    height *= ds.numberOfBlocksLoaded();
     return getAsImage( allCharts.getWidth(), height );
   }
   
@@ -481,6 +478,7 @@ implements ActionListener, ChangeListener {
     // height = Math.max( height, shownHeight );
     
     int loaded = ds.numberOfBlocksLoaded();
+    System.out.println(loaded);
     // TODO: don't bother including plots that have no data loaded
     // (replace FILE_COUNT with a call to 'amountOfDataLoaded' or similar)
     // cheap way to make sure height is a multiple of the chart count
@@ -500,6 +498,7 @@ implements ActionListener, ChangeListener {
 
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( !ds.blockIsSet(i) ) {
+        System.out.println(i + " is not set...");
         continue;
       }
       ChartPanel cp = chartPanels[i];
