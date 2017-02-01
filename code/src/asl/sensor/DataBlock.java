@@ -28,7 +28,7 @@ public class DataBlock {
    */
   public DataBlock
         (List<Number> dataIn, long intervalIn, String nameIn, long timeIn) {
-    setData(dataIn);
+    this.data = dataIn;
     setInterval(intervalIn);
     name = nameIn;
     setStartTime(timeIn);

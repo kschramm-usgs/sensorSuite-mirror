@@ -235,6 +235,7 @@ public class TimeSeriesUtils {
             int fact = dh.getSampleRateFactor();
             int mult = dh.getSampleRateMultiplier();
 
+            // we can assume interval is consistent through a file
             if( fact > 0 && mult > 0) {
               interval = ONE_HZ_INTERVAL / (fact * mult);
             } else if (fact > 0 && mult < 0) {
@@ -244,8 +245,6 @@ public class TimeSeriesUtils {
             } else {
               interval = ONE_HZ_INTERVAL * fact * mult;
             }
-
-            db.setInterval(interval);
 
             DecompressedData decomp = dr.decompress();
 
@@ -292,7 +291,7 @@ public class TimeSeriesUtils {
         }
 
       } // end infinite while loop (read until EOF)
-
+      
       // now we have all the data in a convenient map timestamp -> value
       // which we can then convert into an easy array
       Set<Long> times = timeMap.keySet();
@@ -307,11 +306,12 @@ public class TimeSeriesUtils {
         // (is point i+1's time difference from point i greater than interval?)
         sampleList[i] = timeMap.get(timeList[i]);
       }
-
+      
       // demean the input to remove DC offset before adding it to the data
       List<Number> listOut = 
           FFTResult.demean( Arrays.asList(sampleList) );
       db = new DataBlock(listOut, interval, filter, startTime);
+      return db;
 
     } catch (FileNotFoundException e) {
       // Auto-generated catch block

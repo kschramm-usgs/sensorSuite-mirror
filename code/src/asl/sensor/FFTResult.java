@@ -91,8 +91,9 @@ public class FFTResult {
   }
   
   public static List<Number> demean(List<Number> dataSet) {
-    demean(dataSet);
-    return dataSet;
+    List<Number> dataOut = new ArrayList<Number>(dataSet);
+    demeanInPlace(dataOut);
+    return dataOut;
   }
   
   /**
