@@ -12,7 +12,7 @@ import org.jfree.data.xy.XYSeries;
  */
 public class DataBlock {
   
-  private static final int MAX_POINTS = 10000;
+  private static final int MAX_POINTS = 100000;
   
   private List<Number> data;
   private long interval;
@@ -92,28 +92,17 @@ public class DataBlock {
     // so that we can do the sliding/zooming operations relatively expediently
     // trying to draw the charts with too much data slows it down terribly
     
-    /*
-    // lower interval means higher sample rate means more data
-    int skipFactor = (int) (TimeSeriesUtils.ONE_HZ_INTERVAL / interval);
-    
-    if (interval > TimeSeriesUtils.ONE_HZ_INTERVAL) {
-      // if data is already at or less than 1Hz rate, slow down
-      skipFactor = 1;
-    }
-    */
-    
-    // above behavior has changed for case of data with many days
-    // even at 1Hz would fill up plot so much as to slow program to a crawl
-    
     int skipFactor = data.size() / MAX_POINTS + 1; // must be >= 1
     
+    // 1000 milliseconds in a microsecond
+    long divisor = TimeSeriesUtils.ONE_HZ_INTERVAL / 1000;
     
     XYSeries out = new XYSeries(name);
     long thisTime = startTime;
     for (int i = 0; i < data.size(); i+=skipFactor) {
       Number point = data.get(i);
-      double xTime = (double) thisTime / TimeSeriesUtils.ONE_HZ_INTERVAL;
-      out.add(xTime*1000, point); // seconds to milliseconds
+      double xTime = (double) thisTime / divisor;
+      out.add(xTime, point);
       thisTime += skipFactor*interval;
     }
     
