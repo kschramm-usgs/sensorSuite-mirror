@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import asl.sensor.DataBlock;
-import asl.sensor.DataPanel;
+import asl.sensor.InputPanel;
 import asl.sensor.DataStore;
 
 public class DataStoreTest {
@@ -34,8 +34,8 @@ public class DataStoreTest {
     int oldSize = db.size();
     
     // tested in DataPanelTest
-    long loc1 = DataPanel.getMarkerLocation(db, left);
-    long loc2 = DataPanel.getMarkerLocation(db, right);
+    long loc1 = InputPanel.getMarkerLocation(db, left);
+    long loc2 = InputPanel.getMarkerLocation(db, right);
     //  tested in DataBlockTest
     db.trim(loc1, loc2);
     

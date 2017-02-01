@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import asl.sensor.DataBlock;
 import asl.sensor.TimeSeriesUtils;
-import asl.sensor.DataPanel;
+import asl.sensor.InputPanel;
 
 public class DataPanelTest {
 
@@ -39,8 +39,8 @@ public class DataPanelTest {
       
       long timeRange = interval*size;
       
-      long loc1 = DataPanel.getMarkerLocation(db, left);
-      long loc2 = DataPanel.getMarkerLocation(db, right);
+      long loc1 = InputPanel.getMarkerLocation(db, left);
+      long loc2 = InputPanel.getMarkerLocation(db, right);
       
       assertEquals(loc2 - loc1, timeRange/2); // 500/1000 = 1/2
       assertEquals(loc1, start + (interval * 1/4 * size) ); // correct start pt?

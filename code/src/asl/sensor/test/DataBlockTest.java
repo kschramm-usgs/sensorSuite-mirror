@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import asl.sensor.DataBlock;
 import asl.sensor.TimeSeriesUtils;
-import asl.sensor.DataPanel;
+import asl.sensor.InputPanel;
 
 public class DataBlockTest {
 
@@ -38,8 +38,8 @@ public class DataBlockTest {
       
       
       // these get tested in DataPanelTest
-      long loc1 = DataPanel.getMarkerLocation(db, left);
-      long loc2 = DataPanel.getMarkerLocation(db, right);
+      long loc1 = InputPanel.getMarkerLocation(db, left);
+      long loc2 = InputPanel.getMarkerLocation(db, right);
       
       db.trim(loc1, loc2);
       

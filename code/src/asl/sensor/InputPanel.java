@@ -45,7 +45,7 @@ import org.jfree.data.xy.XYSeriesCollection;
  * @author akearns
  *
  */
-public class DataPanel 
+public class InputPanel 
 extends JPanel 
 implements ActionListener, ChangeListener {
 
@@ -84,7 +84,7 @@ implements ActionListener, ChangeListener {
    * data when a file is loaded in. Also creates a save button for writing all
    * the inputted data plots into a single PNG file.
    */
-  public DataPanel() {
+  public InputPanel() {
     
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
    

@@ -60,7 +60,7 @@ public class SensorSuite extends JPanel implements ActionListener {
   private JTextField[] respFileNames = new JTextField[DataStore.FILE_COUNT];
 
   private JFileChooser fc; // loads in files based on parameter
-  private DataPanel dataBox;
+  private InputPanel inputPlots;
   private JTabbedPane tabbedPane; // holds set of experiment panels
 
   private JButton generate, savePDF, clear; // run all calculations
@@ -73,12 +73,12 @@ public class SensorSuite extends JPanel implements ActionListener {
 
   private void resetTabPlots() {
     
-    DataStore ds = dataBox.getData();
+    DataStore ds = inputPlots.getData();
     InstrumentResponse[] irs = ds.getResponses();
     
     FFTResult[] powerSpectra = new FFTResult[DataStore.FILE_COUNT];
     
-    dataBox.showRegionForGeneration();
+    inputPlots.showRegionForGeneration();
     
     for (int i = 0; i < powerSpectra.length; ++i) {
       
@@ -115,7 +115,7 @@ public class SensorSuite extends JPanel implements ActionListener {
     c.weightx = 1.0; c.weighty = 1.0;
     c.gridwidth = 1;
     c.anchor = GridBagConstraints.CENTER;
-    dataBox = new DataPanel();
+    inputPlots = new InputPanel();
 
     fc = new JFileChooser();
     
@@ -212,7 +212,7 @@ public class SensorSuite extends JPanel implements ActionListener {
     rightPanel.add(clear, rpc);
     
     // add space between the plots and the file-operation panel
-    dataBox.setBorder( new EmptyBorder(0, 0, 0, 5) );
+    inputPlots.setBorder( new EmptyBorder(0, 0, 0, 5) );
     
     JPanel data = new JPanel();
     data.setLayout( new GridBagLayout() );
@@ -223,7 +223,7 @@ public class SensorSuite extends JPanel implements ActionListener {
     dgbc.gridy = 0; dgbc.gridx = 0;
     dgbc.fill = GridBagConstraints.BOTH;
     
-    data.add(dataBox, dgbc);
+    data.add(inputPlots, dgbc);
     
     dgbc.weightx = 0.0;
     dgbc.gridx += 1;
@@ -308,7 +308,7 @@ public class SensorSuite extends JPanel implements ActionListener {
   public void actionPerformed(ActionEvent e) {
 
     if ( e.getSource() == clear ) {
-      dataBox.clearAllData();
+      inputPlots.clearAllData();
       for (JTextField fn : seedFileNames) {
         fn.setText("NO FILE LOADED");
       }
@@ -367,7 +367,7 @@ public class SensorSuite extends JPanel implements ActionListener {
             @Override
             public Integer doInBackground() {
               generate.setEnabled(false);
-              dataBox.setData(idx, filePath, immutableFilter);
+              inputPlots.setData(idx, filePath, immutableFilter);
               return 0;
             }
             
@@ -391,7 +391,7 @@ public class SensorSuite extends JPanel implements ActionListener {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
           respDirectory = file.getParent();
-          dataBox.setResponse( i, file.getAbsolutePath() );
+          inputPlots.setResponse( i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
         }
         return;
@@ -440,9 +440,9 @@ public class SensorSuite extends JPanel implements ActionListener {
    */
   public void plotsToPNG(File file) throws IOException {
     // using 0s to set image height and width to default values (match window)
-    int inHeight = dataBox.getImageHeight();
+    int inHeight = inputPlots.getImageHeight();
     int width = 640;
-    BufferedImage inPlot = dataBox.getAsImage(width, inHeight);
+    BufferedImage inPlot = inputPlots.getAsImage(width, inHeight);
     ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
 
     BufferedImage outPlot = ep.getAsImage( width, 480);
