@@ -205,12 +205,14 @@ public class TimeSeriesUtils {
           if (sr instanceof DataRecord) {
             DataRecord dr = (DataRecord)sr;
             DataHeader dh = dr.getHeader();
-            if (db == null){ // TODO: change this to reflect multiplex data
-              String fileID = extractName(dh);
-              if ( !fileID.equals(filter) ){
-                continue; // skip to next seedRecord
-              }
-              db = new DataBlock(null, interval, fileID, -1);
+            String seriesID = extractName(dh);
+
+            if ( !seriesID.equals(filter) ){
+              // System.out.println(seriesID);
+              continue; // skip to next seedRecord
+            }
+            if (db == null){ // TODO: change this to reflect multiplex data 
+              db = new DataBlock(null, interval, seriesID, -1);
             }
 
 
@@ -222,6 +224,8 @@ public class TimeSeriesUtils {
             }
 
             Btime bt = dh.getStartBtime();
+            
+            //System.out.println(bt.getYear()+","+bt.getJDay());
 
             // convert Btime to microseconds first as milliseconds
             long start = bt.convertToCalendar().getTimeInMillis();

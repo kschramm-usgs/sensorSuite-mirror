@@ -110,7 +110,7 @@ public class StepExperiment extends Experiment {
     XYSeries freqTestPlot = new XYSeries("Freq plot");
     XYSeries respTestPlot = new XYSeries("Resp-applied plot");
     XYSeries fftResPlot = new XYSeries("Forward FFT result (absval)");
-    for (int i = 2000; i <= freqs.length/2+10000; ++i) {
+    for (int i = 2000; i <= freqs.length/2; ++i) {
       freqTestPlot.add(i, freqs[i]);
       respTestPlot.add(i, respFFT[i].abs());
       fftResPlot.add(i, fftValues[i].abs());
