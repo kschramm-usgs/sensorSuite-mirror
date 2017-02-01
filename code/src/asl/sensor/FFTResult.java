@@ -90,12 +90,17 @@ public class FFTResult {
     
   }
   
+  public static List<Number> demean(List<Number> dataSet) {
+    demean(dataSet);
+    return dataSet;
+  }
+  
   /**
    * In-place subtraction of mean from each point in an incoming data set.
    * This is a necessary step in calculating the power-spectral density.
    * @param dataSet The data to have the mean removed from.
    */
-  public static void demean(List<Number> dataSet) {
+  public static void demeanInPlace(List<Number> dataSet) {
     
     // I'm always getting the demeaning tasks, huh?
     
@@ -355,13 +360,13 @@ public class FFTResult {
       double[] toFFT2 = null;
       
       // demean and detrend work in-place on the list
-      demean(data1Range);
+      demeanInPlace(data1Range);
       detrend(data1Range);
       wss = cosineTaper(data1Range, TAPER_WIDTH);
       // TODO: check that we only need the last value of wss
       
       if (!sameData) {
-        demean(data2Range);
+        demeanInPlace(data2Range);
         detrend(data2Range);
         wss = cosineTaper(data2Range, TAPER_WIDTH);
         toFFT2 = new double[padding];

@@ -45,6 +45,7 @@ public class DataBlock {
     setStartTime(in.getStartTime());
   }
   
+
   /**
    * Get the name of the dataset (used as a key in dataseries, etc.)
    * The name is defined by station-location-channel.
@@ -160,10 +161,10 @@ public class DataBlock {
    * Replace the time series data with a new list of Java numeric types.
    * If the data has been resampled somehow, the resample method is preferred,
    * as it requires a new interval to be resampled
-   * @param data New time series data, as from a miniSEED file
+   * @param dataIn New time series data, as from a miniSEED file
    */
-  public void setData(List<Number> data) {
-    this.data = data;
+  public void setData(List<Number> dataIn) {
+    data = dataIn;
   }
   
   /**

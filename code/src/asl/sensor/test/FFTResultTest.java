@@ -54,7 +54,7 @@ public class FFTResultTest {
     List<Number> numList = Arrays.asList(numbers);
     List<Number> demeaned = new ArrayList<Number>(numList);
     
-    FFTResult.demean(demeaned);
+    FFTResult.demeanInPlace(demeaned);
     
     for (int i = 0; i < numList.size(); ++i) {
       assertEquals(demeaned.get(i), numList.get(i).doubleValue()-3);

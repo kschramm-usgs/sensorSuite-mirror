@@ -186,6 +186,7 @@ public class TimeSeriesUtils {
     // XYSeries xys = null;
     DataBlock db = null;
     Map<Long, Number> timeMap = new HashMap<Long, Number>();
+    long interval = 0L;
 
     int byteSize = 512;
     try {
@@ -200,7 +201,6 @@ public class TimeSeriesUtils {
       while ( true ) {
 
         try {
-          long interval = 0L;
           SeedRecord sr = SeedRecord.read(dis, byteSize);
           if (sr instanceof DataRecord) {
             DataRecord dr = (DataRecord)sr;
@@ -210,9 +210,6 @@ public class TimeSeriesUtils {
             if ( !seriesID.equals(filter) ){
               // System.out.println(seriesID);
               continue; // skip to next seedRecord
-            }
-            if (db == null){ // TODO: change this to reflect multiplex data 
-              db = new DataBlock(null, interval, seriesID, -1);
             }
 
 
@@ -304,7 +301,6 @@ public class TimeSeriesUtils {
       Arrays.sort(timeList);
       // lowest time that data exists for is here
       long startTime = timeList[0];
-      db.setStartTime(startTime);
       Number[] sampleList = new Number[timeList.length];
       for (int i = 0; i < timeList.length; ++i ) {
         // TODO: add discontinuity detection here?
@@ -312,8 +308,10 @@ public class TimeSeriesUtils {
         sampleList[i] = timeMap.get(timeList[i]);
       }
 
-
-      db.setData( Arrays.asList(sampleList) );
+      // demean the input to remove DC offset before adding it to the data
+      List<Number> listOut = 
+          FFTResult.demean( Arrays.asList(sampleList) );
+      db = new DataBlock(listOut, interval, filter, startTime);
 
     } catch (FileNotFoundException e) {
       // Auto-generated catch block

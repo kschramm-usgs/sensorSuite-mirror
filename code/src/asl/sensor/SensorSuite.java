@@ -379,7 +379,7 @@ public class SensorSuite extends JPanel implements ActionListener {
           };
           // need a new thread so the UI won't lock with big programs
           
-          executor.submit(worker);
+          new Thread(worker).run();
           return;
         }
       } else if ( e.getSource() == respButton ) {

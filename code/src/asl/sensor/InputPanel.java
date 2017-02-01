@@ -76,7 +76,7 @@ implements ActionListener, ChangeListener {
   private JPanel sliderPanel;
   private JSlider leftSlider;
   private JSlider rightSlider;
-  private int margin = 100; // min space of the two sliders
+  private final int MARGIN = 10; // min space of the two sliders
   
   
   /**
@@ -193,33 +193,27 @@ implements ActionListener, ChangeListener {
       public Integer doInBackground() {
         ds.setData(index, pathFinal, filterName);
         XYSeries ts = ds.getBlock(index).toXYSeries();
-        try {
-          chart = ChartFactory.createXYLineChart(
-              ts.getKey().toString(),
-              "Time",
-              "Counts",
-              new XYSeriesCollection(ts),
-              PlotOrientation.VERTICAL,
-              false, false, false);
+        chart = ChartFactory.createXYLineChart(
+            ts.getKey().toString(),
+            "Time",
+            "Counts",
+            new XYSeriesCollection(ts),
+            PlotOrientation.VERTICAL,
+            false, false, false);
 
-          XYPlot xyp = (XYPlot) chart.getPlot();
-          DateAxis da = new DateAxis();
-          SimpleDateFormat sdf = new SimpleDateFormat("Y.DDD.HH:mm");
-          sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-          da.setLabel("UTC Time (Year.Day.Hour:Minute)");
-          Font bold = da.getLabelFont();
-          bold = bold.deriveFont(Font.BOLD);
-          da.setLabelFont(bold);
-          da.setDateFormatOverride(sdf);
-          xyp.setDomainAxis(da);
-          xyp.getRenderer().setSeriesPaint(0, defaultColor[index]);
+        XYPlot xyp = (XYPlot) chart.getPlot();
+        DateAxis da = new DateAxis();
+        SimpleDateFormat sdf = new SimpleDateFormat("Y.DDD.HH:mm");
+        sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+        da.setLabel("UTC Time (Year.Day.Hour:Minute)");
+        Font bold = da.getLabelFont();
+        bold = bold.deriveFont(Font.BOLD);
+        da.setLabelFont(bold);
+        da.setDateFormatOverride(sdf);
+        xyp.setDomainAxis(da);
+        xyp.getRenderer().setSeriesPaint(0, defaultColor[index]);
 
-          return 0;
-        } catch (Exception e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-        return 1;
+        return 0;
       }
       
       @Override
@@ -549,20 +543,20 @@ implements ActionListener, ChangeListener {
     
     if ( e.getSource() == leftSlider ) {
       if (leftSliderValue > rightSliderValue || 
-          leftSliderValue + margin > rightSliderValue) {
-        leftSliderValue = rightSliderValue - margin;
+          leftSliderValue + MARGIN > rightSliderValue) {
+        leftSliderValue = rightSliderValue - MARGIN;
         if (leftSliderValue < 0) {
           leftSliderValue = 0;
-          rightSliderValue = margin;
+          rightSliderValue = MARGIN;
         }
       }
     } else if ( e.getSource() == rightSlider ) {
       if (rightSliderValue < leftSliderValue ||
-          rightSliderValue - margin < leftSliderValue) {
-        rightSliderValue = leftSliderValue + margin;
+          rightSliderValue - MARGIN < leftSliderValue) {
+        rightSliderValue = leftSliderValue + MARGIN;
         if (rightSliderValue > 1000) {
           rightSliderValue = 1000;
-          leftSliderValue = 1000-margin;
+          leftSliderValue = 1000-MARGIN;
         }
       }
     }
