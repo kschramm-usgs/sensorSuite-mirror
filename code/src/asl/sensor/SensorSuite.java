@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
@@ -51,8 +49,6 @@ public class SensorSuite extends JPanel implements ActionListener {
    * 
    */
   private static final long serialVersionUID = 2866426897343097822L;
-
-  ExecutorService executor = Executors.newCachedThreadPool();
   
   private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
   private JTextField[] seedFileNames = new JTextField[DataStore.FILE_COUNT];
@@ -302,7 +298,10 @@ public class SensorSuite extends JPanel implements ActionListener {
   }
 
   /**
-   * Handles actions when a side-panel button is clicked (file-IO)
+   * Handles actions when a side-panel button is clicked; loading SEED and RESP
+   * files and writing the combined set of plots to a file. Because SEED files
+   * can be large and take a long time to read in, that operation runs on a
+   * separate thread.
    */
   @Override
   public void actionPerformed(ActionEvent e) {
@@ -320,8 +319,8 @@ public class SensorSuite extends JPanel implements ActionListener {
     
     for(int i = 0; i < seedLoaders.length; ++i) {
       final int idx = i; // used to play nice with swingworker
-      JButton seedButton = seedLoaders[i];
-      JButton respButton = respLoaders[i];
+      JButton seedButton = seedLoaders[idx];
+      JButton respButton = respLoaders[idx];
       if ( e.getSource() == seedButton ) {
         fc.setCurrentDirectory( new File(seedDirectory) );
         fc.resetChoosableFileFilters();
@@ -330,8 +329,8 @@ public class SensorSuite extends JPanel implements ActionListener {
         if (returnVal == JFileChooser.APPROVE_OPTION) {
           File file = fc.getSelectedFile();
           seedDirectory = file.getParent();
-          
-          seedFileNames[i].setText("LOADING: " + file.getName());
+          String oldName = seedFileNames[idx].getText();
+          seedFileNames[idx].setText("LOADING: " + file.getName());
           final String filePath = file.getAbsolutePath();
           String filterName = "";
           try {
@@ -342,19 +341,24 @@ public class SensorSuite extends JPanel implements ActionListener {
               String[] names = nameSet.toArray(new String[0]);
               Arrays.sort(names);
               JDialog dialog = new JDialog();
-              filterName = (String) JOptionPane.showInputDialog(
+              Object result = JOptionPane.showInputDialog(
                   dialog,
                   "Select the subseries to load:",
                   "Multiplexed File Selection",
                   JOptionPane.PLAIN_MESSAGE,
                   null, names,
-                  names[0]);     
+                  names[0]);
+              if (result instanceof String) {
+                filterName = (String) result;
+              } else {
+                seedFileNames[idx].setText(oldName);
+                return;
+              }
             } else {
               filterName = new ArrayList<String>(nameSet).get(0);
             }
             
           } catch (FileNotFoundException e1) {
-            // TODO Auto-generated catch block
             e1.printStackTrace();
             return;
           }
@@ -469,6 +473,13 @@ public class SensorSuite extends JPanel implements ActionListener {
 
   }
 
+  /**
+   * Create space with the given dimensions as a buffer between plots
+   * when writing the plots to an image file
+   * @param width The width of the spacer
+   * @param height The height of the spacer
+   * @return A blank BufferedImage that can be concatenated with other plots
+   */
   public static BufferedImage getSpace(int width, int height) {
     BufferedImage space = new BufferedImage(
         width, 
