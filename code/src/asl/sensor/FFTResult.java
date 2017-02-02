@@ -212,8 +212,23 @@ public class FFTResult {
    
     // we're going to assume the data coming in is a power of 2 (and symmetric)
     
+    int padding = 2;
+    while (padding < trimLength || padding < freqDomn.length) {
+      padding *= 2;
+    }
+    
+    Complex[] padded = new Complex[padding];
+    for (int i = 0; i < freqDomn.length; ++i) {
+      padded[i] = freqDomn[i];
+    }
+    for (int i = freqDomn.length; i < padding; ++i) {
+      padded[i] = Complex.ZERO;
+    }
+    
     Complex[] timeSeriesCpx = 
-        fft.transform(freqDomn, TransformType.INVERSE);
+        fft.transform(padded, TransformType.INVERSE);
+    
+    System.out.println(padded+","+trimLength);
     
     double[] timeSeries = new double[trimLength];
     for (int i = 0; i < trimLength; ++i) {
@@ -258,21 +273,23 @@ public class FFTResult {
     
     Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
     
-    // Complex[] fftOut = new Complex[singleSide];
-    double[] frequencies = new double[frqDomn.length];
+    Complex[] fftOut = new Complex[singleSide];
+    double[] frequencies = new double[singleSide];
     
-    for (int i = 0; i <= singleSide; ++i) {
-      // fftOut[i] = frqDomn[i];
+    for (int i = 0; i < singleSide; ++i) {
+      fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
     }
     
     //frequencies[singleSide] = (singleSide-1) * deltaFrq;
     
+    /*
     for (int i = 1; i < frqDomn.length-singleSide; ++i) {
       frequencies[frequencies.length - i] = frequencies[i];
     }
+    */
 
-    return new FFTResult(frqDomn, frequencies);
+    return new FFTResult(fftOut, frequencies);
   }
   
   /**

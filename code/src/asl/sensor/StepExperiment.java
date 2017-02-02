@@ -153,11 +153,11 @@ public class StepExperiment extends Experiment {
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
-    xySeriesData.addSeries(freqTestPlot);
-    xySeriesData.addSeries(respTestPlot);
-    xySeriesData.addSeries(fftResPlot);
-    //xySeriesData.addSeries(scs);
-    //xySeriesData.addSeries(xys);
+    //xySeriesData.addSeries(freqTestPlot);
+    //xySeriesData.addSeries(respTestPlot);
+    //xySeriesData.addSeries(fftResPlot);
+    xySeriesData.addSeries(scs);
+    xySeriesData.addSeries(xys);
     
   }
 
