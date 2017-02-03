@@ -20,6 +20,7 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.annotations.XYTitleAnnotation;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
@@ -49,13 +50,17 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   protected Experiment expResult;
           // used to get the actual data from loaded-in files
   
+  protected String xAxisTitle, yAxisTitle;
+  protected ValueAxis xAxis, yAxis;
+  protected String[] plotTheseInBold;
+  
   public ExperimentPanel(ExperimentEnum exp) {
     
     expType = exp;
     expResult = ExperimentFactory.createExperiment(exp);
     
     chart = ChartFactory.createXYLineChart(expType.getName(), 
-        expResult.getXTitle(), expResult.getYTitle(), null);
+        "", "", null);
     chartPanel = new ChartPanel(chart);
     // chartPanel.setMouseZoomable(false);
     
@@ -63,6 +68,15 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     save = new JButton("Save plot (PNG)");
     save.addActionListener(this);
+  }
+  
+  /**
+   * Since the constructor here must call the 
+   */
+  protected void applyAxesToChart() {
+    XYPlot xyp = chart.getXYPlot();
+    xyp.setDomainAxis( getXAxis() );
+    xyp.setRangeAxis( getYAxis() );
   }
   
   /**
@@ -90,6 +104,16 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
         }
       }
     }
+  }
+  
+  public void displayInfoMessage(String infoMsg) {
+    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
+    TextTitle result = new TextTitle();
+    result.setText(infoMsg);
+    XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
+        RectangleAnchor.CENTER);
+    xyp.clearAnnotations();
+    xyp.addAnnotation(xyt);
   }
   
   public void displayErrorMessage(String errMsg) {
@@ -132,20 +156,47 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     return expType.isTwoInput();
   }
   
+
+  public String getXTitle() {
+    return xAxisTitle;
+  }
+
+  public String getYTitle() {
+    return yAxisTitle;
+  }
+
+
+  public ValueAxis getXAxis() {
+    // TODO Auto-generated method stub
+    return xAxis;
+  }
+
+
+  public ValueAxis getYAxis() {
+    // TODO Auto-generated method stub
+    return yAxis;
+  }
+
+  
+  public String[] seriesToDrawBold() {
+    return plotTheseInBold;
+  }
+  
+  
   /**
    * Defines the type of test results this panel's chart will display
    * @param expT The type of experiment (refer to the enum for valid types)
    * @param expR The experiment to be performed
    * @return A chart displaying the data from the performed experiment
    */
-  public JFreeChart populateChart(XYSeriesCollection data) {
+  public void populateChart(XYSeriesCollection data) {
     
-    String xTitle = expResult.getXTitle();
+    String xTitle = getXTitle();
     
     JFreeChart chart = ChartFactory.createXYLineChart(
         expType.getName(),
         xTitle,
-        expResult.getYTitle(),
+        getYTitle(),
         data,
         PlotOrientation.VERTICAL,
         true, // include legend
@@ -154,7 +205,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     // apply bolding to the components that require it (i.e., NLNM time series)
     XYPlot xyPlot = chart.getXYPlot();
-    String[] bold = expResult.getBoldSeriesNames();
+    String[] bold = seriesToDrawBold();
     XYItemRenderer xyir = xyPlot.getRenderer();
     for (String series : bold) {
       int seriesIdx = data.getSeriesIndex(series);
@@ -164,13 +215,13 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
       xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
     }
     
-    xyPlot.setDomainAxis( expResult.getXAxis() );
-    xyPlot.setRangeAxis( expResult.getYAxis() );
+    xyPlot.setDomainAxis( getXAxis() );
+    xyPlot.setRangeAxis( getYAxis() );
     
-    return chart;
+    this.chart = chart;
   }
   
-  public abstract void updateData(DataStore ds, FFTResult[] psd);
+  public abstract void updateData(DataStore ds);
   
   // details of how to run updateData are left up to the implementing panel
   // however, it is advised to wrap the code inside a swingworker,

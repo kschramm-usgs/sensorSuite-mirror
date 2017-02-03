@@ -1,8 +1,6 @@
 package asl.sensor;
 
 import org.apache.commons.math3.complex.Complex;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.ValueAxis;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -15,9 +13,6 @@ public abstract class Experiment {
   // (i.e., logarithmic, etc.)
   
   protected XYSeriesCollection xySeriesData;
-  protected String xAxisTitle, yAxisTitle;
-  protected ValueAxis xAxis, yAxis;
-  protected boolean freqSpace;
   
   /**
    * Return the plottable data for this experiment
@@ -28,22 +23,13 @@ public abstract class Experiment {
   }
   
   /**
-   * Get the names of data series whose timeseries should be plotted in bold
-   * (used for reference data such as the NLNM plot for PSD)
-   * @return A list of names as Strings
-   */
-  public String[] getBoldSeriesNames() {
-    return new String[]{};
-  }
-  
-  /**
    * Driver to do data processing on inputted data (calls a concrete backend
    * method which is different for each type of experiment)
    * @param ds Timeseries data to be processed
    * @param freqSpace True if the x-axis should be frequency units (False if it
    * should be units of time, for the period)
    */
-  public void setData(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+  public void setData(DataStore ds, boolean freqSpace) {
     
 
     DataBlock db = ds.getXthLoadedBlock(1);
@@ -58,7 +44,7 @@ public abstract class Experiment {
     for (DataBlock data : dataIn) {
       
       if ( data == null) {
-        // we can have null data for the third entry in some cases
+        // we can have null blocks, but can't get interval from a null block
         continue;
       }
       
@@ -67,48 +53,15 @@ public abstract class Experiment {
       }
     }
     
-    backend(ds, psd, freqSpace);
-  }
-  
-  /**
-   * Get the name for the domain axis
-   * @return the name of the axis
-   */
-  public String getXTitle() {
-    return xAxisTitle;
-  }
-  
-  /**
-   * Get the name for the range axis
-   * @return the name of the axis
-   */
-  public String getYTitle() {
-    return yAxisTitle;
-  }
-  
-  /**
-   * Get the domain axis for plotting
-   * @return the axis for the corresponding chart
-   */
-  public ValueAxis getXAxis() {
-    return xAxis;
-  }
-  
-  /**
-   * Get the range axis for plotting
-   * @return the axis for the corresponding chart
-   */
-  public ValueAxis getYAxis() {
-    return yAxis;
+    backend(ds, freqSpace);
   }
   
   public static void addToPlot(
-      DataBlock[] dataIn, 
-      FFTResult[] psd,
+      DataStore ds,
       boolean freqSpace,
       XYSeriesCollection xysc) {
     
-    // TODO: throw exception if dataIn and psd are diff lengths
+    DataBlock[] dataIn = ds.getData();
     
     for (int i = 0; i < dataIn.length; ++i) {
       
@@ -118,8 +71,8 @@ public abstract class Experiment {
       
       XYSeries powerSeries = new XYSeries( "PSD " + dataIn[i].getName() );
 
-      Complex[] resultPSD = psd[i].getFFT();
-      double[] freqs = psd[i].getFreqs();
+      Complex[] resultPSD = ds.getPSD(i).getFFT();
+      double[] freqs = ds.getPSD(i).getFreqs();
 
       for (int j = 0; j < freqs.length; ++j) {
         if (1/freqs[j] > 1.0E3) {
@@ -150,6 +103,6 @@ public abstract class Experiment {
    * @return Plottable series (pl.) of data for all results generated
    */
   abstract void backend(
-      DataStore ds, FFTResult[] psd, boolean freqSpace);
+      DataStore ds, boolean freqSpace);
   
 }

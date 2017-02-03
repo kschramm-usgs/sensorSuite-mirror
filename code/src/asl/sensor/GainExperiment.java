@@ -1,13 +1,9 @@
 package asl.sensor;
 
-import java.awt.Font;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
-import org.jfree.chart.axis.LogarithmicAxis;
-import org.jfree.chart.axis.NumberAxis;
 
 public class GainExperiment extends Experiment {
 
@@ -109,33 +105,21 @@ public class GainExperiment extends Experiment {
   
   private List<FFTResult> fftResults;
   
-  private double ratio;
-  
-  private double sigma;
+  private double ratio, sigma;
   
   /**
-   * Constructor for the gain experiment (setting axes)
-   * Currently does not include setting to set x-axis to display in freq. space
+   * Constructor for the gain experiment
    */
   public GainExperiment() {
-    xAxisTitle = "Period (s)";
-    yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
-    xAxis = new LogarithmicAxis(xAxisTitle);
-    yAxis = new NumberAxis(yAxisTitle);
-    yAxis.setAutoRange(true);
-    ( (NumberAxis) yAxis).setAutoRangeIncludesZero(false);
-    Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
-    xAxis.setLabelFont(bold);
-    yAxis.setLabelFont(bold);
+    super();
   }
 
   /**
    * Populate XYSeriesCollection with all input data (will be trimmed on plot)
    */
   @Override
-  void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+  void backend(DataStore ds, boolean freqSpace) {
     
-    // 
     gainStage1 = new ArrayList<Double>();
     otherGainStages = new ArrayList<Double>();
     
@@ -158,8 +142,8 @@ public class GainExperiment extends Experiment {
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( ds.bothComponentsSet(i) ) {
-        fftResults.add(psd[i]);
-        blocksPlotting.add(ds.getBlock(i));
+        fftResults.add( ds.getPSD(i) );
+        blocksPlotting.add( ds.getBlock(i) );
       }
     }
     
@@ -167,22 +151,10 @@ public class GainExperiment extends Experiment {
     
     xySeriesData.setAutoWidth(true);
     
-    addToPlot(
-        blocksPlotting.toArray(new DataBlock[0]), 
-        fftResults.toArray(new FFTResult[0]), 
-        freqSpace, 
-        xySeriesData);
+    addToPlot(ds, freqSpace, xySeriesData);
     
     xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
     
-  }
-  
-  @Override
-  /**
-   * Specifies plotting the NLNM curve in bold
-   */
-  public String[] getBoldSeriesNames() {
-    return new String[]{"NLNM"};
   }
   
   public double[] getOctaveCenteredAtPeak(int idx) {
@@ -213,6 +185,9 @@ public class GainExperiment extends Experiment {
     double max = Double.NEGATIVE_INFINITY;
     int index = 0;
     for (int i = 0; i < timeSeries.length; ++i) {
+      if (freqs[i] < 0.001) {
+        continue;
+      }
       Complex temp = timeSeries[i].multiply(Math.pow(2*Math.PI*freqs[i],4));
       double result = 10*Math.log10( temp.abs() );
       if ( result < Double.POSITIVE_INFINITY && result > max ) {
@@ -235,7 +210,7 @@ public class GainExperiment extends Experiment {
   public double[] getStatsFromFreqs(int idx0, int idx1, 
       double lowFreq, double highFreq) {
     
-    // TODO: check that indices are within a valid range
+    // TODO: check indices are valid
     
     FFTResult plot0 = fftResults.get(idx0);
     
@@ -279,8 +254,6 @@ public class GainExperiment extends Experiment {
     
     sigma = sdev(plot0, plot1, ratio, lowBnd, higBnd);
     
-    
-    // TODO: replace this with what the actual calculation should be
     double gain1 = gainStage1.get(idx0);
     double gain2 = gainStage1.get(idx1)/Math.sqrt(ratio);
     

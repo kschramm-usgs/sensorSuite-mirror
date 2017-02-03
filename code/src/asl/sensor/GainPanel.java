@@ -2,6 +2,7 @@ package asl.sensor;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 
 import javax.swing.BoxLayout;
@@ -14,6 +15,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.jfree.chart.annotations.XYTitleAnnotation;
+import org.jfree.chart.axis.LogarithmicAxis;
+import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
@@ -45,6 +48,18 @@ implements ChangeListener {
   public GainPanel(ExperimentEnum exp) {
     // instantiate common components
     super(exp);
+    
+    xAxisTitle = "Period (s)";
+    yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
+    xAxis = new LogarithmicAxis(xAxisTitle);
+    yAxis = new NumberAxis(yAxisTitle);
+    yAxis.setAutoRange(true);
+    ( (NumberAxis) yAxis).setAutoRangeIncludesZero(false);
+    Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
+    xAxis.setLabelFont(bold);
+    yAxis.setLabelFont(bold);
+    
+    applyAxesToChart();
     
     // instantiate unique components
     leftSlider = new JSlider(0, 1000, 0);
@@ -325,23 +340,47 @@ implements ChangeListener {
    * the selected combo box entries
    */
   @Override
-  public void updateData(DataStore ds, FFTResult[] psd) {
+  public void updateData(DataStore ds) {
     
     setDataNames(ds);
     
-    try{
-      expResult.setData(ds, psd, false);
-    } catch (IndexOutOfBoundsException e) {
-      displayErrorMessage("INSUFFICIENT DATA LOADED");
-      return;
-    }
+    // TODO: this is going to require a refactoring, I know already
     
-    // need to have 2 series for relative gain
-    firstSeries.setEnabled(true);
-    secondSeries.setEnabled(true);
-    int idx0 = firstSeries.getSelectedIndex();
-    int idx1 = secondSeries.getSelectedIndex();
-    updateDataDriver(idx0, idx1);
+    SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
+      
+      boolean errorTriggered;
+      
+      public Integer doInBackground() {
+        
+        try{
+          expResult.setData(ds, false);
+        } catch (IndexOutOfBoundsException e) {
+          errorTriggered = true;
+          return 1; // TODO: use return value to get error occurent
+        }
+        
+        // need to have 2 series for relative gain
+        firstSeries.setEnabled(true);
+        secondSeries.setEnabled(true);
+        int idx0 = firstSeries.getSelectedIndex();
+        int idx1 = secondSeries.getSelectedIndex();
+        updateDataDriver(idx0, idx1);
+        
+        return 0;
+      }
+      
+      public void done() {
+        
+        if (errorTriggered) {
+          displayErrorMessage("INSUFFICIENT DATA LOADED");
+          return;
+        }
+        
+      }
+      
+    };
+    
+    new Thread(worker).run();
 
   }
   
@@ -354,7 +393,8 @@ implements ChangeListener {
     
     final int idx0 = index0;
     final int idx1 = index1;
-                                          
+    
+    displayInfoMessage("Calculating data...");
     
     SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
       
@@ -362,16 +402,17 @@ implements ChangeListener {
       double[] freqRange;
       double[] gainStatistics;
       
+      int leftSliderValue, rightSliderValue;
+      XYSeriesCollection xysc;
+      
       public Integer doInBackground() {
 
         // plot has 3 components: source, destination, NLNM line plot
         XYSeriesCollection xyscIn = expResult.getData();
-        XYSeriesCollection xysc = new XYSeriesCollection();
+        xysc = new XYSeriesCollection();
         xysc.addSeries( xyscIn.getSeries(idx0) );
         xysc.addSeries( xyscIn.getSeries(idx1) );
         xysc.addSeries( xyscIn.getSeries("NLNM") );
-        
-        chart = populateChart(xysc);
         
         XYSeries xys = xysc.getSeries(0);
         if ( xysc.getSeriesKey(0).equals("NLNM") ) {
@@ -390,11 +431,9 @@ implements ChangeListener {
         // this is used in mapping scale of slider to x-axis values
         low = Math.log10( xys.getMinX() ); // value when slider is 0
         high = Math.log10( xys.getMaxX() ); // value when slider is 1000
-        int leftSliderValue = mapPeriodToSlider(lowPrd);
-        int rightSliderValue = mapPeriodToSlider(highPrd);
+        leftSliderValue = mapPeriodToSlider(lowPrd);
+        rightSliderValue = mapPeriodToSlider(highPrd);
         
-        leftSlider.setValue(leftSliderValue);
-        rightSlider.setValue(rightSliderValue);
         
         // get statistics from frequency (convert from period)
         gainStatistics = 
@@ -405,6 +444,11 @@ implements ChangeListener {
       }
       
       public void done() {
+        
+        displayInfoMessage("Data loaded...drawing chart");
+        
+        populateChart(xysc);
+        
         // obviously, set the chart
         chartPanel.setChart(chart);
         chartPanel.setMouseZoomable(false);
@@ -412,6 +456,9 @@ implements ChangeListener {
         // set vertical bars and enable sliders
         XYPlot xyp = chartPanel.getChart().getXYPlot();
 
+        leftSlider.setValue(leftSliderValue);
+        rightSlider.setValue(rightSliderValue);
+        
         // set the domain to match the boundaries of the octave centered at peak
         setDomainMarkers(lowPrd, highPrd, xyp);
         
@@ -434,4 +481,12 @@ implements ChangeListener {
 
   }
 
+  @Override
+  /**
+   * Specifies plotting the NLNM curve in bold
+   */
+  public String[] seriesToDrawBold() {
+    return new String[]{"NLNM"};
+  }
+  
 }

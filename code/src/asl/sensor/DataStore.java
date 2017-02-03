@@ -2,7 +2,6 @@ package asl.sensor;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.jfree.data.xy.XYSeries;
 
@@ -19,15 +18,14 @@ public class DataStore {
    * Defines the maximum number of plots to be shown
    */
   final static int FILE_COUNT = 3;
-  DataBlock[] dataBlockArray;
-  InstrumentResponse[] responses;
-  XYSeries[] outToPlots;
+  private DataBlock[] dataBlockArray;
+  private InstrumentResponse[] responses;
+  private XYSeries[] outToPlots;
+  FFTResult[] powerSpectra; // used to cache PSD results to speed up calculation
   
-  long startTime = 0L;
-  long endTime = Long.MAX_VALUE;
-  
-  boolean[] thisBlockIsSet;
-  boolean[] thisResponseIsSet;
+  private boolean[] thisBlockIsSet;
+  private boolean[] thisResponseIsSet;
+  private boolean[] thisPSDIsCalculated;
   
   /**
    * Instantiate the collections, including empty datasets to be sent to
@@ -37,30 +35,49 @@ public class DataStore {
    dataBlockArray = new DataBlock[FILE_COUNT];
    responses = new InstrumentResponse[FILE_COUNT];
    outToPlots = new XYSeries[FILE_COUNT];
+   powerSpectra = new FFTResult[FILE_COUNT];
    thisBlockIsSet = new boolean[FILE_COUNT];
    thisResponseIsSet = new boolean[FILE_COUNT];
+   thisPSDIsCalculated = new boolean[FILE_COUNT];
    for (int i = 0; i < FILE_COUNT; ++i) {
      outToPlots[i] = new XYSeries("(EMPTY) " + i);
      thisBlockIsSet[i] = false;
      thisResponseIsSet[i] = false;
+     thisPSDIsCalculated[i] = false;
    }
   }
   
   public DataStore(DataStore ds, long start, long end) {
+    
     dataBlockArray = new DataBlock[FILE_COUNT];
     responses = new InstrumentResponse[FILE_COUNT];
+    powerSpectra = new FFTResult[FILE_COUNT];
     thisBlockIsSet = new boolean[FILE_COUNT];
     thisResponseIsSet = new boolean[FILE_COUNT];
+    thisPSDIsCalculated = new boolean[FILE_COUNT];
     for (int i = 0; i < FILE_COUNT; ++i) {
       boolean[] setBlocks = ds.dataIsSet();
       boolean[] setResps = ds.responsesAreSet();
-      if ( setBlocks[i] ) {
+      if (setBlocks[i]) {
         dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
         thisBlockIsSet[i] = true;
       }
-      if ( setResps[i] ) {
+      if (setResps[i]) {
         responses[i] = ds.getResponse(i);
         thisResponseIsSet[i] = true;
+      }
+      if (setBlocks[i] && setResps[i]) {
+        DataBlock db = dataBlockArray[i];
+        long blockStart = db.getStartTime();
+        long blockEnd = db.getEndTime();
+        if (start == blockStart && end == blockEnd) {
+          thisPSDIsCalculated[i] = ds.isPSDSet(i);
+          if (thisPSDIsCalculated[i]) {
+            powerSpectra[i] = ds.getPSD(i);
+          }
+        }
+      } else {
+        thisPSDIsCalculated[i] = false;
       }
     }
     this.trimAll(start, end);
@@ -68,6 +85,36 @@ public class DataStore {
   
   public boolean[] dataIsSet() {
     return thisBlockIsSet;
+  }
+  
+  public FFTResult getPSD(int idx) {
+    if (!thisPSDIsCalculated[idx]) {
+      // need both a response and source data
+      if (!thisBlockIsSet[idx] || !thisResponseIsSet[idx]) {
+        throw new RuntimeException("Not enough data loaded in");
+      } else {
+        // have enough data but need to calculate before returning
+        DataBlock db = dataBlockArray[idx];
+        InstrumentResponse ir = responses[idx];
+        powerSpectra[idx] = FFTResult.crossPower(db, db, ir, ir);
+        thisPSDIsCalculated[idx] = true;
+      }
+    }
+
+    return powerSpectra[idx];
+  }
+  
+  public FFTResult[] getAllPSDs() {
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (thisBlockIsSet[i] && thisResponseIsSet[i]) {
+        getPSD(i); // calc psd if it's not yet done (but we need data in first)
+      }
+    }
+    return powerSpectra;
+  }
+  
+  public boolean isPSDSet(int idx) {
+    return thisPSDIsCalculated[idx];
   }
   
   /**
@@ -147,6 +194,9 @@ public class DataStore {
       DataBlock xy = TimeSeriesUtils.getTimeSeries(filepath, nameFilter);
       thisBlockIsSet[idx] = true;
       dataBlockArray[idx] = xy;
+      thisPSDIsCalculated[idx] = false;
+      powerSpectra[idx] = null;
+      outToPlots[idx] = xy.toXYSeries();
     } catch (FileNotFoundException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -218,11 +268,13 @@ public class DataStore {
     }
     
     // second pass to trim the data to the limits given
-    for (DataBlock data : dataBlockArray) {
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      DataBlock data = dataBlockArray[i];
       if (data == null) {
         continue;
       }
       data.trim(lastStartTime, firstEndTime);
+      outToPlots[i] = data.toXYSeries();
     }
     
   }

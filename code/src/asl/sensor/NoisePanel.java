@@ -3,35 +3,49 @@ package asl.sensor;
 import java.awt.Checkbox;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
 
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.axis.DateAxis;
+import org.jfree.chart.axis.LogarithmicAxis;
+import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 
 public class NoisePanel extends ExperimentPanel {
 
   private Checkbox freqSpaceBox;
   
+  private NumberAxis freqAxis;
+  private String freqAxisTitle;
+  
   public NoisePanel(ExperimentEnum exp) {
     // create chart, chartPanel, save button & file chooser, 
     super(exp);
+    
+    xAxisTitle = "Period (s)";
+    freqAxisTitle = "Frequency (Hz)";
+    yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
+    xAxis = new LogarithmicAxis(xAxisTitle);
+    freqAxis = new LogarithmicAxis(freqAxisTitle);
+    yAxis = new NumberAxis(yAxisTitle);
+    yAxis.setAutoRange(true);
+    ( (NumberAxis) yAxis).setAutoRangeIncludesZero(false);
+    Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
+    xAxis.setLabelFont(bold);
+    yAxis.setLabelFont(bold);
+    freqAxis.setLabelFont(bold);
+    
+    freqSpaceBox = new Checkbox("Use Hz units (requires regen)");
+    freqSpaceBox.setState(false);
+    
+    applyAxesToChart();
     
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     
     // chart = populateChart(expType, expResult);
     
-    freqSpaceBox = new Checkbox("Use Hz units (requires regen)");
-    freqSpaceBox.setState(false);
+
     
     JPanel optionsPanel = new JPanel();
     optionsPanel.setLayout( new BoxLayout(optionsPanel, BoxLayout.Y_AXIS) );
@@ -48,13 +62,40 @@ public class NoisePanel extends ExperimentPanel {
   }
   
   @Override
+  public ValueAxis getXAxis() {
+    
+    // true if using Hz units
+    if ( freqSpaceBox.getState() ) {
+        return freqAxis;
+    }
+    
+    return xAxis;
+    
+  }
+  
+  @Override
+  public String getXTitle() {
+    if (freqSpaceBox.getState()) {
+      return freqAxisTitle;
+    }
+    return xAxisTitle;
+  }
+  
+  @Override
+  public String[] seriesToDrawBold() {
+    return new String[]{"NLNM"};
+  }
+  
+  @Override
   public void actionPerformed(ActionEvent e) {
+    // overridden in the event we add more stuff to this panel
     super.actionPerformed(e); // only actionlistener here
   }
   
   @Override
-  public void updateData(DataStore ds, FFTResult[] psd) {
+  public void updateData(DataStore ds) {
     
+    // TODO: replace with try-catch, put this check in the experiment backend?
     if (ds.numberFullySet() < 3) {
       displayErrorMessage("INSUFFICIENT DATA LOADED");
       return;
@@ -62,36 +103,34 @@ public class NoisePanel extends ExperimentPanel {
     
     boolean freqSpace = freqSpaceBox.getState();
     
-    updateDriver(ds, psd, freqSpace);
+    updateDriver(ds, freqSpace);
     // setting the new chart is enough to update the plots
     
     
   }
   
-  private void updateDriver(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+  private void updateDriver(DataStore ds, boolean freqSpace) {
     
     final DataStore dsImmutable = ds;
-    final FFTResult[] psdImmutable = psd;
     final boolean freqSpaceImmutable = freqSpace;
+    
+    displayInfoMessage("Calculating data...");
     
     SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
       @Override
       public Integer doInBackground() {
-        expResult.setData(dsImmutable, psdImmutable, freqSpaceImmutable);
+        expResult.setData(dsImmutable, freqSpaceImmutable);
         
-        chart = populateChart(expResult.getData());
-        
-        // override the default axis if the checkbox is set to use Hz units
-        if (freqSpaceImmutable) {
-          ValueAxis xAxis = 
-              ( (NoiseExperiment) expResult ).getXAxis(freqSpaceImmutable);
-          chart.getXYPlot().setDomainAxis(xAxis);
-        }
         return 0;
       }
 
       @Override
       public void done() {
+        
+        displayInfoMessage("Data loaded...drawing chart");
+        
+        populateChart(expResult.getData());
+
         chartPanel.setChart(chart);
         chartPanel.setMouseZoomable(false);
       }

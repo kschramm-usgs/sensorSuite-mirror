@@ -67,7 +67,7 @@ public class DataBlock {
       // how many data points in the time range we're removing? 
       startIdx = (int) (diff / interval); // (start offset = 0)
     }
-    long endTime = startTime + ( interval * data.size() );
+    long endTime = getEndTime();
     if ( end < endTime ) {
       long diff = endTime - end;
       // diff/interval is number of points from ending index, need to subtract
@@ -186,6 +186,10 @@ public class DataBlock {
    */
   public int size() {
     return data.size();
+  }
+
+  public long getEndTime() {
+    return startTime + ( (long) interval * data.size() );
   }
   
 }

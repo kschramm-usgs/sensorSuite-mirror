@@ -1,9 +1,6 @@
 package asl.sensor;
 
-import java.awt.Font;
-
 import org.apache.commons.math3.complex.Complex;
-import org.jfree.chart.axis.NumberAxis;
 import org.jfree.data.xy.XYSeries;
 
 public class StepExperiment extends Experiment {
@@ -13,18 +10,6 @@ public class StepExperiment extends Experiment {
   
   public StepExperiment() {
     super();
-    xAxisTitle = "Time (s)";
-    yAxisTitle = "Counts (normalized)";
-    xAxis = new NumberAxis(xAxisTitle);
-    xAxis.setAutoRange(true);
-    //SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-    //sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-    //xAxis.setLabel("UTC Time");
-    yAxis = new NumberAxis(yAxisTitle);
-    // yAxis.setAutoRange(true);
-    Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
-    xAxis.setLabelFont(bold);
-    yAxis.setLabelFont(bold);
   }
   
   public double[] getCornerAndDamping() {
@@ -32,7 +17,7 @@ public class StepExperiment extends Experiment {
   }
   
   @Override
-  void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+  void backend(DataStore ds, boolean freqSpace) {
     
     // assume that the first block is the raw step calibration
     // the raw calibration is defined as not having an associated response
@@ -107,15 +92,6 @@ public class StepExperiment extends Experiment {
       
     }
     
-    XYSeries freqTestPlot = new XYSeries("Freq plot");
-    XYSeries respTestPlot = new XYSeries("Resp-applied plot");
-    XYSeries fftResPlot = new XYSeries("Forward FFT result (absval)");
-    for (int i = 2000; i <= freqs.length/2; ++i) {
-      freqTestPlot.add(i, freqs[i]);
-      respTestPlot.add(i, respFFT[i].abs());
-      fftResPlot.add(i, fftValues[i].abs());
-    }
-    
     Complex[] correctedValues = new Complex[fftValues.length];
     
     // deconvolving response is dividing fft(signal) by fft(response)
@@ -153,11 +129,10 @@ public class StepExperiment extends Experiment {
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
-    //xySeriesData.addSeries(freqTestPlot);
-    //xySeriesData.addSeries(respTestPlot);
-    //xySeriesData.addSeries(fftResPlot);
     xySeriesData.addSeries(scs);
     xySeriesData.addSeries(xys);
+    
+    // next step: curve fitting
     
   }
 

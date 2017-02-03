@@ -69,27 +69,14 @@ public class SensorSuite extends JPanel implements ActionListener {
 
   private void resetTabPlots() {
     
+    // pass the inputted data to the panels that handle them
     DataStore ds = inputPlots.getData();
-    InstrumentResponse[] irs = ds.getResponses();
-    
-    FFTResult[] powerSpectra = new FFTResult[DataStore.FILE_COUNT];
-    
+    // update the input plots to show the active region being calculated
     inputPlots.showRegionForGeneration();
     
-    for (int i = 0; i < powerSpectra.length; ++i) {
-      
-      if ( !ds.bothComponentsSet(i) ) {
-        continue;
-      }
-      
-      DataBlock data = ds.getBlock(i);
-      InstrumentResponse ir = irs[i];
-      
-      powerSpectra[i] = FFTResult.crossPower(data, data, ir, ir);
-    }
-    
+    // now, update the data
     ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
-    ep.updateData(ds, powerSpectra);
+    ep.updateData(ds);
     
     savePDF.setEnabled(true);
   }

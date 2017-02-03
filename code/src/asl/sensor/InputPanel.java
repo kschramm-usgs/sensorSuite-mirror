@@ -324,23 +324,9 @@ implements ActionListener, ChangeListener {
       return new DataStore();
     }
     
-    int leftValue = leftSlider.getValue();
-    int rightValue = rightSlider.getValue();
-    DataBlock db = zooms.getBlock(0); // default initialization
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      // dataBlocks should have same time range
-      db = zooms.getBlock(i); 
-      if (db == null) {
-        // if this data wasn't set, try the next one
-        continue;
-      } else {
-        break; // all data should have the same range
-      }
-    }
 
-    long start = getMarkerLocation(db, leftValue);
-    long end = getMarkerLocation(db, rightValue);
-    return new DataStore(zooms, start, end);
+    showRegionForGeneration();
+    return zooms;
   }
 
   /**
@@ -407,16 +393,20 @@ implements ActionListener, ChangeListener {
     // all data should have the same range
     DataBlock db = zooms.getXthLoadedBlock(1);
 
-    long start = getMarkerLocation(db, leftSlider.getValue() );
-    long end = getMarkerLocation(db, rightSlider.getValue() );
-    zooms = new DataStore(ds, start, end);
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      if (zooms.getBlock(i) == null) {
-        continue;
+    if ( leftSlider.getValue() != 0 || rightSlider.getValue() != 1000 ) {
+      long start = getMarkerLocation(db, leftSlider.getValue() );
+      long end = getMarkerLocation(db, rightSlider.getValue() );
+      zooms = new DataStore(ds, start, end);
+      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+        if (zooms.getBlock(i) == null) {
+          continue;
+        }
+        resetPlotZoom(i);
       }
-      resetPlotZoom(i);
+      leftSlider.setValue(0); rightSlider.setValue(1000);
     }
-    leftSlider.setValue(0); rightSlider.setValue(1000);
+    
+
     setVerticalBars();
     zoomOut.setEnabled(true);
     
@@ -472,7 +462,6 @@ implements ActionListener, ChangeListener {
     // height = Math.max( height, shownHeight );
     
     int loaded = ds.numberOfBlocksLoaded();
-    System.out.println(loaded);
     // TODO: don't bother including plots that have no data loaded
     // (replace FILE_COUNT with a call to 'amountOfDataLoaded' or similar)
     // cheap way to make sure height is a multiple of the chart count
@@ -492,7 +481,6 @@ implements ActionListener, ChangeListener {
 
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( !ds.blockIsSet(i) ) {
-        System.out.println(i + " is not set...");
         continue;
       }
       ChartPanel cp = chartPanels[i];

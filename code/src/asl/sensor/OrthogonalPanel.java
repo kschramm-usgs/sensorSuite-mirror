@@ -9,11 +9,13 @@ public class OrthogonalPanel extends ExperimentPanel {
 
   public OrthogonalPanel(ExperimentEnum exp) {
     super(exp);
+    xAxisTitle = "Ortho X Axis (units)";
+    yAxisTitle = "Ortho Y Axis (units)";
     // TODO Auto-generated constructor stub
   }
 
   @Override
-  public void updateData(DataStore ds, FFTResult[] psd) {
+  public void updateData(DataStore ds) {
     // TODO Auto-generated method stub
     
   }
