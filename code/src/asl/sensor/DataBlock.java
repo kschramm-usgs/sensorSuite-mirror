@@ -189,7 +189,7 @@ public class DataBlock {
   }
 
   public long getEndTime() {
-    return startTime + ( (long) interval * data.size() );
+    return startTime + ( interval * data.size() );
   }
   
 }
