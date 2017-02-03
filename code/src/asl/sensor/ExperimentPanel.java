@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -68,6 +69,8 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     save = new JButton("Save plot (PNG)");
     save.addActionListener(this);
+    
+    this.setLayout( new GridBagLayout() );
   }
   
   /**

@@ -108,8 +108,10 @@ implements ActionListener, ChangeListener {
       Dimension dim = chartPanels[i].getPreferredSize();
       chartPanels[i].setPreferredSize(
           new Dimension( (int) dim.getWidth(), (int) dim.getHeight()/2) );
+      /*
       chartPanels[i].setMaximumSize(
           new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
+      */
       chartPanels[i].setMouseZoomable(true);
       
       allCharts.add(chartPanels[i]);

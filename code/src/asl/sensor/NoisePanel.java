@@ -2,9 +2,14 @@ package asl.sensor;
 
 import java.awt.Checkbox;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
@@ -14,7 +19,7 @@ import org.jfree.chart.axis.ValueAxis;
 
 public class NoisePanel extends ExperimentPanel {
 
-  private Checkbox freqSpaceBox;
+  private JCheckBox freqSpaceBox;
   
   private NumberAxis freqAxis;
   private String freqAxisTitle;
@@ -23,6 +28,7 @@ public class NoisePanel extends ExperimentPanel {
     // create chart, chartPanel, save button & file chooser, 
     super(exp);
     
+    // instantiate local fields
     xAxisTitle = "Period (s)";
     freqAxisTitle = "Frequency (Hz)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
@@ -36,36 +42,52 @@ public class NoisePanel extends ExperimentPanel {
     yAxis.setLabelFont(bold);
     freqAxis.setLabelFont(bold);
     
-    freqSpaceBox = new Checkbox("Use Hz units (requires regen)");
-    freqSpaceBox.setState(false);
+    freqSpaceBox = new JCheckBox("Use Hz units (requires regen)");
+    freqSpaceBox.setSelected(false);
     
-    applyAxesToChart();
+    applyAxesToChart(); // now that we've got axes defined
     
-    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
+    // set the GUI components
+    this.setLayout( new GridBagLayout() );
+    GridBagConstraints gbc = new GridBagConstraints();
     
-    // chart = populateChart(expType, expResult);
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.gridx = 0; gbc.gridy = 0;
+    gbc.weightx = 1.0; gbc.weighty = 1.0;
+    gbc.gridwidth = 3;
+    gbc.anchor = GridBagConstraints.CENTER;
+    this.add(chartPanel, gbc);
     
-
+    // place the 
+    gbc.gridwidth = 1;
+    gbc.weighty = 0.0; gbc.weightx = 0.0;
+    gbc.anchor = GridBagConstraints.WEST;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.gridy += 1; gbc.gridx = 0;
+    this.add(freqSpaceBox, gbc);
     
-    JPanel optionsPanel = new JPanel();
-    optionsPanel.setLayout( new BoxLayout(optionsPanel, BoxLayout.Y_AXIS) );
-    optionsPanel.add(freqSpaceBox);
-    optionsPanel.add(save);
-    save.setAlignmentX(CENTER_ALIGNMENT);
-
+    gbc.gridx += 1;
+    gbc.weightx = 1.0;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.anchor = GridBagConstraints.CENTER;
+    // gbc.gridwidth = GridBagConstraints.REMAINDER;
+    this.add(save, gbc);
     
-    // do the layout here
-    this.add(chartPanel);
-    this.add(optionsPanel);
-
-    
+    // add an empty panel as a spacer to keep the save button in the center
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.gridx += 1;
+    gbc.weightx = 0;
+    gbc.anchor = GridBagConstraints.WEST;
+    JPanel spacer = new JPanel();
+    spacer.setPreferredSize( freqSpaceBox.getPreferredSize() );
+    this.add(spacer, gbc);
   }
   
   @Override
   public ValueAxis getXAxis() {
     
     // true if using Hz units
-    if ( freqSpaceBox.getState() ) {
+    if ( freqSpaceBox.isSelected() ) {
         return freqAxis;
     }
     
@@ -75,7 +97,7 @@ public class NoisePanel extends ExperimentPanel {
   
   @Override
   public String getXTitle() {
-    if (freqSpaceBox.getState()) {
+    if (freqSpaceBox.isSelected()) {
       return freqAxisTitle;
     }
     return xAxisTitle;
@@ -101,7 +123,7 @@ public class NoisePanel extends ExperimentPanel {
       return;
     }
     
-    boolean freqSpace = freqSpaceBox.getState();
+    boolean freqSpace = freqSpaceBox.isSelected();
     
     updateDriver(ds, freqSpace);
     // setting the new chart is enough to update the plots

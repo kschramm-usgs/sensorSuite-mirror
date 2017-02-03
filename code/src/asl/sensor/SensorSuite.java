@@ -110,7 +110,7 @@ public class SensorSuite extends JPanel implements ActionListener {
 
     for( ExperimentEnum exp : ExperimentEnum.values() ){
       JPanel tab = ExperimentPanelFactory.createPanel(exp);
-      tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
+      //tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
       tabbedPane.addTab( exp.getName(), tab );
     }
     
@@ -137,7 +137,7 @@ public class SensorSuite extends JPanel implements ActionListener {
     rpc.gridy += 1;
     
     rpc.weighty = 0.0;
-    rpc.fill = GridBagConstraints.NONE;
+    rpc.fill = GridBagConstraints.BOTH;
 
     for (int i = 0; i < seedLoaders.length; i++){
       seedLoaders[i] = new JButton("Load SEED file " + (i+1) );
@@ -157,16 +157,16 @@ public class SensorSuite extends JPanel implements ActionListener {
       rpc.gridy += 1;
       
       rpc.weighty = 1.0;
-      rpc.fill = GridBagConstraints.VERTICAL;
+      // rpc.fill = GridBagConstraints.VERTICAL;
       rightPanel.add( Box.createVerticalGlue(), rpc);
-      rpc.gridy += 1;
+      rpc.gridy += 2;
       
       rpc.weighty = 0.0;
-      rpc.fill = GridBagConstraints.NONE;
+      rpc.fill = GridBagConstraints.BOTH;
     }
     
 
-    rpc.weighty = 1.0;
+    rpc.weighty = 0.0;
     rpc.fill = GridBagConstraints.VERTICAL;
     rightPanel.add( Box.createVerticalGlue(), rpc );
     rpc.gridy += 1;
@@ -223,8 +223,9 @@ public class SensorSuite extends JPanel implements ActionListener {
   /**
    * Instantiate a button used to load in a file
    * @param button The button that, when clicked, loads a file
-   * @param text Filename (defaults to NO FILE LOADED when created)
+   * @param text Text field holding filename (defaults to NO FILE LOADED)
    * @param parent The (side) panel that holds the button
+   * @param gbc GridBagConstraints for fitting the data in the window
    */
   private static void initFile(
       JButton button, JTextField text, JPanel parent, GridBagConstraints gbc){
@@ -232,18 +233,16 @@ public class SensorSuite extends JPanel implements ActionListener {
     text.setText("NO FILE LOADED");
     text.setAlignmentX(SwingConstants.CENTER);
     text.setHorizontalAlignment(JTextField.CENTER);
-
-    JScrollPane jsp = new JScrollPane();
+    
+    JScrollPane jsp = new JScrollPane(text);
 
     jsp.setVerticalScrollBarPolicy(
         ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
     jsp.setHorizontalScrollBarPolicy(
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
     
-    jsp.setViewportView(text);
-
     gbc.weighty = 0.0;
-    gbc.fill = GridBagConstraints.NONE;
+    gbc.fill = GridBagConstraints.BOTH;
     parent.add(button, gbc);
     gbc.gridy += 1;
     gbc.fill = GridBagConstraints.HORIZONTAL;
