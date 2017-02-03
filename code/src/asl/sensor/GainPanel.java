@@ -3,6 +3,8 @@ package asl.sensor;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 
 import javax.swing.BoxLayout;
@@ -93,22 +95,42 @@ implements ChangeListener {
     // create layout
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     
-    JPanel sliderPanel = new JPanel();
-    sliderPanel.setLayout( new BoxLayout(sliderPanel, BoxLayout.X_AXIS) );
-    sliderPanel.add(leftSlider);
-    sliderPanel.add(recalcButton);
-    sliderPanel.add(rightSlider);
-
-    JPanel comboPanel = new JPanel();
-    comboPanel.setLayout( new BoxLayout(comboPanel, BoxLayout.X_AXIS) );
-    comboPanel.add(firstSeries);
-    comboPanel.add(secondSeries);
+    this.setLayout( new GridBagLayout() );
+    GridBagConstraints gbc = new GridBagConstraints();
     
-    this.add(chartPanel);
-    this.add(sliderPanel);
-    this.add(comboPanel);
-    // save button instantiated but not displayed on panel
-    this.add(save); save.setAlignmentX(CENTER_ALIGNMENT);
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.gridx = 0; gbc.gridy = 0;
+    gbc.weightx = 1.0; gbc.weighty = 1.0;
+    gbc.gridwidth = 3;
+    gbc.anchor = GridBagConstraints.CENTER;
+    this.add(chartPanel, gbc);
+    
+    gbc.gridx = 0; gbc.gridy += 1;
+    gbc.weighty = 0;
+    gbc.gridwidth = 1;
+    gbc.anchor = GridBagConstraints.EAST;
+    this.add(leftSlider, gbc);
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.gridx += 1;
+    gbc.anchor = GridBagConstraints.CENTER;
+    gbc.weightx = 0;
+    this.add(recalcButton, gbc);
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.gridx += 1;
+    gbc.anchor = GridBagConstraints.WEST;
+    gbc.weightx = 1;
+    this.add(rightSlider, gbc);
+    gbc.gridx = 0; gbc.gridy += 1;
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.anchor = GridBagConstraints.CENTER;
+    this.add(firstSeries, gbc);
+    gbc.weightx = 0;
+    gbc.gridx += 1;
+    gbc.fill = GridBagConstraints.NONE;
+    this.add(save, gbc);
+    gbc.gridx += 1;
+    gbc.fill = GridBagConstraints.BOTH;
+    this.add(secondSeries, gbc);
     
   }
 

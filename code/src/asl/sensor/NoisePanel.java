@@ -58,7 +58,7 @@ public class NoisePanel extends ExperimentPanel {
     gbc.anchor = GridBagConstraints.CENTER;
     this.add(chartPanel, gbc);
     
-    // place the 
+    // place the other UI elements in a single row below the chart
     gbc.gridwidth = 1;
     gbc.weighty = 0.0; gbc.weightx = 0.0;
     gbc.anchor = GridBagConstraints.WEST;
