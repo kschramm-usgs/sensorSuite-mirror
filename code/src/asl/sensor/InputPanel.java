@@ -5,27 +5,38 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.TimeZone;
 
 import javax.imageio.ImageIO;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.JTextComponent;
 
 import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
@@ -71,12 +82,26 @@ implements ActionListener, ChangeListener {
   private JButton save;
   private JButton zoomIn;
   private JButton zoomOut;
+  private JButton clearAll;
   private JFileChooser fc;
   private JPanel allCharts; // parent of the chartpanels, used for image saving
-  private JPanel sliderPanel;
   private JSlider leftSlider;
   private JSlider rightSlider;
   private final int MARGIN = 10; // min space of the two sliders
+  
+  private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
+  private JTextComponent[] seedFileNames = 
+      new JTextComponent[DataStore.FILE_COUNT];
+  private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
+  private JTextComponent[] respFileNames = 
+      new JTextComponent[DataStore.FILE_COUNT];
+  private JButton[] clearButton = new JButton[DataStore.FILE_COUNT];
+  
+  // used to store current directory locations
+  private String seedDirectory = "data";
+  private String respDirectory = "responses";
+  private String saveDirectory = System.getProperty("user.home");
+
   
   
   /**
@@ -86,15 +111,20 @@ implements ActionListener, ChangeListener {
    */
   public InputPanel() {
     
-    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
+    this.setLayout( new GridBagLayout() );
+    GridBagConstraints gbc = new GridBagConstraints();
    
     ds = new DataStore();
     zooms = ds;
     
-    allCharts = new JPanel();
-    allCharts.setLayout( new BoxLayout(allCharts, BoxLayout.Y_AXIS) );
+    gbc.weightx = 1.0;
+    gbc.weighty = 1.0;
+    gbc.gridy = 0;
+    gbc.anchor = GridBagConstraints.CENTER;
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      
+      gbc.gridy = i * 5;
       
       JFreeChart chart = ChartFactory.createXYLineChart(
           "",
@@ -105,151 +135,151 @@ implements ActionListener, ChangeListener {
           false, false, false);
       
       chartPanels[i] = new ChartPanel(chart);
-      Dimension dim = chartPanels[i].getPreferredSize();
-      chartPanels[i].setPreferredSize(
-          new Dimension( (int) dim.getWidth(), (int) dim.getHeight()/2) );
       /*
       chartPanels[i].setMaximumSize(
           new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
       */
       chartPanels[i].setMouseZoomable(true);
       
-      allCharts.add(chartPanels[i]);
+      seedLoaders[i] = new JButton( "Load SEED file " + (i+1) );
       
-      // don't add a space below the last plot (yet)
-      if( i+1 < DataStore.FILE_COUNT) {
-        allCharts.add( Box.createVerticalStrut(5) );
-      }
-
+      JTextField text = new JTextField( "NO FILE LOADED" );
+      text.setHorizontalAlignment(SwingConstants.CENTER);
+      seedFileNames[i] = text;
+      seedFileNames[i].setEditable(false);
+     
+      respLoaders[i] = new JButton( "Load RESP file " + (i+1) );
+      
+      text = new JTextField( "NO FILE LOADED" );
+      text.setHorizontalAlignment(SwingConstants.CENTER);
+      respFileNames[i] = text;
+      respFileNames[i].setEditable(false);
+      
+      clearButton[i] = new JButton( "Clear data " + (i+1) );
+      
+      gbc.gridx = 0;
+      gbc.gridwidth = 6; gbc.gridheight = 5;
+      gbc.weightx = 1; gbc.weighty = 1;
+      gbc.fill = GridBagConstraints.BOTH;
+      this.add(chartPanels[i], gbc);
+      
+      gbc.fill = GridBagConstraints.HORIZONTAL;
+      gbc.gridx = 7; gbc.gridy = i * 5;
+      gbc.gridwidth = 1; gbc.gridheight = 1;
+      gbc.weightx = 0; gbc.weighty = 0;
+      this.add(seedLoaders[i], gbc);
+      seedLoaders[i].addActionListener(this);
+      
+      gbc.fill = GridBagConstraints.BOTH;
+      gbc.weighty = 1;
+      gbc.gridy += 1;
+      JScrollPane jsp = new JScrollPane(seedFileNames[i]);
+      jsp.setVerticalScrollBarPolicy(
+          ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+      jsp.setHorizontalScrollBarPolicy(
+          ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+      this.add(jsp, gbc);
+      
+      gbc.fill = GridBagConstraints.HORIZONTAL;
+      gbc.weighty = 0;
+      gbc.gridy += 1;
+      this.add(respLoaders[i], gbc);
+      respLoaders[i].addActionListener(this);
+      
+      gbc.fill = GridBagConstraints.BOTH;
+      gbc.weighty = 1;
+      gbc.gridy += 1;
+      jsp = new JScrollPane(respFileNames[i]);
+      jsp.setVerticalScrollBarPolicy(
+          ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+      jsp.setHorizontalScrollBarPolicy(
+          ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+      this.add(jsp, gbc);
+      
+      gbc.fill = GridBagConstraints.HORIZONTAL;
+      gbc.weighty = 0;
+      gbc.gridy += 1;
+      clearButton[i] = new JButton("Clear this data");
+      clearButton[i].setOpaque(true);
+      clearButton[i].setBackground( Color.RED.darker() );
+      this.add(clearButton[i], gbc);
+      clearButton[i].addActionListener(this);
+      clearButton[i].setEnabled(false);
       
     }
     
-    this.add(allCharts);
+    int yOfClear = gbc.gridy;
     
-    sliderPanel = new JPanel();
-    sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
-    sliderPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
+    //this.add(allCharts);
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.gridy += 2;
+    gbc.weighty = 0;
+    gbc.weightx = 1;
+    gbc.gridwidth = 3;
+    gbc.gridx = 0;
     leftSlider = new JSlider(0, 1000, 0);
     leftSlider.setEnabled(false);
     leftSlider.addChangeListener(this);
-    sliderPanel.add(leftSlider);
+    this.add(leftSlider, gbc);
+    
+    gbc.gridwidth = 1;
+    gbc.gridx += 1;
+    this.add(new JPanel(), gbc);
+    
+    gbc.gridx += 3;
     rightSlider = new JSlider(0, 1000, 1000);
     rightSlider.setEnabled(false);
     rightSlider.addChangeListener(this);
-    sliderPanel.add(rightSlider);
-    this.add(sliderPanel);
+    this.add(rightSlider, gbc);
     
     // now we can add the space between the last plot and the save button
-    this.add( Box.createVerticalStrut(5) );
+    //this.add( Box.createVerticalStrut(5) );
     
-    JPanel buttons = new JPanel();
-    buttons.setLayout( new BoxLayout(buttons, BoxLayout.X_AXIS) );
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.gridy += 1;
+    gbc.weighty = 0; gbc.weightx = 0;
     
-    zoomIn = new JButton("Zoom on selection");
-    buttons.add(zoomIn);
+    gbc.gridwidth = 3;
+    
+    gbc.gridx = 0;
+    gbc.anchor = GridBagConstraints.EAST;
+    zoomIn = new JButton("Zoom in (on selection)");
+    this.add(zoomIn, gbc);
     zoomIn.addActionListener(this);
     zoomIn.setEnabled(false);
+
     
-    save = new JButton("Save timeseries plots (PNG)");
-    buttons.add(save);
-    save.addActionListener(this);
-    
-    zoomOut = new JButton("Show all data");
-    buttons.add(zoomOut);
+    gbc.gridx += 3;
+    gbc.anchor = GridBagConstraints.WEST;
+    zoomOut = new JButton("Zoom out (show all)");
+    this.add(zoomOut, gbc);
     zoomOut.addActionListener(this);
     zoomOut.setEnabled(false);
     
-    this.add(buttons);
+    gbc.gridwidth = 1;
+    gbc.anchor = GridBagConstraints.CENTER;
+    gbc.gridx = 7;
+    gbc.gridy = yOfClear+1;
+    gbc.gridheight = 2;
+    gbc.fill = GridBagConstraints.BOTH;
+    save = new JButton("Save input (PNG)");
+    this.add(save, gbc);
+    save.addActionListener(this);
+    save.setEnabled(false);
+    
+    gbc.gridy += 2;
+    gbc.gridheight = GridBagConstraints.REMAINDER;
+    clearAll = new JButton("Clear all data");
+    this.add(clearAll, gbc);
+    clearAll.setOpaque(true);
+    clearAll.setBackground( Color.RED.darker() );
+    clearAll.addActionListener(this);
+    clearAll.setEnabled(false);
+    
+    //this.add(buttons);
     
     fc = new JFileChooser();
     
-  }
-  
-  
-  /**
-   * Takes a loaded and converted miniSEED time series and plots it
-   * by calling the underlying DataStore
-   * @param idx Index of chart to be loaded to (0 to DataStore.FILE_COUNT)
-   * @param filepath The full address of the file to be loaded in
-   * @param filterName The specific SNCL data to extract from the file
-   */
-  public void setData(int idx, String filepath, String filterName) { 
-
-    // set all data to the same range first (zoom out)
-    zooms = ds;
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      if (zooms.getBlock(i) == null) {
-        continue;
-      }
-      this.resetPlotZoom(i);
-    }
-    
-    final String pathFinal = filepath;
-    final int index = idx;
-
-    SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
-
-      JFreeChart chart;
-      
-      @Override
-      public Integer doInBackground() {
-        ds.setData(index, pathFinal, filterName);
-        XYSeries ts = ds.getBlock(index).toXYSeries();
-        chart = ChartFactory.createXYLineChart(
-            ts.getKey().toString(),
-            "Time",
-            "Counts",
-            new XYSeriesCollection(ts),
-            PlotOrientation.VERTICAL,
-            false, false, false);
-
-        XYPlot xyp = (XYPlot) chart.getPlot();
-        DateAxis da = new DateAxis();
-        SimpleDateFormat sdf = new SimpleDateFormat("Y.DDD.HH:mm");
-        sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-        da.setLabel("UTC Time (Year.Day.Hour:Minute)");
-        Font bold = da.getLabelFont();
-        bold = bold.deriveFont(Font.BOLD);
-        da.setLabelFont(bold);
-        da.setDateFormatOverride(sdf);
-        xyp.setDomainAxis(da);
-        xyp.getRenderer().setSeriesPaint(0, defaultColor[index]);
-
-        return 0;
-      }
-      
-      @Override
-      public void done() {
-        // drawing the chart generally takes longer than reading in the data
-        // which can be very fast if we don't use the error checking read-in
-        // so threading here may not be necessary
-        
-        if (chart == null) {
-          set[index] = false;
-          return;
-        }
-        
-        chartPanels[index].setChart(chart);
-        chartPanels[index].setMouseZoomable(true);
-
-        showRegionForGeneration();
-        
-        set[index] = true;
-
-        zoomIn.setEnabled(true);
-        leftSlider.setEnabled(true);
-        rightSlider.setEnabled(true);
-
-        leftSlider.setValue(0);
-        rightSlider.setValue(1000);
-        setVerticalBars();
-      }
-      
-    };
-
-    new Thread(worker).start();
-    return;
-
   }
   
   /**
@@ -337,14 +367,178 @@ implements ActionListener, ChangeListener {
   @Override
   public void actionPerformed(ActionEvent e) {
 
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      JButton clear = clearButton[i];
+      JButton seed = seedLoaders[i];
+      JButton resp = respLoaders[i];
+      
+      if( e.getSource() == clear ) {
+        
+      }
+      
+      if ( e.getSource() == seed ) {
+        // TODO: combine with other loading actions in load file routine
+        final int idx = i;
+        fc.setCurrentDirectory( new File(seedDirectory) );
+        fc.resetChoosableFileFilters();
+        fc.setDialogTitle("Load SEED file...");
+        int returnVal = fc.showOpenDialog(seed);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+          File file = fc.getSelectedFile();
+          seedDirectory = file.getParent();
+          String oldName = seedFileNames[idx].getText();
+          seedFileNames[idx].setText("LOADING: " + file.getName());
+          final String filePath = file.getAbsolutePath();
+          String filterName = "";
+          try {
+            Set<String> nameSet = TimeSeriesUtils.getMplexNameSet(filePath);
+            
+            if (nameSet.size() > 1) {
+              // more than one series in the file? prompt user for it
+              String[] names = nameSet.toArray(new String[0]);
+              Arrays.sort(names);
+              JDialog dialog = new JDialog();
+              Object result = JOptionPane.showInputDialog(
+                  dialog,
+                  "Select the subseries to load:",
+                  "Multiplexed File Selection",
+                  JOptionPane.PLAIN_MESSAGE,
+                  null, names,
+                  names[0]);
+              if (result instanceof String) {
+                filterName = (String) result;
+              } else {
+                seedFileNames[idx].setText(oldName);
+                return;
+              }
+            } else {
+              // just get the first one; it's the only one in the list
+              filterName = new ArrayList<String>(nameSet).get(0);
+            }
+            
+          } catch (FileNotFoundException e1) {
+            e1.printStackTrace();
+            return;
+          }
+
+          final File immutableFile = file;
+          final String immutableFilter = filterName;
+          
+          // create swingworker to load large files in the background
+          SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
+            
+            JFreeChart chart;
+            
+            @Override
+            public Integer doInBackground() {
+              // generate.setEnabled(false);
+              ds.setData(idx, filePath, immutableFilter);
+              XYSeries ts = ds.getBlock(idx).toXYSeries();
+              chart = ChartFactory.createXYLineChart(
+                  ts.getKey().toString(),
+                  "Time",
+                  "Counts",
+                  new XYSeriesCollection(ts),
+                  PlotOrientation.VERTICAL,
+                  false, false, false);
+
+              XYPlot xyp = (XYPlot) chart.getPlot();
+              DateAxis da = new DateAxis();
+              SimpleDateFormat sdf = new SimpleDateFormat("Y.DDD.HH:mm");
+              sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+              da.setLabel("UTC Time (Year.Day.Hour:Minute)");
+              Font bold = da.getLabelFont();
+              bold = bold.deriveFont(Font.BOLD);
+              da.setLabelFont(bold);
+              da.setDateFormatOverride(sdf);
+              xyp.setDomainAxis(da);
+              xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+
+              return 0;
+              // setData(idx, filePath, immutableFilter);
+              // return 0;
+            }
+            
+            public void done() {
+              
+              zooms = ds;
+              for (int j = 0; j < DataStore.FILE_COUNT; ++j) {
+                if (zooms.getBlock(j) == null) {
+                  continue;
+                }
+                resetPlotZoom(j);
+              }
+              
+              if (chart == null) {
+                set[idx] = false;
+                return;
+              }
+              
+              chartPanels[idx].setChart(chart);
+              chartPanels[idx].setMouseZoomable(true);
+
+              showRegionForGeneration();
+              
+              set[idx] = true;
+
+              zoomIn.setEnabled(true);
+              leftSlider.setEnabled(true);
+              rightSlider.setEnabled(true);
+              save.setEnabled(true);
+              clearAll.setEnabled(true);
+              
+              leftSlider.setValue(0);
+              rightSlider.setValue(1000);
+              setVerticalBars();
+              
+              seedFileNames[idx].setText( 
+                  immutableFile.getName() + ": " + immutableFilter);
+              // generate.setEnabled(true); TODO callback somehow
+            }
+          };
+          // need a new thread so the UI won't lock with big programs
+          
+          new Thread(worker).run();
+          return;
+        }
+      }
+      
+      if ( e.getSource() == resp ) {
+        // don't need a new thread because resp loading is pretty prompt
+        fc.setCurrentDirectory( new File(respDirectory) );
+        fc.resetChoosableFileFilters();
+        fc.setDialogTitle("Load response file...");
+        int returnVal = fc.showOpenDialog(resp);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+          File file = fc.getSelectedFile();
+          respDirectory = file.getParent();
+          ds.setResponse(i, file.getAbsolutePath() );
+          zooms.setResponse(i, file.getAbsolutePath() );
+          respFileNames[i].setText( file.getName() );
+          clearAll.setEnabled(true);
+        }
+        return;
+      }
+      
+    }
+    
+    if ( e.getSource() == clearAll) {
+      clearAllData();
+      
+      return;
+    }
+    
+    
     if ( e.getSource() == save ) {
       String ext = ".png";
+      fc.setCurrentDirectory( new File(saveDirectory) );
       fc.addChoosableFileFilter(
           new FileNameExtensionFilter("PNG image (.png)",ext) );
       fc.setFileFilter(fc.getChoosableFileFilters()[1]);
       int returnVal = fc.showSaveDialog(save);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         File selFile = fc.getSelectedFile();
+        saveDirectory = selFile.getParent();
         if( !selFile.getName().endsWith( ext.toLowerCase() ) ) {
           selFile = new File( selFile.toString() + ext);
         }
@@ -571,6 +765,16 @@ implements ActionListener, ChangeListener {
     
     leftSlider.setEnabled(false);
     rightSlider.setEnabled(false);
+    
+    clearAll.setEnabled(false);
+    save.setEnabled(false);
+    
+    for (JTextComponent fn : seedFileNames) {
+      fn.setText("NO FILE LOADED");
+    }
+    for (JTextComponent fn : respFileNames) {
+      fn.setText("NO FILE LOADED");
+    }
     
     for (ChartPanel cp : chartPanels) {
       JFreeChart chart = ChartFactory.createXYLineChart(

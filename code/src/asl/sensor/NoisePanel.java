@@ -1,15 +1,11 @@
 package asl.sensor;
 
-import java.awt.Checkbox;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 

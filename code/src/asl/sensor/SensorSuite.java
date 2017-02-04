@@ -18,7 +18,6 @@ import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -26,6 +25,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
@@ -49,21 +49,15 @@ public class SensorSuite extends JPanel implements ActionListener {
    * 
    */
   private static final long serialVersionUID = 2866426897343097822L;
-  
-  private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
-  private JTextField[] seedFileNames = new JTextField[DataStore.FILE_COUNT];
-  private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
-  private JTextField[] respFileNames = new JTextField[DataStore.FILE_COUNT];
+ 
 
   private JFileChooser fc; // loads in files based on parameter
   private InputPanel inputPlots;
   private JTabbedPane tabbedPane; // holds set of experiment panels
 
-  private JButton generate, savePDF, clear; // run all calculations
+  private JButton generate, savePDF; // run all calculations
   
   // used to store current directory locations
-  private String seedDirectory = "data";
-  private String respDirectory = "responses";
   private String saveDirectory = System.getProperty("user.home");
 
 
@@ -123,79 +117,25 @@ public class SensorSuite extends JPanel implements ActionListener {
 
     // panel for UI elements to load data, generate full plot, etc.
     JPanel rightPanel = new JPanel();
-    
     rightPanel.setLayout( new GridBagLayout() );
     GridBagConstraints rpc = new GridBagConstraints();
-    rpc.weightx = 0.0;
-    rpc.gridwidth = 1;
-    rpc.gridy = 0;
-    
-    rpc.weighty = 1.0;
+    rpc.weighty = 0.0; rpc.weightx = 0.0;
+    rpc.gridy = 0; rpc.gridx = 0;
     rpc.fill = GridBagConstraints.BOTH;
-    rightPanel.add( Box.createVerticalGlue(), rpc);
-    
-    rpc.gridy += 1;
-    
-    rpc.weighty = 0.0;
-    rpc.fill = GridBagConstraints.BOTH;
-
-    for (int i = 0; i < seedLoaders.length; i++){
-      seedLoaders[i] = new JButton("Load SEED file " + (i+1) );
-      seedLoaders[i].addActionListener(this);
-      seedFileNames[i] = new JTextField();
-
-      respLoaders[i] = new JButton("Load response " + (i+1) );
-      respLoaders[i].addActionListener(this);
-      respFileNames[i] = new JTextField();
-
-      seedFileNames[i].setEditable(false);
-      respFileNames[i].setEditable(false);
-
-      initFile(seedLoaders[i], seedFileNames[i], rightPanel, rpc);
-      initFile(respLoaders[i], respFileNames[i], rightPanel, rpc);
-
-      rpc.gridy += 1;
-      
-      rpc.weighty = 1.0;
-      // rpc.fill = GridBagConstraints.VERTICAL;
-      rightPanel.add( Box.createVerticalGlue(), rpc);
-      rpc.gridy += 2;
-      
-      rpc.weighty = 0.0;
-      rpc.fill = GridBagConstraints.BOTH;
-    }
-    
-
-    rpc.weighty = 0.0;
-    rpc.fill = GridBagConstraints.VERTICAL;
-    rightPanel.add( Box.createVerticalGlue(), rpc );
-    rpc.gridy += 1;
-    
-    rpc.weighty = 0.0;
-    rpc.fill = GridBagConstraints.HORIZONTAL;
-    rpc.ipady = 10;
     
     // TODO: replace duplicated effects factory-style methods?
     
-    generate = new JButton("Generate plot");
+    generate = new JButton("Generate test results");
     generate.setEnabled(true);
     generate.addActionListener(this);
     rightPanel.add(generate, rpc);
-    rpc.gridy += 1;
+    rpc.gridx += 1;
 
-    savePDF = new JButton("Save display (PNG)");
+    savePDF = new JButton("Save all plots (PNG)");
     savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
     rightPanel.add(savePDF, rpc);
     rpc.gridy += 1;
-    
-    clear = new JButton("Clear data");
-    clear.setEnabled(true);
-    clear.addActionListener(this);
-    rightPanel.add(clear, rpc);
-    
-    // add space between the plots and the file-operation panel
-    inputPlots.setBorder( new EmptyBorder(0, 0, 0, 5) );
     
     JPanel data = new JPanel();
     data.setLayout( new GridBagLayout() );
@@ -209,47 +149,18 @@ public class SensorSuite extends JPanel implements ActionListener {
     data.add(inputPlots, dgbc);
     
     dgbc.weightx = 0.0;
-    dgbc.gridx += 1;
+    dgbc.gridy += 1;
     
     data.add(rightPanel, dgbc);
     data.setBorder( new EmptyBorder(5, 5, 5, 5) );
     
-    c.gridy += 1;
+    c.gridx += 1;
     this.add(data, c);
-    data.setAlignmentX(SwingConstants.CENTER);
-
-  }
-
-  /**
-   * Instantiate a button used to load in a file
-   * @param button The button that, when clicked, loads a file
-   * @param text Text field holding filename (defaults to NO FILE LOADED)
-   * @param parent The (side) panel that holds the button
-   * @param gbc GridBagConstraints for fitting the data in the window
-   */
-  private static void initFile(
-      JButton button, JTextField text, JPanel parent, GridBagConstraints gbc){
-
-    text.setText("NO FILE LOADED");
-    text.setAlignmentX(SwingConstants.CENTER);
-    text.setHorizontalAlignment(JTextField.CENTER);
     
-    JScrollPane jsp = new JScrollPane(text);
+    //this.add(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true,tabbedPane, data));
+    
+    //data.setAlignmentX(SwingConstants.CENTER);
 
-    jsp.setVerticalScrollBarPolicy(
-        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-    jsp.setHorizontalScrollBarPolicy(
-        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-    
-    gbc.weighty = 0.0;
-    gbc.fill = GridBagConstraints.BOTH;
-    parent.add(button, gbc);
-    gbc.gridy += 1;
-    gbc.fill = GridBagConstraints.HORIZONTAL;
-    parent.add(jsp, gbc);
-    gbc.gridy += 1;
-    
-    gbc.fill = GridBagConstraints.NONE;
   }
 
   /**
@@ -292,102 +203,6 @@ public class SensorSuite extends JPanel implements ActionListener {
   @Override
   public void actionPerformed(ActionEvent e) {
 
-    if ( e.getSource() == clear ) {
-      inputPlots.clearAllData();
-      for (JTextField fn : seedFileNames) {
-        fn.setText("NO FILE LOADED");
-      }
-      for (JTextField fn : respFileNames) {
-        fn.setText("NO FILE LOADED");
-      }
-      return;
-    }
-    
-    for(int i = 0; i < seedLoaders.length; ++i) {
-      final int idx = i; // used to play nice with swingworker
-      JButton seedButton = seedLoaders[idx];
-      JButton respButton = respLoaders[idx];
-      if ( e.getSource() == seedButton ) {
-        fc.setCurrentDirectory( new File(seedDirectory) );
-        fc.resetChoosableFileFilters();
-        fc.setDialogTitle("Load SEED file...");
-        int returnVal = fc.showOpenDialog(seedButton);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fc.getSelectedFile();
-          seedDirectory = file.getParent();
-          String oldName = seedFileNames[idx].getText();
-          seedFileNames[idx].setText("LOADING: " + file.getName());
-          final String filePath = file.getAbsolutePath();
-          String filterName = "";
-          try {
-            Set<String> nameSet = TimeSeriesUtils.getMplexNameSet(filePath);
-            
-            if (nameSet.size() > 1) {
-              // more than one series in the file? prompt user for it
-              String[] names = nameSet.toArray(new String[0]);
-              Arrays.sort(names);
-              JDialog dialog = new JDialog();
-              Object result = JOptionPane.showInputDialog(
-                  dialog,
-                  "Select the subseries to load:",
-                  "Multiplexed File Selection",
-                  JOptionPane.PLAIN_MESSAGE,
-                  null, names,
-                  names[0]);
-              if (result instanceof String) {
-                filterName = (String) result;
-              } else {
-                seedFileNames[idx].setText(oldName);
-                return;
-              }
-            } else {
-              filterName = new ArrayList<String>(nameSet).get(0);
-            }
-            
-          } catch (FileNotFoundException e1) {
-            e1.printStackTrace();
-            return;
-          }
-
-          final File immutableFile = file;
-          final String immutableFilter = filterName;
-          
-          // create swingworker to load large files in the background
-          SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
-            @Override
-            public Integer doInBackground() {
-              generate.setEnabled(false);
-              inputPlots.setData(idx, filePath, immutableFilter);
-              return 0;
-            }
-            
-            public void done() {
-              seedFileNames[idx].setText( 
-                  immutableFile.getName() + ": " + immutableFilter);
-              generate.setEnabled(true);
-            }
-          };
-          // need a new thread so the UI won't lock with big programs
-          
-          new Thread(worker).run();
-          return;
-        }
-      } else if ( e.getSource() == respButton ) {
-        // don't need a new thread because resp loading is pretty prompt
-        fc.setCurrentDirectory( new File(respDirectory) );
-        fc.resetChoosableFileFilters();
-        fc.setDialogTitle("Load response file...");
-        int returnVal = fc.showOpenDialog(seedButton);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fc.getSelectedFile();
-          respDirectory = file.getParent();
-          inputPlots.setResponse( i, file.getAbsolutePath() );
-          respFileNames[i].setText( file.getName() );
-        }
-        return;
-      }
-      
-    } // end for loop 
 
     if ( e.getSource() == generate ) {
       this.resetTabPlots();

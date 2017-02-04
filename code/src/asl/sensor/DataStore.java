@@ -218,6 +218,8 @@ public class DataStore {
     try {
       responses[idx] = new InstrumentResponse(filepath);
       thisResponseIsSet[idx] = true;
+      thisPSDIsCalculated[idx] = false;
+      powerSpectra[idx] = null;
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
