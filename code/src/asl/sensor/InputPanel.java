@@ -106,6 +106,18 @@ implements ActionListener, ChangeListener {
 
   
   
+  private void instantiateChart(int idx) {
+    JFreeChart chart = ChartFactory.createXYLineChart(
+        "SEED input " + (idx + 1),
+        "Time",
+        "Counts",
+        new XYSeriesCollection(),
+        PlotOrientation.VERTICAL,
+        false, false, false);
+    
+    chartPanels[idx] = new ChartPanel(chart);
+  }
+  
   /**
    * Creates a new data panel -- instantiates each chart, to be populated with
    * data when a file is loaded in. Also creates a save button for writing all
@@ -128,15 +140,8 @@ implements ActionListener, ChangeListener {
       
       gbc.gridy = i * 5;
       
-      JFreeChart chart = ChartFactory.createXYLineChart(
-          "",
-          "",
-          "",
-          new XYSeriesCollection(),
-          PlotOrientation.VERTICAL,
-          false, false, false);
+      instantiateChart(i);
       
-      chartPanels[i] = new ChartPanel(chart);
       /*
       chartPanels[i].setMaximumSize(
           new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
@@ -213,10 +218,8 @@ implements ActionListener, ChangeListener {
     
     // set size so that the result pane isn't distorted on window launch
     Dimension d = chartPanels[0].getPreferredSize();
-    int height = (int) d.getHeight();
-    int width = (int) d.getWidth();
-    
-    this.setPreferredSize( new Dimension(width, height*2) );
+    d.setSize( d.getWidth(), d.getHeight()* 2 );
+    this.setPreferredSize(d);
     
     int yOfClear = gbc.gridy;
     
@@ -279,7 +282,7 @@ implements ActionListener, ChangeListener {
     
     gbc.gridy += 2;
     gbc.gridheight = GridBagConstraints.REMAINDER;
-    clearAll = new JButton("Clear all data");
+    clearAll = new JButton("Clear ALL data");
     this.add(clearAll, gbc);
     clearAll.setOpaque(true);
     clearAll.setBackground( Color.RED.darker() );
@@ -383,14 +386,7 @@ implements ActionListener, ChangeListener {
       JButton resp = respLoaders[i];
       
       if( e.getSource() == clear ) {
-        JFreeChart chart = ChartFactory.createXYLineChart(
-            "",
-            "",
-            "",
-            new XYSeriesCollection(),
-            PlotOrientation.VERTICAL,
-            false, false, false);
-        chartPanels[i].setChart(chart);
+        instantiateChart(i);
         ds.removeData(i);
         clear.setEnabled(false);
         seedFileNames[i].setText("NO FILE LOADED");

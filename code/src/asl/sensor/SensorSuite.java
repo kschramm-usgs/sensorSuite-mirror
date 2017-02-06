@@ -86,15 +86,7 @@ public class SensorSuite extends JPanel implements ActionListener {
 
     super();
     
-    JPanel leftSide = new JPanel();
-    leftSide.setLayout ( new GridBagLayout() );
-    GridBagConstraints c = new GridBagConstraints();
-    c.fill = GridBagConstraints.BOTH;
-    c.gridx = 0; c.gridy = 0;
-    c.weightx = 1.0; c.weighty = 1.0;
-    c.gridwidth = 2;
-    c.anchor = GridBagConstraints.CENTER;
-    
+    // set up experiment panes in a tabbed pane
     tabbedPane = new JTabbedPane();
     
     for ( ExperimentEnum exp : ExperimentEnum.values() ) {
@@ -102,43 +94,53 @@ public class SensorSuite extends JPanel implements ActionListener {
       tabbedPane.addTab( exp.getName(), tab);
     }
     
-    leftSide.add(tabbedPane, c);
+    Dimension d = tabbedPane.getPreferredSize();
+    d.setSize( d.getWidth() * 1.5, d.getHeight() );
+    tabbedPane.setPreferredSize(d);
+    
+    inputPlots = new InputPanel();
+    
+    // experiments on left, input on the right; split to allow resizing
+    JSplitPane mainSplit = 
+        new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
+        // boolean allows redrawing immediately on resize
+    mainSplit.setLeftComponent(tabbedPane);
+    mainSplit.setRightComponent(inputPlots);
+    // set the left-pane to resize more when window is horizontally stretched
+    mainSplit.setResizeWeight(.5);
+    mainSplit.setOneTouchExpandable(true);
+    
+    // we want to make sure the split pane fills the window
+    this.setLayout( new GridBagLayout() );
+    GridBagConstraints c = new GridBagConstraints();
+    c.gridx = 0; c.gridy = 0;
+    c.weightx = 1; c.weighty = 1;
+    c.gridwidth = 2;
+    c.fill = GridBagConstraints.BOTH;
+    
+    this.add(mainSplit, c);
     
     c.fill = GridBagConstraints.BOTH;
     c.gridx = 0; c.gridy = 1;
     c.weightx = 1.0; c.weighty = 0.0;
     c.gridwidth = 1;
     
+    // now add the buttons
     savePDF = new JButton("Save input and output plots (PNG)");
     savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
-    leftSide.add(savePDF, c);
+    this.add(savePDF, c);
     c.gridx += 1;
 
-    generate = new JButton("Generate test results");
+    generate = new JButton("Generate test result");
     generate.setEnabled(true);
     generate.addActionListener(this);
     generate.setOpaque(true);
     generate.setBackground(Color.BLUE);
-    leftSide.add(generate, c);
-    
-    inputPlots = new InputPanel();
-    
-    JSplitPane mainSplit = 
-        new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false);
-    mainSplit.setLeftComponent(leftSide);
-    mainSplit.setRightComponent(inputPlots);
-    // set the left-pane to resize more when window is horizontally stretched
-    mainSplit.setResizeWeight(.75);
-    mainSplit.setOneTouchExpandable(true);
-    
-    // this allows the window to change size
-    this.setLayout( new GridBagLayout() );
-    c.gridx = 1; c.gridy = 1;
-    c.weightx = 1; c.weighty = 1;
-    c.fill = GridBagConstraints.BOTH;
-    
-    this.add(mainSplit, c);
+    d = generate.getPreferredSize();
+    d.setSize( d.getWidth(), d.getHeight() * 2 );
+    generate.setPreferredSize(d);
+    this.add(generate, c);
     
     fc = new JFileChooser();
 
