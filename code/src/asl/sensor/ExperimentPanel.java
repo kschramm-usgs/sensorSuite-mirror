@@ -155,8 +155,16 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     return bi;
   }
 
-  public boolean isTwoInput() {
-    return expType.isTwoInput();
+  public boolean haveEnoughData(DataStore ds) {
+    if ( ds.numberFullySet() < expType.fullDataNeeded() ) {
+      return false;
+    }
+    if ( ds.numberOfBlocksLoaded() < expType.blocksNeeded() ) {
+      return false;
+    }
+    
+    return true;
+    
   }
   
 

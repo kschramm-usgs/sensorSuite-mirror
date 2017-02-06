@@ -117,6 +117,15 @@ public class DataStore {
     return thisPSDIsCalculated[idx];
   }
   
+  public boolean isAnythingSet() {
+    for (int i = 0; i< FILE_COUNT; ++i) {
+      if (thisBlockIsSet[i] || thisResponseIsSet[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   /**
    * Return a single data block according to the passed index 
    * @param idx Index of datablock, corresponding to data panel plot index

@@ -105,6 +105,23 @@ implements ActionListener, ChangeListener {
   private String saveDirectory = System.getProperty("user.home");
 
   
+  public void addChangeListener(ChangeListener listener) {
+    listenerList.add(ChangeListener.class, listener);
+  }
+  
+  public void removeChangeListener(ChangeListener listener) {
+    listenerList.remove(ChangeListener.class, listener);
+  }
+  
+  protected void fireStateChanged() {
+    ChangeListener[] lsners = listenerList.getListeners(ChangeListener.class);
+    if (lsners != null && lsners.length > 0) {
+      ChangeEvent evt = new ChangeEvent(this);
+      for (ChangeListener lsnr : lsners) {
+        lsnr.stateChanged(evt);
+      }
+    }
+  }
   
   private void instantiateChart(int idx) {
     JFreeChart chart = ChartFactory.createXYLineChart(
@@ -115,7 +132,13 @@ implements ActionListener, ChangeListener {
         PlotOrientation.VERTICAL,
         false, false, false);
     
-    chartPanels[idx] = new ChartPanel(chart);
+    if (chartPanels[idx] == null) {
+      chartPanels[idx] = new ChartPanel(chart);
+    } else {
+      chartPanels[idx].setChart(chart);
+
+    }
+    chartPanels[idx].setMouseZoomable(true);
   }
   
   /**
@@ -139,7 +162,6 @@ implements ActionListener, ChangeListener {
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       
       gbc.gridy = i * 5;
-      
       instantiateChart(i);
       
       /*
@@ -391,6 +413,11 @@ implements ActionListener, ChangeListener {
         clear.setEnabled(false);
         seedFileNames[i].setText("NO FILE LOADED");
         respFileNames[i].setText("NO FILE LOADED");
+        
+        // disable clearAll button if there's no other data loaded in
+        clearAll.setEnabled( ds.isAnythingSet() );
+        
+        fireStateChanged();
       }
       
       if ( e.getSource() == seed ) {
@@ -447,7 +474,6 @@ implements ActionListener, ChangeListener {
             
             @Override
             public Integer doInBackground() {
-              // generate.setEnabled(false);
               ds.setData(idx, filePath, immutableFilter);
               XYSeries ts = ds.getBlock(idx).toXYSeries();
               chart = ChartFactory.createXYLineChart(
@@ -511,7 +537,8 @@ implements ActionListener, ChangeListener {
               
               seedFileNames[idx].setText( 
                   immutableFile.getName() + ": " + immutableFilter);
-              // generate.setEnabled(true); TODO callback somehow
+              
+              fireStateChanged();
             }
           };
           // need a new thread so the UI won't lock with big programs
@@ -533,7 +560,10 @@ implements ActionListener, ChangeListener {
           ds.setResponse(i, file.getAbsolutePath() );
           zooms.setResponse(i, file.getAbsolutePath() );
           respFileNames[i].setText( file.getName() );
+          clear.setEnabled(true);
           clearAll.setEnabled(true);
+          
+          fireStateChanged();
         }
         return;
       }
@@ -542,6 +572,8 @@ implements ActionListener, ChangeListener {
     
     if ( e.getSource() == clearAll) {
       clearAllData();
+      
+      fireStateChanged();
       
       return;
     }
@@ -792,18 +824,10 @@ implements ActionListener, ChangeListener {
       fn.setText("NO FILE LOADED");
     }
     
-    for (ChartPanel cp : chartPanels) {
-      JFreeChart chart = ChartFactory.createXYLineChart(
-          "",
-          "",
-          "",
-          new XYSeriesCollection(),
-          PlotOrientation.VERTICAL,
-          false, false, false);
-      
-      cp.setChart(chart);
-      cp.setMouseZoomable(true);
+    for (int i = 0; i < chartPanels.length; ++i) {
+      instantiateChart(i);
     }
+    
   }
   
 }

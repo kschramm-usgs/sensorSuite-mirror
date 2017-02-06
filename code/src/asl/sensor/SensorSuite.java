@@ -34,6 +34,8 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 // TODO: move file operations to the datapanel object?
@@ -44,7 +46,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author akearns
  *
  */
-public class SensorSuite extends JPanel implements ActionListener {
+public class SensorSuite extends JPanel 
+                         implements ActionListener, ChangeListener {
 
   /**
    * 
@@ -98,7 +101,10 @@ public class SensorSuite extends JPanel implements ActionListener {
     d.setSize( d.getWidth() * 1.5, d.getHeight() );
     tabbedPane.setPreferredSize(d);
     
+    tabbedPane.addChangeListener(this);
+    
     inputPlots = new InputPanel();
+    inputPlots.addChangeListener(this);
     
     // experiments on left, input on the right; split to allow resizing
     JSplitPane mainSplit = 
@@ -276,6 +282,16 @@ public class SensorSuite extends JPanel implements ActionListener {
     tmp.dispose();
 
     return space;
+  }
+
+  @Override
+  public void stateChanged(ChangeEvent e) {
+    if ( e.getSource() == inputPlots || e.getSource() == tabbedPane ) {
+      ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+      DataStore ds = inputPlots.getData();
+      boolean canGenerate = ep.haveEnoughData(ds);
+      generate.setEnabled(canGenerate);
+    }
   }
 
 
