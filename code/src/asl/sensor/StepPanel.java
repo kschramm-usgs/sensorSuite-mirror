@@ -41,6 +41,8 @@ public class StepPanel extends ExperimentPanel {
     this.add(save);
     save.setAlignmentX(CENTER_ALIGNMENT);
     
+    plotTheseInBold = new String[]{};
+    
   }
 
   /**

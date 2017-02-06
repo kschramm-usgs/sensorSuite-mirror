@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
@@ -85,81 +86,61 @@ public class SensorSuite extends JPanel implements ActionListener {
 
     super();
     
-    this.setLayout( new GridBagLayout() );
+    JPanel leftSide = new JPanel();
+    leftSide.setLayout ( new GridBagLayout() );
     GridBagConstraints c = new GridBagConstraints();
     c.fill = GridBagConstraints.BOTH;
     c.gridx = 0; c.gridy = 0;
     c.weightx = 1.0; c.weighty = 1.0;
-    c.gridwidth = 1;
+    c.gridwidth = 2;
     c.anchor = GridBagConstraints.CENTER;
-    inputPlots = new InputPanel();
-
-    fc = new JFileChooser();
     
-    // each pane will correspond to a plot which gets a test from
-    // a test factory; this will return the test corresponding to the plot type
-    // which is determined based on an enum of tests
-
     tabbedPane = new JTabbedPane();
-
-    for( ExperimentEnum exp : ExperimentEnum.values() ){
+    
+    for ( ExperimentEnum exp : ExperimentEnum.values() ) {
       JPanel tab = ExperimentPanelFactory.createPanel(exp);
-      //tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
-      tabbedPane.addTab( exp.getName(), tab );
+      tabbedPane.addTab( exp.getName(), tab);
     }
     
-    this.add(tabbedPane, c);
+    leftSide.add(tabbedPane, c);
     
-    // reset for other components
-    c.weightx = 1.0;
-    c.weighty = 1.0;
     c.fill = GridBagConstraints.BOTH;
+    c.gridx = 0; c.gridy = 1;
+    c.weightx = 1.0; c.weighty = 0.0;
+    c.gridwidth = 1;
+    
+    savePDF = new JButton("Save input and output plots (PNG)");
+    savePDF.setEnabled(true); // TODO: change this back?
+    savePDF.addActionListener(this);
+    leftSide.add(savePDF, c);
+    c.gridx += 1;
 
-    // panel for UI elements to load data, generate full plot, etc.
-    JPanel rightPanel = new JPanel();
-    rightPanel.setLayout( new GridBagLayout() );
-    GridBagConstraints rpc = new GridBagConstraints();
-    rpc.weighty = 0.0; rpc.weightx = 0.0;
-    rpc.gridy = 0; rpc.gridx = 0;
-    rpc.fill = GridBagConstraints.BOTH;
-    
-    // TODO: replace duplicated effects factory-style methods?
-    
     generate = new JButton("Generate test results");
     generate.setEnabled(true);
     generate.addActionListener(this);
-    rightPanel.add(generate, rpc);
-    rpc.gridx += 1;
-
-    savePDF = new JButton("Save all plots (PNG)");
-    savePDF.setEnabled(true); // TODO: change this back?
-    savePDF.addActionListener(this);
-    rightPanel.add(savePDF, rpc);
-    rpc.gridy += 1;
+    generate.setOpaque(true);
+    generate.setBackground(Color.BLUE);
+    leftSide.add(generate, c);
     
-    JPanel data = new JPanel();
-    data.setLayout( new GridBagLayout() );
+    inputPlots = new InputPanel();
     
-    GridBagConstraints dgbc = new GridBagConstraints();
-    dgbc.weightx = 1.0; dgbc.weighty = 1.0;
-    dgbc.gridheight = 1;
-    dgbc.gridy = 0; dgbc.gridx = 0;
-    dgbc.fill = GridBagConstraints.BOTH;
+    JSplitPane mainSplit = 
+        new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, false);
+    mainSplit.setLeftComponent(leftSide);
+    mainSplit.setRightComponent(inputPlots);
+    // set the left-pane to resize more when window is horizontally stretched
+    mainSplit.setResizeWeight(.75);
+    mainSplit.setOneTouchExpandable(true);
     
-    data.add(inputPlots, dgbc);
+    // this allows the window to change size
+    this.setLayout( new GridBagLayout() );
+    c.gridx = 1; c.gridy = 1;
+    c.weightx = 1; c.weighty = 1;
+    c.fill = GridBagConstraints.BOTH;
     
-    dgbc.weightx = 0.0;
-    dgbc.gridy += 1;
+    this.add(mainSplit, c);
     
-    data.add(rightPanel, dgbc);
-    data.setBorder( new EmptyBorder(5, 5, 5, 5) );
-    
-    c.gridx += 1;
-    this.add(data, c);
-    
-    //this.add(new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true,tabbedPane, data));
-    
-    //data.setAlignmentX(SwingConstants.CENTER);
+    fc = new JFileChooser();
 
   }
 

@@ -336,6 +336,15 @@ public class DataStore {
   public boolean timeSeriesSet(int idx) {
     return thisBlockIsSet[idx];
   }
+  
+  public void removeData(int idx) {
+    dataBlockArray[idx] = null;
+    responses[idx] = null;
+    outToPlots[idx] = null;
+    thisBlockIsSet[idx] = false;
+    thisPSDIsCalculated[idx] = false;
+    thisResponseIsSet[idx] = false;
+  }
 
   /**
    * Checks if both components at a specific index are set

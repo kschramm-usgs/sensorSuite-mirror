@@ -53,6 +53,8 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 /**
  * Panel used to hold the plots for the files taken in as input
+ * Handles the UI for loading SEED and RESP files, plotting their data
+ * and selecting regions of that data, as well as outputting the plots to PNG
  * @author akearns
  *
  */
@@ -139,6 +141,7 @@ implements ActionListener, ChangeListener {
       chartPanels[i].setMaximumSize(
           new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
       */
+      
       chartPanels[i].setMouseZoomable(true);
       
       seedLoaders[i] = new JButton( "Load SEED file " + (i+1) );
@@ -163,10 +166,10 @@ implements ActionListener, ChangeListener {
       gbc.fill = GridBagConstraints.BOTH;
       this.add(chartPanels[i], gbc);
       
-      gbc.fill = GridBagConstraints.HORIZONTAL;
+      gbc.fill = GridBagConstraints.BOTH;
       gbc.gridx = 7; gbc.gridy = i * 5;
       gbc.gridwidth = 1; gbc.gridheight = 1;
-      gbc.weightx = 0; gbc.weighty = 0;
+      gbc.weightx = 0; gbc.weighty = 0.25;
       this.add(seedLoaders[i], gbc);
       seedLoaders[i].addActionListener(this);
       
@@ -180,8 +183,8 @@ implements ActionListener, ChangeListener {
           ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
       this.add(jsp, gbc);
       
-      gbc.fill = GridBagConstraints.HORIZONTAL;
-      gbc.weighty = 0;
+      gbc.fill = GridBagConstraints.BOTH;
+      gbc.weighty = 0.25;
       gbc.gridy += 1;
       this.add(respLoaders[i], gbc);
       respLoaders[i].addActionListener(this);
@@ -207,6 +210,13 @@ implements ActionListener, ChangeListener {
       clearButton[i].setEnabled(false);
       
     }
+    
+    // set size so that the result pane isn't distorted on window launch
+    Dimension d = chartPanels[0].getPreferredSize();
+    int height = (int) d.getHeight();
+    int width = (int) d.getWidth();
+    
+    this.setPreferredSize( new Dimension(width, height*2) );
     
     int yOfClear = gbc.gridy;
     
@@ -373,11 +383,21 @@ implements ActionListener, ChangeListener {
       JButton resp = respLoaders[i];
       
       if( e.getSource() == clear ) {
-        
+        JFreeChart chart = ChartFactory.createXYLineChart(
+            "",
+            "",
+            "",
+            new XYSeriesCollection(),
+            PlotOrientation.VERTICAL,
+            false, false, false);
+        chartPanels[i].setChart(chart);
+        ds.removeData(i);
+        clear.setEnabled(false);
+        seedFileNames[i].setText("NO FILE LOADED");
+        respFileNames[i].setText("NO FILE LOADED");
       }
       
       if ( e.getSource() == seed ) {
-        // TODO: combine with other loading actions in load file routine
         final int idx = i;
         fc.setCurrentDirectory( new File(seedDirectory) );
         fc.resetChoosableFileFilters();
@@ -477,6 +497,8 @@ implements ActionListener, ChangeListener {
               chartPanels[idx].setChart(chart);
               chartPanels[idx].setMouseZoomable(true);
 
+              clearButton[idx].setEnabled(true);
+              
               showRegionForGeneration();
               
               set[idx] = true;
@@ -531,6 +553,7 @@ implements ActionListener, ChangeListener {
     
     if ( e.getSource() == save ) {
       String ext = ".png";
+      fc = new JFileChooser();
       fc.setCurrentDirectory( new File(saveDirectory) );
       fc.addChoosableFileFilter(
           new FileNameExtensionFilter("PNG image (.png)",ext) );
@@ -547,7 +570,6 @@ implements ActionListener, ChangeListener {
           
           ImageIO.write(bi,"png",selFile);
         } catch (IOException e1) {
-          // TODO Auto-generated catch block
           e1.printStackTrace();
         }
         
@@ -658,8 +680,6 @@ implements ActionListener, ChangeListener {
     // height = Math.max( height, shownHeight );
     
     int loaded = ds.numberOfBlocksLoaded();
-    // TODO: don't bother including plots that have no data loaded
-    // (replace FILE_COUNT with a call to 'amountOfDataLoaded' or similar)
     // cheap way to make sure height is a multiple of the chart count
     height = (height*loaded)/loaded;
     

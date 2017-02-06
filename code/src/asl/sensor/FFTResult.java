@@ -228,8 +228,6 @@ public class FFTResult {
     Complex[] timeSeriesCpx = 
         fft.transform(padded, TransformType.INVERSE);
     
-    System.out.println(padded+","+trimLength);
-    
     double[] timeSeries = new double[trimLength];
     for (int i = 0; i < trimLength; ++i) {
       timeSeries[i] = timeSeriesCpx[i].getReal();
