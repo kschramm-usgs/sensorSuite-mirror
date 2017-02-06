@@ -139,7 +139,7 @@ public class SensorSuite extends JPanel
     c.gridx += 1;
 
     generate = new JButton("Generate test result");
-    generate.setEnabled(true);
+    generate.setEnabled(false);
     generate.addActionListener(this);
     generate.setOpaque(true);
     generate.setBackground(Color.BLUE);

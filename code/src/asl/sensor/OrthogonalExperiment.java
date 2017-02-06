@@ -8,7 +8,7 @@ public class OrthogonalExperiment extends Experiment {
   }
 
   @Override
-  void backend(DataStore ds, boolean freqSpace) {
+  protected void backend(final DataStore ds, final boolean freqSpace) {
     // TODO auto generated method stub
   }
 

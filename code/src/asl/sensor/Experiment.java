@@ -29,19 +29,19 @@ public abstract class Experiment {
    * @param freqSpace True if the x-axis should be frequency units (False if it
    * should be units of time, for the period)
    */
-  public void setData(DataStore ds, boolean freqSpace) {
+  public void setData(final DataStore ds, final boolean freqSpace) {
     
 
-    DataBlock db = ds.getXthLoadedBlock(1);
+    final DataBlock db = ds.getXthLoadedBlock(1);
 
     long interval = db.getInterval();
     
-    DataBlock[] dataIn = ds.getData();
+    final DataBlock[] dataIn = ds.getData();
     
     xySeriesData = new XYSeriesCollection();
     
     // int length = dataIn[0].size();
-    for (DataBlock data : dataIn) {
+    for (final DataBlock data : dataIn) {
       
       if ( data == null) {
         // we can have null blocks, but can't get interval from a null block
@@ -57,8 +57,8 @@ public abstract class Experiment {
   }
   
   public static void addToPlot(
-      DataStore ds,
-      boolean freqSpace,
+      final DataStore ds,
+      final boolean freqSpace,
       XYSeriesCollection xysc) {
     
     DataBlock[] dataIn = ds.getData();
@@ -102,7 +102,7 @@ public abstract class Experiment {
    * if it should be plotted by period) for domain axis
    * @return Plottable series (pl.) of data for all results generated
    */
-  abstract void backend(
-      DataStore ds, boolean freqSpace);
+  protected abstract void backend(
+      final DataStore ds, final boolean freqSpace);
   
 }

@@ -36,7 +36,7 @@ public class NoiseExperiment extends Experiment {
    * remaining terms for the formula for the self-noise results.
    */
   @Override
-  void backend(DataStore ds, boolean freqSpace) {
+  protected void backend(final DataStore ds, final boolean freqSpace) {
     
     DataBlock[] dataIn = ds.getData();
     InstrumentResponse[] responses = ds.getResponses();

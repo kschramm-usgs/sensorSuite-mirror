@@ -17,7 +17,7 @@ public class StepExperiment extends Experiment {
   }
   
   @Override
-  void backend(DataStore ds, boolean freqSpace) {
+  protected void backend(final DataStore ds, final boolean freqSpace) {
     
     // assume that the first block is the raw step calibration
     // the raw calibration is defined as not having an associated response

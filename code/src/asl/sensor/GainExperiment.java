@@ -118,7 +118,7 @@ public class GainExperiment extends Experiment {
    * Populate XYSeriesCollection with all input data (will be trimmed on plot)
    */
   @Override
-  void backend(DataStore ds, boolean freqSpace) {
+  protected void backend(final DataStore ds, final boolean freqSpace) {
     
     gainStage1 = new ArrayList<Double>();
     otherGainStages = new ArrayList<Double>();
@@ -147,13 +147,11 @@ public class GainExperiment extends Experiment {
       }
     }
     
-    freqSpace = false;
-    
     xySeriesData.setAutoWidth(true);
     
-    addToPlot(ds, freqSpace, xySeriesData);
+    addToPlot(ds, false, xySeriesData); // don't plot in frequency space
     
-    xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
+    xySeriesData.addSeries( FFTResult.getLowNoiseModel(false, this) );
     
   }
   
