@@ -326,12 +326,11 @@ implements ActionListener, ChangeListener {
         fc.setDialogTitle("Load SEED file...");
         int returnVal = fc.showOpenDialog(seed);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fc.getSelectedFile();
+          final File file = fc.getSelectedFile();
           seedDirectory = file.getParent();
           String oldName = seedFileNames[idx].getText();
           // TODO: clearly facing some issues with threading here
           seedFileNames[idx].setText("LOADING: " + file.getName());
-          seedFileNames[idx].updateUI();
           System.out.println(seedFileNames[idx].getText());
           final String filePath = file.getAbsolutePath();
           String filterName = "";
@@ -367,7 +366,6 @@ implements ActionListener, ChangeListener {
             return;
           }
 
-          final File immutableFile = file;
           final String immutableFilter = filterName;
           
           // create swingworker to load large files in the background
@@ -417,7 +415,7 @@ implements ActionListener, ChangeListener {
               if (caughtException) {
                 XYPlot xyp = (XYPlot) chartPanels[idx].getChart().getPlot();
                 TextTitle result = new TextTitle();
-                String errMsg = "COULD NOT LOAD IN " + immutableFile.getName();
+                String errMsg = "COULD NOT LOAD IN " + file.getName();
                 errMsg += "\nTIME RANGE DOES NOT INTERSECT";
                 result.setText(errMsg);
                 result.setBackgroundPaint(Color.red);
@@ -457,14 +455,15 @@ implements ActionListener, ChangeListener {
               setVerticalBars();
               
               seedFileNames[idx].setText( 
-                  immutableFile.getName() + ": " + immutableFilter);
+                  file.getName() + ": " + immutableFilter);
               
               fireStateChanged();
             }
           };
-          // need a new thread so the UI won't lock with big programs
           
-          new Thread(worker).run();
+          // TODO: add some sort of lock to datastore to make time boundaries
+          // threadsafe
+          worker.execute();
           return;
         }
       }

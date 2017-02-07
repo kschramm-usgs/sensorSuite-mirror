@@ -201,7 +201,16 @@ public class SensorSuite extends JPanel
 
 
     if ( e.getSource() == generate ) {
-      this.resetTabPlots();
+      SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
+        
+        @Override
+        public Integer doInBackground() {
+          resetTabPlots();
+          return 0;
+        }
+        
+      };
+      new Thread(worker).run();
       return;
     } else if ( e.getSource() == savePDF ) {
 
