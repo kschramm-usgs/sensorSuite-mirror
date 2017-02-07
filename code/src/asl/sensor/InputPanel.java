@@ -417,7 +417,9 @@ implements ActionListener, ChangeListener {
               if (caughtException) {
                 XYPlot xyp = (XYPlot) chartPanels[idx].getChart().getPlot();
                 TextTitle result = new TextTitle();
-                result.setText("TIME RANGE DOES NOT INTERSECT");
+                String errMsg = "COULD NOT LOAD IN " + immutableFile.getName();
+                errMsg += "\nTIME RANGE DOES NOT INTERSECT";
+                result.setText(errMsg);
                 result.setBackgroundPaint(Color.red);
                 result.setPaint(Color.white);
                 XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
