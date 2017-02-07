@@ -26,16 +26,16 @@ public enum ExperimentEnum {
     this.fullDataNeeded = fullDataNeeded;
   }
   
-  public String getName() {
-    return name;
-  }
-  
   public int blocksNeeded() {
     return blocksNeeded;
   }
   
   public int fullDataNeeded() {
     return fullDataNeeded;
+  }
+  
+  public String getName() {
+    return name;
   }
   
 }

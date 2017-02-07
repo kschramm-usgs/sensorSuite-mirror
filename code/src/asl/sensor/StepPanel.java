@@ -15,8 +15,13 @@ import org.jfree.ui.RectangleAnchor;
 
 public class StepPanel extends ExperimentPanel {
 
-  JFileChooser fc;
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 3693391540945130688L;
   
+  JFileChooser fc;
+
   public StepPanel(ExperimentEnum exp) {
     super(exp);
     
@@ -45,15 +50,10 @@ public class StepPanel extends ExperimentPanel {
     
   }
 
-  /**
-   * 
-   */
-  private static final long serialVersionUID = 3693391540945130688L;
-
   @Override
   public void updateData(DataStore ds) {
     
-    // TODO: threading
+    // TODO: threading?
     
     int numLoaded = ds.numberOfBlocksLoaded();
     int numLoadedWithResp = ds.numberFullySet();

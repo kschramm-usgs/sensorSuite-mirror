@@ -12,10 +12,6 @@ public class StepExperiment extends Experiment {
     super();
   }
   
-  public double[] getCornerAndDamping() {
-    return new double[]{f, h};
-  }
-  
   @Override
   protected void backend(final DataStore ds, final boolean freqSpace) {
     
@@ -134,6 +130,10 @@ public class StepExperiment extends Experiment {
     
     // next step: curve fitting
     
+  }
+  
+  public double[] getCornerAndDamping() {
+    return new double[]{f, h};
   }
 
 }

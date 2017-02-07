@@ -74,15 +74,6 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   }
   
   /**
-   * Since the constructor here must call the 
-   */
-  protected void applyAxesToChart() {
-    XYPlot xyp = chart.getXYPlot();
-    xyp.setDomainAxis( getXAxis() );
-    xyp.setRangeAxis( getYAxis() );
-  }
-  
-  /**
    * Handle's saving this plot's chart to file (PNG image) 
    * when the save button is clicked.
    */
@@ -109,14 +100,13 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     }
   }
   
-  public void displayInfoMessage(String infoMsg) {
-    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
-    TextTitle result = new TextTitle();
-    result.setText(infoMsg);
-    XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
-        RectangleAnchor.CENTER);
-    xyp.clearAnnotations();
-    xyp.addAnnotation(xyt);
+  /**
+   * Since the constructor here must call the 
+   */
+  protected void applyAxesToChart() {
+    XYPlot xyp = chart.getXYPlot();
+    xyp.setDomainAxis( getXAxis() );
+    xyp.setRangeAxis( getYAxis() );
   }
   
   public void displayErrorMessage(String errMsg) {
@@ -125,6 +115,16 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     result.setText(errMsg);
     result.setBackgroundPaint(Color.red);
     result.setPaint(Color.white);
+    XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
+        RectangleAnchor.CENTER);
+    xyp.clearAnnotations();
+    xyp.addAnnotation(xyt);
+  }
+  
+  public void displayInfoMessage(String infoMsg) {
+    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
+    TextTitle result = new TextTitle();
+    result.setText(infoMsg);
     XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
         RectangleAnchor.CENTER);
     xyp.clearAnnotations();
@@ -155,6 +155,27 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     return bi;
   }
 
+  public ValueAxis getXAxis() {
+    // TODO Auto-generated method stub
+    return xAxis;
+  }
+  
+
+  public String getXTitle() {
+    return xAxisTitle;
+  }
+
+  public ValueAxis getYAxis() {
+    // TODO Auto-generated method stub
+    return yAxis;
+  }
+
+
+  public String getYTitle() {
+    return yAxisTitle;
+  }
+
+
   public boolean haveEnoughData(DataStore ds) {
     if ( ds.numberFullySet() < expType.fullDataNeeded() ) {
       return false;
@@ -166,33 +187,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     return true;
     
   }
-  
 
-  public String getXTitle() {
-    return xAxisTitle;
-  }
-
-  public String getYTitle() {
-    return yAxisTitle;
-  }
-
-
-  public ValueAxis getXAxis() {
-    // TODO Auto-generated method stub
-    return xAxis;
-  }
-
-
-  public ValueAxis getYAxis() {
-    // TODO Auto-generated method stub
-    return yAxis;
-  }
-
-  
-  public String[] seriesToDrawBold() {
-    return plotTheseInBold;
-  }
-  
   
   /**
    * Defines the type of test results this panel's chart will display
@@ -230,6 +225,11 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     xyPlot.setRangeAxis( getYAxis() );
     
     this.chart = chart;
+  }
+  
+  
+  public String[] seriesToDrawBold() {
+    return plotTheseInBold;
   }
   
   public abstract void updateData(DataStore ds);

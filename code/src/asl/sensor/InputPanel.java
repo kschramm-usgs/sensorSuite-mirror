@@ -42,13 +42,16 @@ import org.jfree.chart.ChartColor;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.annotations.XYTitleAnnotation;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RectangleAnchor;
 
 
 /**
@@ -73,10 +76,20 @@ implements ActionListener, ChangeListener {
    */
   public static final int IMAGE_HEIGHT = 240;
   
+  /**
+   * Gets the value of start or end time from slider value and DataBlock
+   * @param db DataBlock corresponding to one of the plots
+   * @param sliderValue Value of starting or ending time slider [0-1000]
+   * @return Long that represents start or end time matching slider's value
+   */
+  public static long getMarkerLocation(DataBlock db, int sliderValue) {
+    long start = db.getStartTime();
+    long len = (db.getInterval()) * db.size();
+    return start + (sliderValue * len) / 1000;
+  }
   private DataStore ds;
   private DataStore zooms;
   private ChartPanel[] chartPanels = new ChartPanel[DataStore.FILE_COUNT];
-  private boolean[] set = new boolean[DataStore.FILE_COUNT];
   private Color[] defaultColor = {
           ChartColor.LIGHT_RED, 
           ChartColor.LIGHT_BLUE, 
@@ -89,57 +102,22 @@ implements ActionListener, ChangeListener {
   private JPanel allCharts; // parent of the chartpanels, used for image saving
   private JSlider leftSlider;
   private JSlider rightSlider;
-  private final int MARGIN = 10; // min space of the two sliders
   
+  private final int MARGIN = 10; // min space of the two sliders
   private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
   private JTextComponent[] seedFileNames = 
       new JTextComponent[DataStore.FILE_COUNT];
   private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
   private JTextComponent[] respFileNames = 
       new JTextComponent[DataStore.FILE_COUNT];
-  private JButton[] clearButton = new JButton[DataStore.FILE_COUNT];
   
+  private JButton[] clearButton = new JButton[DataStore.FILE_COUNT];
   // used to store current directory locations
   private String seedDirectory = "data";
   private String respDirectory = "responses";
+
+  
   private String saveDirectory = System.getProperty("user.home");
-
-  
-  public void addChangeListener(ChangeListener listener) {
-    listenerList.add(ChangeListener.class, listener);
-  }
-  
-  public void removeChangeListener(ChangeListener listener) {
-    listenerList.remove(ChangeListener.class, listener);
-  }
-  
-  protected void fireStateChanged() {
-    ChangeListener[] lsners = listenerList.getListeners(ChangeListener.class);
-    if (lsners != null && lsners.length > 0) {
-      ChangeEvent evt = new ChangeEvent(this);
-      for (ChangeListener lsnr : lsners) {
-        lsnr.stateChanged(evt);
-      }
-    }
-  }
-  
-  private void instantiateChart(int idx) {
-    JFreeChart chart = ChartFactory.createXYLineChart(
-        "SEED input " + (idx + 1),
-        "Time",
-        "Counts",
-        new XYSeriesCollection(),
-        PlotOrientation.VERTICAL,
-        false, false, false);
-    
-    if (chartPanels[idx] == null) {
-      chartPanels[idx] = new ChartPanel(chart);
-    } else {
-      chartPanels[idx].setChart(chart);
-
-    }
-    chartPanels[idx].setMouseZoomable(true);
-  }
   
   /**
    * Creates a new data panel -- instantiates each chart, to be populated with
@@ -318,85 +296,6 @@ implements ActionListener, ChangeListener {
   }
   
   /**
-   * Displays the range set by the sliders using
-   * vertical bars at the min and max values
-   */
-  public void setVerticalBars() {
-    
-    // zooms.trimToCommonTime();
-    
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      if ( null == ds.getBlock(i) ) {
-        continue;
-      }
-      
-      int leftValue = leftSlider.getValue();
-      int rightValue = rightSlider.getValue();
-      
-      XYPlot xyp = (XYPlot) chartPanels[i].getChart().getPlot();
-      xyp.clearDomainMarkers();
-      
-      DataBlock db = zooms.getBlock(i);
-      
-      long startMarkerLocation = getMarkerLocation(db, leftValue);
-      long endMarkerLocation = getMarkerLocation(db, rightValue);
-      
-      Marker startMarker = new ValueMarker(startMarkerLocation/1000);
-      startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-      Marker endMarker = new ValueMarker(endMarkerLocation/1000);
-      endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-      
-      xyp.addDomainMarker(startMarker);
-      xyp.addDomainMarker(endMarker);
-      
-      chartPanels[i].repaint();
-    }
-    
-    
-  }
-  
-  /**
-   * Gets the value of start or end time from slider value and DataBlock
-   * @param db DataBlock corresponding to one of the plots
-   * @param sliderValue Value of starting or ending time slider [0-1000]
-   * @return Long that represents start or end time matching slider's value
-   */
-  public static long getMarkerLocation(DataBlock db, int sliderValue) {
-    long start = db.getStartTime();
-    long len = (db.getInterval()) * db.size();
-    return start + (sliderValue * len) / 1000;
-  }
-  
-  /**
-   * Parent function to load in a response file to this panel's
-   * DataStore object
-   * @param idx Index of the file/chart this response corresponds to
-   * @param filepath Full address of the file to be loaded in
-   */
-  public void setResponse(int idx, String filepath) {
-    
-    ds.setResponse(idx, filepath);
-    zooms.setResponse(idx, filepath);
-  }
-  
-  
-  /**
-   * Returns the selected region of underlying DataStore, to be fed 
-   * into experiments for processing (the results of which will be plotted)
-   * @return A DataStore object (contains arrays of DataBlocks & Responses)
-   */
-  public DataStore getData() {
-    
-    if ( ds.numberOfBlocksLoaded() < 1 ) {
-      return new DataStore();
-    }
-    
-
-    showRegionForGeneration();
-    return zooms;
-  }
-
-  /**
    * Dispatches commands based on save and zoom buttons clicked
    */
   @Override
@@ -430,7 +329,10 @@ implements ActionListener, ChangeListener {
           File file = fc.getSelectedFile();
           seedDirectory = file.getParent();
           String oldName = seedFileNames[idx].getText();
+          // TODO: clearly facing some issues with threading here
           seedFileNames[idx].setText("LOADING: " + file.getName());
+          seedFileNames[idx].updateUI();
+          System.out.println(seedFileNames[idx].getText());
           final String filePath = file.getAbsolutePath();
           String filterName = "";
           try {
@@ -451,6 +353,7 @@ implements ActionListener, ChangeListener {
               if (result instanceof String) {
                 filterName = (String) result;
               } else {
+                // if the user cnacelled selecting a subseries
                 seedFileNames[idx].setText(oldName);
                 return;
               }
@@ -471,11 +374,19 @@ implements ActionListener, ChangeListener {
           SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
             
             JFreeChart chart;
+            boolean caughtException = false;
             
             @Override
             public Integer doInBackground() {
-              ds.setData(idx, filePath, immutableFilter);
-              XYSeries ts = ds.getBlock(idx).toXYSeries();
+              
+              try {
+                ds.setData(idx, filePath, immutableFilter);
+              } catch (RuntimeException e) {
+                caughtException = true;
+                return 1;
+              }
+
+              XYSeries ts = ds.getPlotSeries(idx);
               chart = ChartFactory.createXYLineChart(
                   ts.getKey().toString(),
                   "Time",
@@ -503,6 +414,21 @@ implements ActionListener, ChangeListener {
             
             public void done() {
               
+              if (caughtException) {
+                XYPlot xyp = (XYPlot) chartPanels[idx].getChart().getPlot();
+                TextTitle result = new TextTitle();
+                result.setText("TIME RANGE DOES NOT INTERSECT");
+                result.setBackgroundPaint(Color.red);
+                result.setPaint(Color.white);
+                XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
+                    RectangleAnchor.CENTER);
+                xyp.clearAnnotations();
+                xyp.addAnnotation(xyt);
+                seedFileNames[idx].setText("NO FILE LOADED");
+                clearButton[idx].setEnabled(true);
+                return;
+              }
+              
               zooms = ds;
               for (int j = 0; j < DataStore.FILE_COUNT; ++j) {
                 if (zooms.getBlock(j) == null) {
@@ -511,19 +437,12 @@ implements ActionListener, ChangeListener {
                 resetPlotZoom(j);
               }
               
-              if (chart == null) {
-                set[idx] = false;
-                return;
-              }
-              
               chartPanels[idx].setChart(chart);
               chartPanels[idx].setMouseZoomable(true);
 
               clearButton[idx].setEnabled(true);
               
               showRegionForGeneration();
-              
-              set[idx] = true;
 
               zoomIn.setEnabled(true);
               leftSlider.setEnabled(true);
@@ -629,57 +548,48 @@ implements ActionListener, ChangeListener {
     }
   }
   
-  public void showRegionForGeneration() {
-    
-    if ( ds.numberOfBlocksLoaded() < 1 ) {
-      return;
-    }
-    
-    // get (any) loaded data block to map slider to domain boundary
-    // all data should have the same range
-    DataBlock db = zooms.getXthLoadedBlock(1);
-
-    if ( leftSlider.getValue() != 0 || rightSlider.getValue() != 1000 ) {
-      long start = getMarkerLocation(db, leftSlider.getValue() );
-      long end = getMarkerLocation(db, rightSlider.getValue() );
-      zooms = new DataStore(ds, start, end);
-      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-        if (zooms.getBlock(i) == null) {
-          continue;
-        }
-        resetPlotZoom(i);
-      }
-      leftSlider.setValue(0); rightSlider.setValue(1000);
-    }
-    
-
-    setVerticalBars();
-    zoomOut.setEnabled(true);
-    
+  public void addChangeListener(ChangeListener listener) {
+    listenerList.add(ChangeListener.class, listener);
   }
   
   /**
-   * Does the work to reset the zoom of each chart
-   * @param idx Index of appropriate chart/panel
+   * Resets the data and blanks out all charts
    */
-  private void resetPlotZoom(int idx) {
-    XYPlot xyp = chartPanels[idx].getChart().getXYPlot();
-    XYSeriesCollection xys = new XYSeriesCollection();
-    xys.addSeries( zooms.getBlock(idx).toXYSeries() );
-    xyp.setDataset( xys );
-    xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
-    if ( xyp.getSeriesCount() > 1 ) {
-      throw new RuntimeException("TOO MUCH DATA");
+  public void clearAllData() {
+    ds = new DataStore();
+    zooms = ds;
+    
+    zoomIn.setEnabled(false);
+    zoomOut.setEnabled(false);
+    
+    leftSlider.setEnabled(false);
+    rightSlider.setEnabled(false);
+    
+    clearAll.setEnabled(false);
+    save.setEnabled(false);
+    
+    for (JTextComponent fn : seedFileNames) {
+      fn.setText("NO FILE LOADED");
     }
-    chartPanels[idx].repaint();
+    for (JTextComponent fn : respFileNames) {
+      fn.setText("NO FILE LOADED");
+    }
+    
+    for (int i = 0; i < chartPanels.length; ++i) {
+      clearButton[i].setEnabled(false);
+      instantiateChart(i);
+    }
+    
   }
   
-  public int getImageHeight() {
-    return IMAGE_HEIGHT * ds.numberOfBlocksLoaded();
-  }
-  
-  public int getImageWidth()  {
-    return allCharts.getWidth();
+  protected void fireStateChanged() {
+    ChangeListener[] lsners = listenerList.getListeners(ChangeListener.class);
+    if (lsners != null && lsners.length > 0) {
+      ChangeEvent evt = new ChangeEvent(this);
+      for (ChangeListener lsnr : lsners) {
+        lsnr.stateChanged(evt);
+      }
+    }
   }
   
   /**
@@ -759,6 +669,148 @@ implements ActionListener, ChangeListener {
     
     return bi;
   }
+  
+  
+  /**
+   * Returns the selected region of underlying DataStore, to be fed 
+   * into experiments for processing (the results of which will be plotted)
+   * @return A DataStore object (contains arrays of DataBlocks & Responses)
+   */
+  public DataStore getData() {
+    
+    if ( ds.numberOfBlocksLoaded() < 1 ) {
+      return new DataStore();
+    }
+    
+
+    showRegionForGeneration();
+    return zooms;
+  }
+
+  public int getImageHeight() {
+    return IMAGE_HEIGHT * ds.numberOfBlocksLoaded();
+  }
+  
+  public int getImageWidth()  {
+    return allCharts.getWidth();
+  }
+  
+  private void instantiateChart(int idx) {
+    JFreeChart chart = ChartFactory.createXYLineChart(
+        "SEED input " + (idx + 1),
+        "Time",
+        "Counts",
+        new XYSeriesCollection(),
+        PlotOrientation.VERTICAL,
+        false, false, false);
+    
+    if (chartPanels[idx] == null) {
+      chartPanels[idx] = new ChartPanel(chart);
+    } else {
+      chartPanels[idx].setChart(chart);
+
+    }
+    chartPanels[idx].setMouseZoomable(true);
+  }
+  
+  public void removeChangeListener(ChangeListener listener) {
+    listenerList.remove(ChangeListener.class, listener);
+  }
+  
+  /**
+   * Does the work to reset the zoom of each chart
+   * @param idx Index of appropriate chart/panel
+   */
+  private void resetPlotZoom(int idx) {
+    XYPlot xyp = chartPanels[idx].getChart().getXYPlot();
+    XYSeriesCollection xys = new XYSeriesCollection();
+    xys.addSeries( zooms.getBlock(idx).toXYSeries() );
+    xyp.setDataset( xys );
+    xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+    if ( xyp.getSeriesCount() > 1 ) {
+      throw new RuntimeException("TOO MUCH DATA");
+    }
+    chartPanels[idx].repaint();
+  }
+  
+  /**
+   * Parent function to load in a response file to this panel's
+   * DataStore object
+   * @param idx Index of the file/chart this response corresponds to
+   * @param filepath Full address of the file to be loaded in
+   */
+  public void setResponse(int idx, String filepath) {
+    
+    ds.setResponse(idx, filepath);
+    zooms.setResponse(idx, filepath);
+  }
+  
+  /**
+   * Displays the range set by the sliders using
+   * vertical bars at the min and max values
+   */
+  public void setVerticalBars() {
+    
+    // zooms.trimToCommonTime();
+    
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      if ( null == ds.getBlock(i) ) {
+        continue;
+      }
+      
+      int leftValue = leftSlider.getValue();
+      int rightValue = rightSlider.getValue();
+      
+      XYPlot xyp = (XYPlot) chartPanels[i].getChart().getPlot();
+      xyp.clearDomainMarkers();
+      
+      DataBlock db = zooms.getBlock(i);
+      
+      long startMarkerLocation = getMarkerLocation(db, leftValue);
+      long endMarkerLocation = getMarkerLocation(db, rightValue);
+      
+      Marker startMarker = new ValueMarker(startMarkerLocation/1000);
+      startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+      Marker endMarker = new ValueMarker(endMarkerLocation/1000);
+      endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+      
+      xyp.addDomainMarker(startMarker);
+      xyp.addDomainMarker(endMarker);
+      
+      chartPanels[i].repaint();
+    }
+    
+    
+  }
+
+  public void showRegionForGeneration() {
+    
+    if ( ds.numberOfBlocksLoaded() < 1 ) {
+      return;
+    }
+    
+    // get (any) loaded data block to map slider to domain boundary
+    // all data should have the same range
+    DataBlock db = zooms.getXthLoadedBlock(1);
+
+    if ( leftSlider.getValue() != 0 || rightSlider.getValue() != 1000 ) {
+      long start = getMarkerLocation(db, leftSlider.getValue() );
+      long end = getMarkerLocation(db, rightSlider.getValue() );
+      zooms = new DataStore(ds, start, end);
+      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+        if (zooms.getBlock(i) == null) {
+          continue;
+        }
+        resetPlotZoom(i);
+      }
+      leftSlider.setValue(0); rightSlider.setValue(1000);
+    }
+    
+
+    setVerticalBars();
+    zoomOut.setEnabled(true);
+    
+  }
 
   @Override
   /**
@@ -797,36 +849,6 @@ implements ActionListener, ChangeListener {
     rightSlider.setValue(rightSliderValue);
     
     setVerticalBars();
-    
-  }
-
-  /**
-   * Resets the data and blanks out all charts
-   */
-  public void clearAllData() {
-    ds = new DataStore();
-    zooms = ds;
-    set = new boolean[DataStore.FILE_COUNT];
-    
-    zoomIn.setEnabled(false);
-    zoomOut.setEnabled(false);
-    
-    leftSlider.setEnabled(false);
-    rightSlider.setEnabled(false);
-    
-    clearAll.setEnabled(false);
-    save.setEnabled(false);
-    
-    for (JTextComponent fn : seedFileNames) {
-      fn.setText("NO FILE LOADED");
-    }
-    for (JTextComponent fn : respFileNames) {
-      fn.setText("NO FILE LOADED");
-    }
-    
-    for (int i = 0; i < chartPanels.length; ++i) {
-      instantiateChart(i);
-    }
     
   }
   

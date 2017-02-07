@@ -15,9 +15,14 @@ import org.jfree.chart.axis.ValueAxis;
 
 public class NoisePanel extends ExperimentPanel {
 
-  private JCheckBox freqSpaceBox;
+  /**
+   * Auto-generated serialize ID
+   */
+  private static final long serialVersionUID = 9018553361096758354L;
   
+  private JCheckBox freqSpaceBox;
   private NumberAxis freqAxis;
+  
   private String freqAxisTitle;
   
   public NoisePanel(ExperimentEnum exp) {
@@ -80,6 +85,12 @@ public class NoisePanel extends ExperimentPanel {
   }
   
   @Override
+  public void actionPerformed(ActionEvent e) {
+    // overridden in the event we add more stuff to this panel
+    super.actionPerformed(e); // only actionlistener here
+  }
+  
+  @Override
   public ValueAxis getXAxis() {
     
     // true if using Hz units
@@ -105,12 +116,6 @@ public class NoisePanel extends ExperimentPanel {
   }
   
   @Override
-  public void actionPerformed(ActionEvent e) {
-    // overridden in the event we add more stuff to this panel
-    super.actionPerformed(e); // only actionlistener here
-  }
-  
-  @Override
   public void updateData(DataStore ds) {
     
     // TODO: replace with try-catch, put this check in the experiment backend?
@@ -127,6 +132,7 @@ public class NoisePanel extends ExperimentPanel {
     
   }
   
+
   private void updateDriver(DataStore ds, boolean freqSpace) {
     
     final DataStore dsImmutable = ds;
@@ -159,12 +165,6 @@ public class NoisePanel extends ExperimentPanel {
     return;
     
   }
-  
-
-  /**
-   * Auto-generated serialize ID
-   */
-  private static final long serialVersionUID = 9018553361096758354L;
   
   
 

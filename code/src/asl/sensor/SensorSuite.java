@@ -55,29 +55,67 @@ public class SensorSuite extends JPanel
   private static final long serialVersionUID = 2866426897343097822L;
  
 
+  /**
+   * Loads the main window for the program on launch
+   */
+  private static void createAndShowGUI() {
+    JFrame frame = new JFrame("Sensor Tests");
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+    frame.add( new SensorSuite() );
+
+    frame.pack();
+    frame.setVisible(true);
+  }
+  /**
+   * Create space with the given dimensions as a buffer between plots
+   * when writing the plots to an image file
+   * @param width The width of the spacer
+   * @param height The height of the spacer
+   * @return A blank BufferedImage that can be concatenated with other plots
+   */
+  public static BufferedImage getSpace(int width, int height) {
+    BufferedImage space = new BufferedImage(
+        width, 
+        height, 
+        BufferedImage.TYPE_INT_RGB);
+    Graphics2D tmp = space.createGraphics();
+    JPanel margin = new JPanel();
+    margin.add( Box.createRigidArea( new Dimension(width,height) ) );
+    margin.printAll(tmp);
+    tmp.dispose();
+
+    return space;
+  }
+  /**
+   * Starts the program -- instantiate the top-level GUI
+   * @param args (Any parameters fed in on command line are currently ignored)
+   */
+  public static void main(String[] args) {
+    //Schedule a job for the event dispatch thread:
+    //creating and showing this application's GUI.
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        //Turn off metal's use of bold fonts
+        // UIManager.put("swing.boldMetal", Boolean.FALSE); 
+        createAndShowGUI();
+      }
+    });
+
+  }
+
   private JFileChooser fc; // loads in files based on parameter
+  
   private InputPanel inputPlots;
+
+
   private JTabbedPane tabbedPane; // holds set of experiment panels
 
   private JButton generate, savePDF; // run all calculations
-  
+
   // used to store current directory locations
   private String saveDirectory = System.getProperty("user.home");
 
-
-  private void resetTabPlots() {
-    
-    // pass the inputted data to the panels that handle them
-    DataStore ds = inputPlots.getData();
-    // update the input plots to show the active region being calculated
-    inputPlots.showRegionForGeneration();
-    
-    // now, update the data
-    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
-    ep.updateData(ds);
-    
-    savePDF.setEnabled(true);
-  }
 
   /**
    * Creates the main window of the program when called
@@ -150,37 +188,6 @@ public class SensorSuite extends JPanel
     
     fc = new JFileChooser();
 
-  }
-
-  /**
-   * Starts the program -- instantiate the top-level GUI
-   * @param args (Any parameters fed in on command line are currently ignored)
-   */
-  public static void main(String[] args) {
-    //Schedule a job for the event dispatch thread:
-    //creating and showing this application's GUI.
-    SwingUtilities.invokeLater(new Runnable() {
-      public void run() {
-        //Turn off metal's use of bold fonts
-        // UIManager.put("swing.boldMetal", Boolean.FALSE); 
-        createAndShowGUI();
-      }
-    });
-
-  }
-
-
-  /**
-   * Loads the main window for the program on launch
-   */
-  private static void createAndShowGUI() {
-    JFrame frame = new JFrame("Sensor Tests");
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-    frame.add( new SensorSuite() );
-
-    frame.pack();
-    frame.setVisible(true);
   }
 
   /**
@@ -263,25 +270,18 @@ public class SensorSuite extends JPanel
 
   }
 
-  /**
-   * Create space with the given dimensions as a buffer between plots
-   * when writing the plots to an image file
-   * @param width The width of the spacer
-   * @param height The height of the spacer
-   * @return A blank BufferedImage that can be concatenated with other plots
-   */
-  public static BufferedImage getSpace(int width, int height) {
-    BufferedImage space = new BufferedImage(
-        width, 
-        height, 
-        BufferedImage.TYPE_INT_RGB);
-    Graphics2D tmp = space.createGraphics();
-    JPanel margin = new JPanel();
-    margin.add( Box.createRigidArea( new Dimension(width,height) ) );
-    margin.printAll(tmp);
-    tmp.dispose();
-
-    return space;
+  private void resetTabPlots() {
+    
+    // pass the inputted data to the panels that handle them
+    DataStore ds = inputPlots.getData();
+    // update the input plots to show the active region being calculated
+    inputPlots.showRegionForGeneration();
+    
+    // now, update the data
+    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+    ep.updateData(ds);
+    
+    savePDF.setEnabled(true);
   }
 
   @Override

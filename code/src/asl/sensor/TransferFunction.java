@@ -18,11 +18,11 @@ public enum TransferFunction {
    */
   LINEAR (1.0);
   
+  private double function;
+  
   TransferFunction(double function) {
     this.function = function;
   }
-  
-  private double function;
   
   public double getFunction(){
     return function;

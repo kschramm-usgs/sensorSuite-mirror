@@ -83,25 +83,21 @@ public class DataStore {
     this.trimAll(start, end);
   }
   
-  public boolean[] dataIsSet() {
-    return thisBlockIsSet;
+  public boolean blockIsSet(int idx) {
+    return thisBlockIsSet[idx];
   }
   
-  public FFTResult getPSD(int idx) {
-    if (!thisPSDIsCalculated[idx]) {
-      // need both a response and source data
-      if (!thisBlockIsSet[idx] || !thisResponseIsSet[idx]) {
-        throw new RuntimeException("Not enough data loaded in");
-      } else {
-        // have enough data but need to calculate before returning
-        DataBlock db = dataBlockArray[idx];
-        InstrumentResponse ir = responses[idx];
-        powerSpectra[idx] = FFTResult.crossPower(db, db, ir, ir);
-        thisPSDIsCalculated[idx] = true;
-      }
-    }
-
-    return powerSpectra[idx];
+  /**
+   * Checks if both components at a specific index are set
+   * @param idx Index of data to check if set or not
+   * @return True if a miniseed and response have been both loaded in
+   */
+  public boolean bothComponentsSet(int idx) {
+    return (thisBlockIsSet[idx] && thisResponseIsSet[idx]);
+  }
+  
+  public boolean[] dataIsSet() {
+    return thisBlockIsSet;
   }
   
   public FFTResult[] getAllPSDs() {
@@ -111,19 +107,6 @@ public class DataStore {
       }
     }
     return powerSpectra;
-  }
-  
-  public boolean isPSDSet(int idx) {
-    return thisPSDIsCalculated[idx];
-  }
-  
-  public boolean isAnythingSet() {
-    for (int i = 0; i< FILE_COUNT; ++i) {
-      if (thisBlockIsSet[i] || thisResponseIsSet[i]) {
-        return true;
-      }
-    }
-    return false;
   }
   
   /**
@@ -143,10 +126,6 @@ public class DataStore {
     return dataBlockArray;
   }
   
-  public InstrumentResponse getResponse(int idx) {
-    return responses[idx];
-  }
-  
   /**
    * Returns the plottable format of the data held in the arrays at 
    * the specified index
@@ -155,6 +134,27 @@ public class DataStore {
    */
   public XYSeries getPlotSeries(int idx) {
     return outToPlots[idx];
+  }
+  
+  public FFTResult getPSD(int idx) {
+    if (!thisPSDIsCalculated[idx]) {
+      // need both a response and source data
+      if (!thisBlockIsSet[idx] || !thisResponseIsSet[idx]) {
+        throw new RuntimeException("Not enough data loaded in");
+      } else {
+        // have enough data but need to calculate before returning
+        DataBlock db = dataBlockArray[idx];
+        InstrumentResponse ir = responses[idx];
+        powerSpectra[idx] = FFTResult.crossPower(db, db, ir, ir);
+        thisPSDIsCalculated[idx] = true;
+      }
+    }
+
+    return powerSpectra[idx];
+  }
+  
+  public InstrumentResponse getResponse(int idx) {
+    return responses[idx];
   }
   
   /**
@@ -167,6 +167,71 @@ public class DataStore {
     return responses;
   }
   
+  /**
+   * Used to get the first, second, etc. data set loaded. Used when operations
+   * reading in data don't require all the inputs to be loaded.
+   * Requires both SEED and RESP to be loaded for this to be valid.
+   * @param x x-th set of loaded data to get, starting at 1
+   * @return index of the loaded data
+   */
+  public int getXthFullyLoadedIndex(int x) {
+    if (x < 1) {
+      throw new IndexOutOfBoundsException("Parameter must be >= 1");
+    }
+    
+    int loaded = 0;
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if ( bothComponentsSet(i) ) {
+        ++loaded;
+        if (loaded == x) {
+          return i;
+        }
+      }
+    }
+    
+    String errMsg = "Not enough data loaded in (found " + loaded + ")";
+    throw new IndexOutOfBoundsException(errMsg);
+  }
+  
+  /**
+   * Used to get the first, second, etc. loaded block, whether or not it has
+   * a loaded response file as well.
+   * Used to find the panel where a step calibration is loaded
+   * @param x x-th set of data to get, starting at 1
+   * @return The Xth DataBlock in this object that is not null
+   */
+  public DataBlock getXthLoadedBlock(int x) {
+    if (x < 1) {
+      throw new IndexOutOfBoundsException("Parameter must be >= 1");
+    }
+    
+    int count = 0;
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (thisBlockIsSet[i]) {
+        ++count;
+        if (count == x) {
+          return dataBlockArray[i];
+        }
+      }
+    }
+    
+    String errMsg = "Not enough data loaded in (found " + count + ")";
+    throw new IndexOutOfBoundsException(errMsg);
+  }
+  
+  public boolean isAnythingSet() {
+    for (int i = 0; i< FILE_COUNT; ++i) {
+      if (thisBlockIsSet[i] || thisResponseIsSet[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  public boolean isPSDSet(int idx) {
+    return thisPSDIsCalculated[idx];
+  }
+  
   public int numberFullySet() {
     int loaded = 0;
     for (int i = 0; i < FILE_COUNT; ++i) {
@@ -176,7 +241,7 @@ public class DataStore {
     }
     return loaded;
   }
-  
+
   public int numberOfBlocksLoaded() {
     int loaded = 0;
     for (int i = 0; i < FILE_COUNT; ++i) {
@@ -185,6 +250,15 @@ public class DataStore {
       }
     }
     return loaded;
+  }
+
+  public void removeData(int idx) {
+    dataBlockArray[idx] = null;
+    responses[idx] = null;
+    outToPlots[idx] = null;
+    thisBlockIsSet[idx] = false;
+    thisPSDIsCalculated[idx] = false;
+    thisResponseIsSet[idx] = false;
   }
   
   public boolean[] responsesAreSet() {
@@ -213,6 +287,24 @@ public class DataStore {
 
     if (numberOfBlocksLoaded() > 1) {
       // loading in multiple series of data? trim to common time now
+      long start = dataBlockArray[idx].getStartTime();
+      long end = dataBlockArray[idx].getEndTime();
+      
+      // there's clearly already another block loaded, let's make sure they
+      // actually have an intersecting time range
+      for (int i = 0; i < FILE_COUNT; ++i) {
+        if (i != idx && thisBlockIsSet[i]) {
+          // whole block either comes before or after the data set
+          if (end < dataBlockArray[i].getStartTime() || 
+              start > dataBlockArray[i].getEndTime() ) {
+            thisBlockIsSet[idx] = false;
+            outToPlots[idx] = null;
+            dataBlockArray[idx] = null;
+            throw new RuntimeException("Time range does not intersect");
+          }
+        }
+      }
+      
       trimToCommonTime();
     }
     
@@ -234,6 +326,10 @@ public class DataStore {
       e.printStackTrace();
     }
   }
+  
+  public boolean timeSeriesSet(int idx) {
+    return thisBlockIsSet[idx];
+  }
 
   /**
    * Trims all data blocks to be within a certain time range.
@@ -248,7 +344,7 @@ public class DataStore {
       }
     }
   }
-
+  
   /**
    * Trims this object's data blocks to hold only points in their common range
    * WARNING: assumes each plot has its data taken at the same point in time
@@ -288,83 +384,5 @@ public class DataStore {
       outToPlots[i] = data.toXYSeries();
     }
     
-  }
-  
-  /**
-   * Used to get the first, second, etc. loaded block, whether or not it has
-   * a loaded response file as well.
-   * Used to find the panel where a step calibration is loaded
-   * @param x x-th set of data to get, starting at 1
-   * @return The Xth DataBlock in this object that is not null
-   */
-  public DataBlock getXthLoadedBlock(int x) {
-    if (x < 1) {
-      throw new IndexOutOfBoundsException("Parameter must be >= 1");
-    }
-    
-    int count = 0;
-    for (int i = 0; i < FILE_COUNT; ++i) {
-      if (thisBlockIsSet[i]) {
-        ++count;
-        if (count == x) {
-          return dataBlockArray[i];
-        }
-      }
-    }
-    
-    String errMsg = "Not enough data loaded in (found " + count + ")";
-    throw new IndexOutOfBoundsException(errMsg);
-  }
-  
-  /**
-   * Used to get the first, second, etc. data set loaded. Used when operations
-   * reading in data don't require all the inputs to be loaded.
-   * Requires both SEED and RESP to be loaded for this to be valid.
-   * @param x x-th set of loaded data to get, starting at 1
-   * @return index of the loaded data
-   */
-  public int getXthFullyLoadedIndex(int x) {
-    if (x < 1) {
-      throw new IndexOutOfBoundsException("Parameter must be >= 1");
-    }
-    
-    int loaded = 0;
-    for (int i = 0; i < FILE_COUNT; ++i) {
-      if ( bothComponentsSet(i) ) {
-        ++loaded;
-        if (loaded == x) {
-          return i;
-        }
-      }
-    }
-    
-    String errMsg = "Not enough data loaded in (found " + loaded + ")";
-    throw new IndexOutOfBoundsException(errMsg);
-  }
-  
-  public boolean timeSeriesSet(int idx) {
-    return thisBlockIsSet[idx];
-  }
-  
-  public void removeData(int idx) {
-    dataBlockArray[idx] = null;
-    responses[idx] = null;
-    outToPlots[idx] = null;
-    thisBlockIsSet[idx] = false;
-    thisPSDIsCalculated[idx] = false;
-    thisResponseIsSet[idx] = false;
-  }
-
-  /**
-   * Checks if both components at a specific index are set
-   * @param idx Index of data to check if set or not
-   * @return True if a miniseed and response have been both loaded in
-   */
-  public boolean bothComponentsSet(int idx) {
-    return (thisBlockIsSet[idx] && thisResponseIsSet[idx]);
-  }
-  
-  public boolean blockIsSet(int idx) {
-    return thisBlockIsSet[idx];
   }
 }

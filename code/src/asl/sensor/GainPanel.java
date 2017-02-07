@@ -213,6 +213,16 @@ implements ChangeListener {
   }
 
   /**
+   * Converts x-axis value from log scale to linear, to get slider position
+   * @param prd period value marking data window boundary
+   * @return value of slider (ranges from 0 to 1000)
+   */
+  public int mapPeriodToSlider(double prd) {
+    double scale = (high - low)/1000; // recall slider range is 0 to 1000
+    return (int) ( ( Math.log10(prd) - low ) / scale );
+  }
+  
+  /**
    * Converts the slider position to a logarithmic scale matching x-axis values
    * which is the period given in a rate of seconds
    * @param position value of slider
@@ -223,17 +233,16 @@ implements ChangeListener {
     return Math.pow(10, low + (scale * position) );
   }
   
+
+  @Override
   /**
-   * Converts x-axis value from log scale to linear, to get slider position
-   * @param prd period value marking data window boundary
-   * @return value of slider (ranges from 0 to 1000)
+   * Specifies plotting the NLNM curve in bold
    */
-  public int mapPeriodToSlider(double prd) {
-    double scale = (high - low)/1000; // recall slider range is 0 to 1000
-    return (int) ( ( Math.log10(prd) - low ) / scale );
+  public String[] seriesToDrawBold() {
+    return new String[]{"NLNM"};
   }
   
-
+  
   /**
    * Used to populate the comboboxes with the incoming data
    * @param ds DataStore object being processed 
@@ -258,7 +267,23 @@ implements ChangeListener {
     secondSeries.setSelectedIndex(1);
   }
   
-  
+    
+  /**
+   * Draws the lines marking the boundaries of the current window
+   * @param lowPrd lower x-axis value (period, in seconds)
+   * @param highPrd upper x-axis value (period, in seconds)
+   * @param xyp plot displayed in this object's chart
+   */
+  private void setDomainMarkers(double lowPrd, double highPrd, XYPlot xyp) {
+    xyp.clearDomainMarkers();
+    Marker startMarker = new ValueMarker( lowPrd );
+    startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+    Marker endMarker = new ValueMarker( highPrd );
+    endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
+    xyp.addDomainMarker(startMarker);
+    xyp.addDomainMarker(endMarker);
+  }
+
   /**
    * Displays the statistic results when the calculate button is hit
    * @param mean Calculated mean value
@@ -289,7 +314,6 @@ implements ChangeListener {
     xyp.addAnnotation(xyt);
   }
   
-    
   /**
    * Used to get boundaries of chart window specified by this panel's slider
    * and to draw the vertical lines matching the location of those bounds
@@ -338,22 +362,6 @@ implements ChangeListener {
       // remove old bars and draw the new ones
       setDomainMarkers(lowPrd, highPrd, xyp);
     }
-  }
-
-  /**
-   * Draws the lines marking the boundaries of the current window
-   * @param lowPrd lower x-axis value (period, in seconds)
-   * @param highPrd upper x-axis value (period, in seconds)
-   * @param xyp plot displayed in this object's chart
-   */
-  private void setDomainMarkers(double lowPrd, double highPrd, XYPlot xyp) {
-    xyp.clearDomainMarkers();
-    Marker startMarker = new ValueMarker( lowPrd );
-    startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-    Marker endMarker = new ValueMarker( highPrd );
-    endMarker.setStroke( new BasicStroke( (float) 1.5 ) );
-    xyp.addDomainMarker(startMarker);
-    xyp.addDomainMarker(endMarker);
   }
   
   /**
@@ -404,7 +412,7 @@ implements ChangeListener {
     new Thread(worker).run();
 
   }
-  
+
   /**
    * Given input data (including time series collection), get only the relevant
    * ones to display based on combo boxes and then do the statistics on those
@@ -500,14 +508,6 @@ implements ChangeListener {
     
     new Thread(worker).start();
 
-  }
-
-  @Override
-  /**
-   * Specifies plotting the NLNM curve in bold
-   */
-  public String[] seriesToDrawBold() {
-    return new String[]{"NLNM"};
   }
   
 }

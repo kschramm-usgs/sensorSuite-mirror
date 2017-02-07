@@ -12,7 +12,56 @@ public abstract class Experiment {
   // TODO: include axis scale definitions constructed along with axis titles
   // (i.e., logarithmic, etc.)
   
+  public static void addToPlot(
+      final DataStore ds,
+      final boolean freqSpace,
+      XYSeriesCollection xysc) {
+    
+    DataBlock[] dataIn = ds.getData();
+    
+    for (int i = 0; i < dataIn.length; ++i) {
+      
+      if( dataIn[i] == null ) {
+        continue;
+      }
+      
+      XYSeries powerSeries = new XYSeries( "PSD " + dataIn[i].getName() );
+
+      Complex[] resultPSD = ds.getPSD(i).getFFT();
+      double[] freqs = ds.getPSD(i).getFreqs();
+
+      for (int j = 0; j < freqs.length; ++j) {
+        if (1/freqs[j] > 1.0E3) {
+          continue;
+        }
+
+        // TODO: is this right (seems to be)
+        Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],4));
+
+        if (freqSpace) {
+          powerSeries.add( freqs[j], 10*Math.log10( temp.abs() ) );
+        } else {
+          powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
+        }
+      }
+
+      xysc.addSeries(powerSeries);
+
+    }
+    
+  }
+  
   protected XYSeriesCollection xySeriesData;
+  
+  /**
+   * (Overwritten by concrete experiments with specific operations)
+   * @param ds Object containing the raw timeseries data to process
+   * @param freqSpace True if the data should be plotted by frequency (False
+   * if it should be plotted by period) for domain axis
+   * @return Plottable series (pl.) of data for all results generated
+   */
+  protected abstract void backend(
+      final DataStore ds, final boolean freqSpace);
   
   /**
    * Return the plottable data for this experiment
@@ -55,54 +104,5 @@ public abstract class Experiment {
     
     backend(ds, freqSpace);
   }
-  
-  public static void addToPlot(
-      final DataStore ds,
-      final boolean freqSpace,
-      XYSeriesCollection xysc) {
-    
-    DataBlock[] dataIn = ds.getData();
-    
-    for (int i = 0; i < dataIn.length; ++i) {
-      
-      if( dataIn[i] == null ) {
-        continue;
-      }
-      
-      XYSeries powerSeries = new XYSeries( "PSD " + dataIn[i].getName() );
-
-      Complex[] resultPSD = ds.getPSD(i).getFFT();
-      double[] freqs = ds.getPSD(i).getFreqs();
-
-      for (int j = 0; j < freqs.length; ++j) {
-        if (1/freqs[j] > 1.0E3) {
-          continue;
-        }
-
-        // TODO: is this right (seems to be)
-        Complex temp = resultPSD[j].multiply(Math.pow(2*Math.PI*freqs[j],4));
-
-        if (freqSpace) {
-          powerSeries.add( freqs[j], 10*Math.log10( temp.abs() ) );
-        } else {
-          powerSeries.add( 1/freqs[j], 10*Math.log10( temp.abs() ) );
-        }
-      }
-
-      xysc.addSeries(powerSeries);
-
-    }
-    
-  }
-  
-  /**
-   * (Overwritten by concrete experiments with specific operations)
-   * @param ds Object containing the raw timeseries data to process
-   * @param freqSpace True if the data should be plotted by frequency (False
-   * if it should be plotted by period) for domain axis
-   * @return Plottable series (pl.) of data for all results generated
-   */
-  protected abstract void backend(
-      final DataStore ds, final boolean freqSpace);
   
 }

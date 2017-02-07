@@ -16,27 +16,40 @@ import org.apache.commons.math3.complex.Complex;
 public class InstrumentResponse {
 
   
+  /**
+   * Extract the real and imaginary terms from a pole or zero in a RESP file
+   * @param line the line the zero or pole is found on in the file
+   * @param array the array of zeros and poles the term will be added to
+   */
+  private static void parseTermAsComplex(String line, Complex[] array) {
+    // reparse the line. why are we doing this?
+    // if a number is negative, only one space between it and prev. number
+    // and the previous split operation assumed > 2 spaces between numbers
+    String[] words = line.split("\\s+");
+
+
+    // index 0 is the identifier for the field types (used in switch-stmt)
+    // index 1 is where in the list this zero or pole is
+    // index 2 is the real part, and index 3 the imaginary
+    // indices 4 and 5 are error terms (ignored)    
+    int index = Integer.parseInt(words[1]);
+    double realPart = Double.parseDouble(words[2]);
+    double imagPart = Double.parseDouble(words[3]);
+    array[index] = new Complex(realPart, imagPart);
+  }
+  
   private TransferFunction transferType;
   
   // gain values, indexed by stage
   private List<Double> gain;
-  
   private List<Complex> zeros;
+  
   private List<Complex> poles;
   
   private Unit unitType;
-  
   private double normalization;
-  private double normalFreq; // ♫ cuz she's a normalFreq, normalFreq 
   
-  /**
-   * Reads in an instrument response from a RESP file
-   * @param filename full path of the RESP file
-   * @throws IOException
-   */
-  public InstrumentResponse(String filename) throws IOException {
-    parseResponseFile(filename);
-  }
+  private double normalFreq; // ♫ cuz she's a normalFreq, normalFreq 
   
   /**
    * Create a copy of an existing response object
@@ -58,61 +71,12 @@ public class InstrumentResponse {
   }
   
   /**
-   * Get the transfer function of this response file (laplacian, linear)
-   * @return
+   * Reads in an instrument response from a RESP file
+   * @param filename full path of the RESP file
+   * @throws IOException
    */
-  public TransferFunction getTransferFunction() {
-    return transferType;
-  }
-  
-  /**
-   * Get the 3 gain stages of the RESP file. Stage x is at index x. That is,
-   * the sensitivity is at 0, the sensor gain is at 1, and the digitizer
-   * gain is at 2.
-   * @return
-   */
-  public List<Double> getGain() {
-    return gain;
-  }
-  
-  /**
-   * Return the list of zeros in the RESP file, not including error terms
-   * @return List of complex numbers; index y is the yth zero in response list
-   */
-  public List<Complex> getZeros() {
-    return zeros;
-  }
-  
-  /**
-   * Return the list of poles in the RESP file, not including error terms
-   * @return List of complex numbers; index y is the yth pole in response list
-   */
-  public List<Complex> getPoles() {
-    return poles;
-  }
-  
-  /**
-   * Gives the unit type of the RESP file (displacement, velocity, acceleration)
-   * @return
-   */
-  public Unit getUnits() {
-    return unitType;
-  }
-  
-  /**
-   * Get the normalization of the response
-   * @return
-   */
-  public double getNormalization() {
-    return normalization;
-  }
-  
-  /**
-   * Get the normalization frequency
-   * @return
-   */
-  public double getNormalizationFrequency() {
-    return normalFreq;
+  public InstrumentResponse(String filename) throws IOException {
+    parseResponseFile(filename);
   }
   
   /**
@@ -194,6 +158,64 @@ public class InstrumentResponse {
     }
     
     return resps;
+  }
+  
+  /**
+   * Get the 3 gain stages of the RESP file. Stage x is at index x. That is,
+   * the sensitivity is at 0, the sensor gain is at 1, and the digitizer
+   * gain is at 2.
+   * @return
+   */
+  public List<Double> getGain() {
+    return gain;
+  }
+  
+  /**
+   * Get the normalization of the response
+   * @return
+   */
+  public double getNormalization() {
+    return normalization;
+  }
+  
+  /**
+   * Get the normalization frequency
+   * @return
+   */
+  public double getNormalizationFrequency() {
+    return normalFreq;
+  }
+  
+  /**
+   * Return the list of poles in the RESP file, not including error terms
+   * @return List of complex numbers; index y is the yth pole in response list
+   */
+  public List<Complex> getPoles() {
+    return poles;
+  }
+  
+  /**
+   * Get the transfer function of this response file (laplacian, linear)
+   * @return
+   */
+  public TransferFunction getTransferFunction() {
+    return transferType;
+  }
+  
+  /**
+   * Gives the unit type of the RESP file (displacement, velocity, acceleration)
+   * @return
+   */
+  public Unit getUnits() {
+    return unitType;
+  }
+  
+  /**
+   * Return the list of zeros in the RESP file, not including error terms
+   * @return List of complex numbers; index y is the yth zero in response list
+   */
+  public List<Complex> getZeros() {
+    return zeros;
   }
   
   /**
@@ -346,28 +368,6 @@ public class InstrumentResponse {
       e.printStackTrace();
     }
     
-  }
-  
-  /**
-   * Extract the real and imaginary terms from a pole or zero in a RESP file
-   * @param line the line the zero or pole is found on in the file
-   * @param array the array of zeros and poles the term will be added to
-   */
-  private static void parseTermAsComplex(String line, Complex[] array) {
-    // reparse the line. why are we doing this?
-    // if a number is negative, only one space between it and prev. number
-    // and the previous split operation assumed > 2 spaces between numbers
-    String[] words = line.split("\\s+");
-
-
-    // index 0 is the identifier for the field types (used in switch-stmt)
-    // index 1 is where in the list this zero or pole is
-    // index 2 is the real part, and index 3 the imaginary
-    // indices 4 and 5 are error terms (ignored)    
-    int index = Integer.parseInt(words[1]);
-    double realPart = Double.parseDouble(words[2]);
-    double imagPart = Double.parseDouble(words[3]);
-    array[index] = new Complex(realPart, imagPart);
   }
   
   
