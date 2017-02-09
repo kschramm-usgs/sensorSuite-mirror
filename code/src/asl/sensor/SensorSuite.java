@@ -179,8 +179,6 @@ public class SensorSuite extends JPanel
     generate = new JButton("Generate test result");
     generate.setEnabled(false);
     generate.addActionListener(this);
-    generate.setOpaque(true);
-    generate.setBackground(Color.BLUE);
     d = generate.getPreferredSize();
     d.setSize( d.getWidth(), d.getHeight() * 2 );
     generate.setPreferredSize(d);

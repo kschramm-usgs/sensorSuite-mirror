@@ -118,8 +118,8 @@ public class StepExperiment extends Experiment{
     System.out.println("problem built");
     
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
-        withCostRelativeTolerance(1.0E-8).
-        withParameterRelativeTolerance(1.0E-8);
+        withCostRelativeTolerance(1.0E-10).
+        withParameterRelativeTolerance(1.0E-10);
     
     System.out.println("optimizer constructed");
     
