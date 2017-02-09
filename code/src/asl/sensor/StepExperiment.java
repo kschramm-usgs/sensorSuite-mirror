@@ -1,12 +1,34 @@
 package asl.sensor;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresFactory;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
+import org.apache.commons.math3.fitting.
+        leastsquares.LevenbergMarquardtOptimizer;
+import org.apache.commons.math3.fitting.
+        leastsquares.MultivariateJacobianFunction;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.optim.ConvergenceChecker;
+import org.apache.commons.math3.optim.SimpleVectorValueChecker;
+import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
-public class StepExperiment extends Experiment {
+public class StepExperiment extends Experiment{
 
   double f, h; //corner and damping of output (uncorrected)
   double fCorr, hCorr; // fit parameters to turn output into cal input
+  
+  int trimLength;
+  double[] freqs;
+  Complex[] sensorFFTSeries; // FFT of step cal from sensor
+  double[] stepCalSeries; // time series of raw step cal function
+  
+  final double STEP_FACTOR = 1.0000000001;
   
   public StepExperiment() {
     super();
@@ -18,6 +40,15 @@ public class StepExperiment extends Experiment {
     // assume that the first block is the raw step calibration
     // the raw calibration is defined as not having an associated response
     DataBlock stepCalRaw = ds.getXthLoadedBlock(1);
+    
+    stepCalSeries = new double[stepCalRaw.size()];
+    
+    // doing it this way to play nice with numerical typing
+    // i.e., what if the datablock was from a file with floats or longs
+    for (int i = 0; i < stepCalSeries.length; ++i) {
+      stepCalSeries[i] = stepCalRaw.getData().get(i).doubleValue();
+    }
+    
     // but we want the response and the data of the cal result
     int outIdx = ds.getXthFullyLoadedIndex(1);
     
@@ -29,7 +60,7 @@ public class StepExperiment extends Experiment {
     }
     
     // resulting inverse fft should be this length
-    int trimLength = stepCalRaw.getData().size();
+    trimLength = stepCalRaw.getData().size();
 
     // get data of the result of the step calibration
     DataBlock sensorOutput = ds.getBlock(outIdx);
@@ -39,6 +70,87 @@ public class StepExperiment extends Experiment {
     
     f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
+    
+    double[] params = new double[]{f, h};
+    
+    // get FFT of datablock timeseries, deconvolve with response
+    FFTResult sensorsFFT = FFTResult.simpleFFT(sensorOutput);
+    Complex[] fftValues = sensorsFFT.getFFT();
+    sensorFFTSeries = fftValues;
+    freqs = sensorsFFT.getFreqs();
+    
+    double[] toPlot = calculate(params);
+    
+    long start = 0L; // was db.startTime();
+    long now = start;
+    XYSeries xys = new XYSeries("STEP *^(-1) RESP");
+    XYSeries scs = new XYSeries( stepCalRaw.getName() ); 
+    for (double point : toPlot) {
+      double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
+      xys.add(seconds, point);
+      now += interval;
+    }
+    now = start;
+    for (Number point : stepCalRaw.getData() ) {
+      double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
+      scs.add(seconds, point);
+      now += interval;
+    }
+    
+    // next we'll want to find the parameters to fit the plots
+    // to the inputted data
+    xySeriesData.addSeries(scs);
+    xySeriesData.addSeries(xys);
+    
+    // next step: curve fitting
+    RealVector startVector = MatrixUtils.createRealVector(params);
+    RealVector observedComponents = MatrixUtils.createRealVector(stepCalSeries);
+    
+    LeastSquaresProblem lsp = new LeastSquaresBuilder().
+        start(startVector).
+        target(observedComponents).
+        model( getJacobianFunction() ).
+        lazyEvaluation(false).
+        maxEvaluations(1000000000).
+        maxIterations(1000000000).
+        build();
+    
+    System.out.println("problem built");
+    
+    LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
+        withCostRelativeTolerance(1.0E-8).
+        withParameterRelativeTolerance(1.0E-8);
+    
+    System.out.println("optimizer constructed");
+    
+    LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
+    
+    System.out.println("optimization completed");
+    
+    double[] newParams = optimum.getPoint().toArray();
+    
+    fCorr = newParams[0];
+    hCorr = newParams[1];
+    
+    double[] fitPlot = calculate(newParams);
+    start = 0L; // was db.startTime();
+    now = start;
+    XYSeries bfs = new XYSeries("BEST FIT PLOT");
+    for (double point : fitPlot) {
+      double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
+      bfs.add(seconds, point);
+      now += interval;
+    }
+    
+    xySeriesData.addSeries(bfs);
+    
+    
+  }
+  
+  public double[] calculate(double[] beta) {
+    
+    double f = beta[0];
+    double h = beta[1];
     
     // use these terms to calculate the poles
     
@@ -60,13 +172,8 @@ public class StepExperiment extends Experiment {
     Complex pole2 = hCast.subtract( tempResult.sqrt() ).multiply(-1);
     pole2 = pole2.multiply(omega);
     
-    // get FFT of datablock timeseries, deconvolve with response
-    FFTResult sensorsFFT = FFTResult.simpleFFT(sensorOutput);
-    Complex[] fftValues = sensorsFFT.getFFT();
-    double[] freqs = sensorsFFT.getFreqs();
-    
     // calculate the FFT of the response
-    Complex[] respFFT = new Complex[fftValues.length]; // array of resps
+    Complex[] respFFT = new Complex[sensorFFTSeries.length]; // array of resps
     double max = 0.0;
     // don't let denominator be zero
     respFFT[0] = Complex.ONE;
@@ -88,11 +195,11 @@ public class StepExperiment extends Experiment {
       
     }
     
-    Complex[] correctedValues = new Complex[fftValues.length];
+    Complex[] toDeconvolve = new Complex[sensorFFTSeries.length];
     
     // deconvolving response is dividing fft(signal) by fft(response)
     
-    for (int i = 0; i < fftValues.length; ++i) {
+    for (int i = 0; i < sensorFFTSeries.length; ++i) {
       // the conjugate of the response, used twice in deconvolution
       Complex conjResp = respFFT[i].conjugate();
       double aboveZero = 0.008*max;  // term to keep the denominator above 0
@@ -102,38 +209,57 @@ public class StepExperiment extends Experiment {
       
       // deconvolving the response from output
       // fft * conj(resp) / (resp * conjResp)+0.008(max(|resp|))
-      correctedValues[i] = fftValues[i].multiply(conjResp).divide(denom);
+      toDeconvolve[i] = sensorFFTSeries[i].multiply(conjResp).divide(denom);
     }
     
-    double[] toPlot = FFTResult.inverseFFT(correctedValues, trimLength);
-    
-    long start = 0L; // was db.startTime();
-    long now = start;
-    XYSeries xys = new XYSeries("FFT(STEP)/RESP");
-    XYSeries scs = new XYSeries( stepCalRaw.getName() ); 
-    for (double point : toPlot) {
-      double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
-      xys.add(seconds, point);
-      now += interval;
-    }
-    now = start;
-    for (Number point : stepCalRaw.getData() ) {
-      double seconds = (double) now / TimeSeriesUtils.ONE_HZ_INTERVAL;
-      scs.add(seconds, point);
-      now += interval;
-    }
-    
-    // next we'll want to find the parameters to fit the plots
-    // to the inputted data
-    xySeriesData.addSeries(scs);
-    xySeriesData.addSeries(xys);
-    
-    // next step: curve fitting
+    return FFTResult.inverseFFT(toDeconvolve, trimLength);
     
   }
   
+  private Pair<RealVector, RealMatrix> jacobian(RealVector variables) {
+    
+    // approximate through forward differences
+    double[][] jacobian = new double[trimLength][2];
+    
+    double f1 = variables.getEntry(0);
+    double h1 = variables.getEntry(1);
+    double f2 = f1 * STEP_FACTOR;
+    double h2 = h1 * STEP_FACTOR;
+    
+    double[] fInit = calculate(new double[]{f1, h1});
+    double[] diffOnF = calculate(new double[]{f2, h1});
+    double[] diffOnH = calculate(new double[]{f1, h2});
+    
+    for (int i = 0; i < trimLength; ++i) {
+      jacobian[i][0] = (diffOnF[i] - fInit[i]) / (f2 - f1);
+      jacobian[i][1] = (diffOnH[i] - fInit[i]) / (h2 - h1);
+    }
+    
+    RealMatrix jMat = MatrixUtils.createRealMatrix(jacobian);
+    RealVector fnc = MatrixUtils.createRealVector(fInit);
+    
+    return new Pair<RealVector, RealMatrix>(fnc, jMat);
+  }
+  
+  public MultivariateJacobianFunction getJacobianFunction() {
+    return new MultivariateJacobianFunction() {
+      private static final long serialVersionUID = -8673650298627399464L;
+      public Pair<RealVector, RealMatrix> value(RealVector point) {
+          return jacobian(point);
+      }
+    };
+  }
+  
+  public double[] value(double[] point) {
+    return calculate(point);
+  }
+  
+  public double[] getFitCornerAndDamping() {
+    return new double[]{fCorr, hCorr};
+  }
+
   public double[] getCornerAndDamping() {
     return new double[]{f, h};
   }
-
+  
 }

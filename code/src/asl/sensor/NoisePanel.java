@@ -161,8 +161,7 @@ public class NoisePanel extends ExperimentPanel {
 
     };
     
-    new Thread(worker).start();
-    return;
+    worker.execute();
     
   }
   

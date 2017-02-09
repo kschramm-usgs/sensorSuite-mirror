@@ -331,7 +331,6 @@ implements ActionListener, ChangeListener {
           String oldName = seedFileNames[idx].getText();
           // TODO: clearly facing some issues with threading here
           seedFileNames[idx].setText("LOADING: " + file.getName());
-          System.out.println(seedFileNames[idx].getText());
           final String filePath = file.getAbsolutePath();
           String filterName = "";
           try {
@@ -405,6 +404,8 @@ implements ActionListener, ChangeListener {
               xyp.setDomainAxis(da);
               xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
 
+              zooms = ds;
+              
               return 0;
               // setData(idx, filePath, immutableFilter);
               // return 0;
@@ -413,6 +414,7 @@ implements ActionListener, ChangeListener {
             public void done() {
               
               if (caughtException) {
+                instantiateChart(idx);
                 XYPlot xyp = (XYPlot) chartPanels[idx].getChart().getPlot();
                 TextTitle result = new TextTitle();
                 String errMsg = "COULD NOT LOAD IN " + file.getName();
@@ -429,7 +431,8 @@ implements ActionListener, ChangeListener {
                 return;
               }
               
-              zooms = ds;
+              seedFileNames[idx].setText("PLOTTING: " + file.getName());
+              
               for (int j = 0; j < DataStore.FILE_COUNT; ++j) {
                 if (zooms.getBlock(j) == null) {
                   continue;
@@ -461,8 +464,6 @@ implements ActionListener, ChangeListener {
             }
           };
           
-          // TODO: add some sort of lock to datastore to make time boundaries
-          // threadsafe
           worker.execute();
           return;
         }

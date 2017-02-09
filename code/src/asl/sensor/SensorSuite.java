@@ -205,12 +205,16 @@ public class SensorSuite extends JPanel
         
         @Override
         public Integer doInBackground() {
-          resetTabPlots();
+          try{
+            resetTabPlots();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
           return 0;
         }
         
       };
-      new Thread(worker).run();
+      worker.execute();
       return;
     } else if ( e.getSource() == savePDF ) {
 

@@ -506,7 +506,7 @@ implements ChangeListener {
       
     };
     
-    new Thread(worker).start();
+    worker.execute();
 
   }
   

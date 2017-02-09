@@ -55,15 +55,7 @@ public class StepPanel extends ExperimentPanel {
     
     // TODO: threading?
     
-    int numLoaded = ds.numberOfBlocksLoaded();
-    int numLoadedWithResp = ds.numberFullySet();
-    
-    // we need two sets of data, one of which has a response file
-    if (numLoaded < 2 || numLoadedWithResp < 1) {
-      displayErrorMessage("INSUFFICIENT DATA LOADED");
-      return;
-    }
-
+    displayInfoMessage("Running stepcal testing...");
     
     expResult.setData(ds, false);
     XYSeriesCollection xysc = expResult.getData();
@@ -72,17 +64,29 @@ public class StepPanel extends ExperimentPanel {
     populateChart(xysc);
     XYPlot xyp = (XYPlot) chart.getPlot();
     double[] rolloff = ( (StepExperiment) expResult ).getCornerAndDamping();
+    double[] fit = ( (StepExperiment) expResult ).getFitCornerAndDamping();
     double corner = rolloff[0];
     double damping = rolloff[1];
+    double fitCorner = fit[0];
+    double fitDamping = fit[1];
     
     // TODO: will probably need to relocate some of this to its own method
     TextTitle result = new TextTitle();
     StringBuilder sb = new StringBuilder();
+    sb.append("RESP parameters\n");
     sb.append("corner frequency: ");
     sb.append(corner);
     sb.append("\n");
     sb.append("damping: ");
     sb.append(damping);
+    sb.append("\n");
+    sb.append("Best-fit parameters\n");
+    sb.append("corner frequency: ");
+    sb.append(fitCorner);
+    sb.append("\n");
+    sb.append("damping: ");
+    sb.append(fitDamping);
+    sb.append("\n");
     String temp = sb.toString();
     result.setText(temp);
     result.setBackgroundPaint(Color.white);

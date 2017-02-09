@@ -5,6 +5,11 @@ import java.io.IOException;
 
 import org.jfree.data.xy.XYSeries;
 
+// TODO (BIG, BIG IMPORTANT TODO) implement locking for file loading and
+// for PSD calculation
+// need to lock for file read-in to prevent race conditions on time boundary
+// need to lock on PSD to prevent redundant calculation thereof
+
 /**
  * Holds the inputted data from miniSEED files both as a simple struct
  * (see DataBlock) and as a plottable format for the DataPanel.
