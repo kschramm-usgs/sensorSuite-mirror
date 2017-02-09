@@ -63,8 +63,8 @@ public class TimeSeriesUtils {
     int npole = 2;
     int numPoles = npole;
     int twopass = 2;
-    double TWOPI = Math.PI * 2;
-    double PI = Math.PI;
+    final double TWOPI = Math.PI * 2;
+    final double PI = Math.PI;
 
     Complex c0 = new Complex(0., 0.);
     Complex c1 = new Complex(1., 0.);
@@ -604,5 +604,32 @@ public class TimeSeriesUtils {
     return upsamp;
   }
 
+  
+  /** 
+   * Scales data of an arbitrary range to lie within a 0-1 range
+   * @param data Timeseries data
+   * @return Same data, over the range 0-1, linearly scaled
+   */
+  public static double[] normalize(double[] data) {
+    double max = Double.NEGATIVE_INFINITY;
+    double min = Double.POSITIVE_INFINITY;
+    
+    for (double point : data) {
+      if (point < min) {
+        min = point;
+      }
+      if (point > max) {
+        max = point;
+      }
+    }
+    
+    for (int i = 0; i < data.length; ++i) {
+      data[i] = (data[i] - min) / (max - min);
+    }
+    
+    return data;
+    
+  }
+  
 }
 

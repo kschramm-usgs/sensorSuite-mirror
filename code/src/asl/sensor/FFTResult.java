@@ -124,6 +124,27 @@ public class FFTResult {
     // test shows this works as in-place method
   }
   
+  public static double[] demean(double[] dataSet) {
+    
+    List<Number> dataToProcess = new ArrayList<Number>();
+    
+    for (double number : dataSet) {
+      dataToProcess.add(number);
+    }
+    
+    demeanInPlace(dataToProcess);
+    
+    double[] out = new double[dataSet.length];
+    
+    for (int i = 0; i < out.length; ++i) {
+      out[i] = dataToProcess.get(i).doubleValue();
+    }
+    
+    return out;
+    
+  }
+  
+  
   /**
    * In-place subtraction of trend from each point in an incoming data set.
    * This is a necessary step in calculating the power-spectral density.
@@ -208,7 +229,7 @@ public class FFTResult {
    */
   public static double[] inverseFFT(Complex[] freqDomn, int trimLength) {
     FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.STANDARD);
+        new FastFourierTransformer(DftNormalization.UNITARY);
    
     // we're going to assume the data coming in is a power of 2 (and symmetric)
     
@@ -239,22 +260,15 @@ public class FFTResult {
   /**
    * Calculate the forward FFT of a data block
    * @param db DataBlock to have FFT computed from
-   * @return FFTResult containing the frequency data of the FFT and the
-   * corresponding frequency at each index
+   * @return Complex values representing double-sided FFT of input values
    */
-  public static FFTResult simpleFFT(DataBlock db) {
+  public static Complex[] simpleFFT(DataBlock db) {
     ArrayList<Number> list1 = new ArrayList<Number>( db.getData() );
         
     int padding = 2;
     while ( padding < list1.size() ) {
       padding *= 2;
     }
-    
-    int singleSide = padding/2;
-    
-    double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
-    period *= db.getInterval();
-    double deltaFrq = 1. / (period * padding);
     
     // detrend(list1);
     // demean(list1);
@@ -267,17 +281,12 @@ public class FFTResult {
     }
     
     FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.STANDARD);
+        new FastFourierTransformer(DftNormalization.UNITARY);
     
     Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
     
-    Complex[] fftOut = new Complex[singleSide];
-    double[] frequencies = new double[singleSide];
     
-    for (int i = 0; i < singleSide; ++i) {
-      fftOut[i] = frqDomn[i];
-      frequencies[i] = i * deltaFrq;
-    }
+    return frqDomn;
     
     //frequencies[singleSide] = (singleSide-1) * deltaFrq;
     
@@ -287,7 +296,81 @@ public class FFTResult {
     }
     */
 
+
+  }
+  
+  public static double[] simpleFFTTrimmed(Complex[] dataIn, int trimLength) {
+    int padding = 2;
+    while ( padding < dataIn.length ) {
+      padding *= 2;
+    }
+    
+    Complex[] toFFT = new Complex[dataIn.length];
+    
+    for (int i = 0; i < toFFT.length; ++i) {
+      if (i < dataIn.length) {
+        toFFT[i] = dataIn[i].multiply(-1);
+      } else {
+        toFFT[i] = Complex.ZERO;
+      }
+    }
+    
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.UNITARY);
+    
+    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+    
+    double[] out = new double[trimLength];
+    for (int i = 0; i < trimLength; ++i) {
+      out[i] = frqDomn[i].getReal() * -1;
+    }
+    
+    return out;
+  }
+  
+  
+  public static Complex[] simpleFFT(double[] dataIn) {
+    
+    int padding = 2;
+    while ( padding < dataIn.length ) {
+      padding *= 2;
+    }
+    
+    double[] toFFT = new double[padding];
+    
+    for (int i = 0; i < dataIn.length; ++i) {
+      toFFT[i] = dataIn[i];
+    }
+    
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.UNITARY);
+    
+    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+    
+    
+    return frqDomn;
+  }
+  
+  public static FFTResult simpleSingleSidedFFT(DataBlock db) {
+    
+    Complex[] frqDomn = simpleFFT(db);
+    
+    int padding = frqDomn.length;
+    int singleSide = padding/2;
+    double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
+    period *= db.getInterval();
+    double deltaFrq = 1. / (period * padding);
+    
+    Complex[] fftOut = new Complex[singleSide];
+    double[] frequencies = new double[singleSide];
+    
+    for (int i = 0; i < singleSide; ++i) {
+      fftOut[i] = frqDomn[i];
+      frequencies[i] = i * deltaFrq;
+    }
+    
     return new FFTResult(fftOut, frequencies);
+    
   }
   
   /**

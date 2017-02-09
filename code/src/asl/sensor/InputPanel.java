@@ -75,6 +75,7 @@ implements ActionListener, ChangeListener {
    * (each chart is 240 pixels tall)
    */
   public static final int IMAGE_HEIGHT = 240;
+  public static final int IMAGE_WIDTH = 480;
   
   /**
    * Gets the value of start or end time from slider value and DataBlock
@@ -602,7 +603,7 @@ implements ActionListener, ChangeListener {
     // if all 3 plots are set, height of panel is height of image
     int height = getImageHeight();
     // otherwise, we only use the height of images actually set
-    return getAsImage( allCharts.getWidth(), height );
+    return getAsImage( IMAGE_WIDTH, height );
   }
   
   /**
@@ -616,7 +617,7 @@ implements ActionListener, ChangeListener {
     
     // int shownHeight = allCharts.getHeight();
     
-    width = Math.min( width, chartPanels[0].getWidth() );
+    // width = Math.min( width, chartPanels[0].getWidth() );
     // height = Math.max( height, shownHeight );
     
     int loaded = ds.numberOfBlocksLoaded();

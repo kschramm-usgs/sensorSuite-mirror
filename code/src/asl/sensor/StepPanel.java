@@ -90,8 +90,8 @@ public class StepPanel extends ExperimentPanel {
     String temp = sb.toString();
     result.setText(temp);
     result.setBackgroundPaint(Color.white);
-    XYTitleAnnotation xyt = new XYTitleAnnotation(0.98, 0.02, result,
-        RectangleAnchor.BOTTOM_RIGHT);
+    XYTitleAnnotation xyt = new XYTitleAnnotation(0.98, 0.5, result,
+        RectangleAnchor.RIGHT);
     xyp.clearAnnotations();
     xyp.addAnnotation(xyt);
     
