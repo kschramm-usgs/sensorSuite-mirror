@@ -50,6 +50,8 @@ implements ChangeListener {
     // instantiate common components
     super(exp);
     
+    plotTheseInBold = new String[]{"NLNM"};
+    
     xAxisTitle = "Period (s)";
     yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
     xAxis = new LogarithmicAxis(xAxisTitle);
@@ -232,16 +234,6 @@ implements ChangeListener {
     double scale = (high - low)/1000; // slider range is 0 to 1000
     return Math.pow(10, low + (scale * position) );
   }
-  
-
-  @Override
-  /**
-   * Specifies plotting the NLNM curve in bold
-   */
-  public String[] seriesToDrawBold() {
-    return new String[]{"NLNM"};
-  }
-  
   
   /**
    * Used to populate the comboboxes with the incoming data

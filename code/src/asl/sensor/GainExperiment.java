@@ -151,7 +151,7 @@ public class GainExperiment extends Experiment {
     
     addToPlot(ds, false, xySeriesData); // don't plot in frequency space
     
-    xySeriesData.addSeries( FFTResult.getLowNoiseModel(false, this) );
+    xySeriesData.addSeries( FFTResult.getLowNoiseModel(false) );
     
   }
   

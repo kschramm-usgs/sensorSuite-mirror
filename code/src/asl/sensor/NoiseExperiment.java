@@ -141,7 +141,8 @@ public class NoiseExperiment extends Experiment {
       xySeriesData.addSeries(noiseSeries);
     }
     
-    xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
+    xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace) );
+    xySeriesData.addSeries( FFTResult.getHighNoiseModel(freqSpace) );
 
   }
 

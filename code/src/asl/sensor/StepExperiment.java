@@ -133,7 +133,7 @@ public class StepExperiment extends Experiment{
     
     
     ConvergenceChecker<LeastSquaresProblem.Evaluation> svc = 
-        new EvaluationRmsChecker(1E-8, 1E-8);
+        new EvaluationRmsChecker(1E-12, 1E-12);
         
     LeastSquaresProblem lsp = new LeastSquaresBuilder().
         start(startVector).

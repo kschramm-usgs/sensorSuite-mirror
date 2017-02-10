@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
@@ -189,7 +190,7 @@ public class FFTResult {
    * NLNM data points for given input frequencies.
    * @return Plottable data series representing the NLNM
    */
-  public static XYSeries getLowNoiseModel(boolean freqSpace, Experiment exp) {
+  public static XYSeries getLowNoiseModel(boolean freqSpace) {
     // TODO: define NLNM as an array or something in a different class?
     XYSeries xys = new XYSeries("NLNM");
     try {
@@ -220,6 +221,39 @@ public class FFTResult {
     }
     return xys;
   }
+  
+  public static XYSeries getHighNoiseModel(boolean freqSpace) {
+    XYSeries xys = new XYSeries("NHNM");
+    try {
+      BufferedReader fr = new BufferedReader(
+                            new FileReader(
+                              new File(".resources/NHNM.txt") ) );
+      String str = fr.readLine();
+      while (str != null) {
+        String[] values = str.split("\\s+");
+        System.out.println(Arrays.toString(values));
+        double x = Double.parseDouble(values[0]); // period, in seconds
+        if (x > 1.0E3) {
+          break;
+        }
+        double y = Double.parseDouble(values[1]);
+        if (freqSpace) {
+          xys.add(1/x, y);
+        } else {
+          xys.add(x, y);
+        }
+        
+        str = fr.readLine();
+      }
+      fr.close();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return xys;
+  }
+  
   
   public static double[] 
       bandFilter(double[] toFilt, double sps, double low, double high) {

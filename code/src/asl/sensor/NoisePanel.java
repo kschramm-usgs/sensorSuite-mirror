@@ -1,9 +1,12 @@
 package asl.sensor;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
@@ -12,6 +15,7 @@ import javax.swing.SwingWorker;
 import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.data.xy.XYSeriesCollection;
 
 public class NoisePanel extends ExperimentPanel {
 
@@ -23,11 +27,19 @@ public class NoisePanel extends ExperimentPanel {
   private JCheckBox freqSpaceBox;
   private NumberAxis freqAxis;
   
+  private final int NOISE_PLOT_COUNT = 6;
+  // three PSDs, three self-noise calcs
+  
+  private final Color[] COLORS = {Color.RED, Color.GREEN, Color.BLUE};
+  
   private String freqAxisTitle;
   
   public NoisePanel(ExperimentEnum exp) {
+    
     // create chart, chartPanel, save button & file chooser, 
     super(exp);
+    
+    plotTheseInBold = new String[]{"NLNM","NHNM"};
     
     // instantiate local fields
     xAxisTitle = "Period (s)";
@@ -109,12 +121,7 @@ public class NoisePanel extends ExperimentPanel {
     }
     return xAxisTitle;
   }
-  
-  @Override
-  public String[] seriesToDrawBold() {
-    return new String[]{"NLNM"};
-  }
-  
+
   @Override
   public void updateData(DataStore ds) {
     
@@ -145,6 +152,15 @@ public class NoisePanel extends ExperimentPanel {
       public Integer doInBackground() {
         expResult.setData(dsImmutable, freqSpaceImmutable);
         
+        XYSeriesCollection xysc = expResult.getData();
+        
+        for (int i = 0; i < NOISE_PLOT_COUNT; ++i) {
+          String name = (String) xysc.getSeriesKey(i);
+          Color plotColor = COLORS[i%3];
+          seriesColorMap.put(name, plotColor);
+          seriesDashedMap.put(name, (i >= 3) );
+        }
+        
         return 0;
       }
 
@@ -156,7 +172,7 @@ public class NoisePanel extends ExperimentPanel {
         populateChart(expResult.getData());
 
         chartPanel.setChart(chart);
-        chartPanel.setMouseZoomable(false);
+        chartPanel.setMouseZoomable(true);
       }
 
     };
@@ -164,7 +180,6 @@ public class NoisePanel extends ExperimentPanel {
     worker.execute();
     
   }
-  
   
 
 }

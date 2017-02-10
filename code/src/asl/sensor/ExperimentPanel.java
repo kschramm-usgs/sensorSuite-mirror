@@ -5,11 +5,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
+import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -55,7 +58,13 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   protected ValueAxis xAxis, yAxis;
   protected String[] plotTheseInBold;
   
+  protected Map<String, Color> seriesColorMap;
+  protected Map<String, Boolean> seriesDashedMap;
+  
   public ExperimentPanel(ExperimentEnum exp) {
+    
+    seriesColorMap = new HashMap<String, Color>();
+    seriesDashedMap = new HashMap<String, Boolean>();
     
     expType = exp;
     expResult = ExperimentFactory.createExperiment(exp);
@@ -211,11 +220,37 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     // apply bolding to the components that require it (i.e., NLNM time series)
     XYPlot xyPlot = chart.getXYPlot();
-    String[] bold = seriesToDrawBold();
     XYItemRenderer xyir = xyPlot.getRenderer();
-    for (String series : bold) {
+    
+    for ( String series : seriesColorMap.keySet() ) {
       int seriesIdx = data.getSeriesIndex(series);
-      BasicStroke stroke = (BasicStroke) xyir.getBaseStroke();
+      xyir.setSeriesPaint( seriesIdx, seriesColorMap.get(series) );
+      
+      if ( seriesDashedMap.get(series) ) {
+        xyir.setSeriesPaint( seriesIdx, seriesColorMap.get(series).darker() );
+        
+        BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
+        if (stroke == null) {
+          stroke = (BasicStroke) xyir.getBaseStroke();
+        }
+        float width = stroke.getLineWidth();
+        int join = stroke.getLineJoin();
+        int cap = stroke.getEndCap();
+        
+        float[] dashing = new float[]{1,4};
+        
+        stroke = new BasicStroke(width, cap, join, 10f, dashing, 0f);
+        xyir.setSeriesStroke(seriesIdx, stroke);
+      }
+      
+    }
+
+    for (String series : plotTheseInBold) {
+      int seriesIdx = data.getSeriesIndex(series);
+      BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
+      if (stroke == null) {
+        stroke = (BasicStroke) xyir.getBaseStroke();
+      }
       stroke = new BasicStroke( stroke.getLineWidth()*2 );
       xyir.setSeriesStroke(seriesIdx, stroke);
       xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
@@ -225,11 +260,6 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     xyPlot.setRangeAxis( getYAxis() );
     
     this.chart = chart;
-  }
-  
-  
-  public String[] seriesToDrawBold() {
-    return plotTheseInBold;
   }
   
   public abstract void updateData(DataStore ds);
