@@ -28,7 +28,7 @@ public class StepExperiment extends Experiment{
   Complex[] sensorFFTSeries; // FFT of step cal from sensor
   double[] stepCalSeries; // time series of raw step cal function
   
-  final double STEP_FACTOR = Math.nextUp( Math.nextUp( (double) 1.0 ) );
+  final double STEP_FACTOR = Math.nextUp( Math.nextUp(1.0) );
   
   public StepExperiment() {
     super();

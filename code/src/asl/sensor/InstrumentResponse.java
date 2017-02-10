@@ -252,6 +252,13 @@ public class InstrumentResponse {
       Complex[] zerosArr = null;
       
       while (line != null) {
+        
+        if( line.length() == 0 ) {
+          // empty line? need to skip it
+          line = br.readLine();
+          continue;
+        }
+        
         if (line.charAt(0) == '#') {
           // comment -- skip
           line = br.readLine();
