@@ -221,6 +221,33 @@ public class FFTResult {
     return xys;
   }
   
+  public static double[] 
+      bandFilter(double[] toFilt, double sps, double low, double high) {
+    
+    Complex[] fft = simpleFFT(toFilt);
+    
+    int trim = fft.length/2;
+    
+    Complex[] toInvert = new Complex[trim];
+    
+    double freqDelta = sps/trim;
+    
+    for (int i = 0; i < trim; ++i) {
+      double x = i * freqDelta;
+      double scale = 1;
+      if ( x < low ) {
+        scale = x / low;
+      } else if (x > high) {
+        scale = 1 - ( x / (sps - high) );
+      }
+      
+      toInvert[i] = fft[i].multiply(scale);
+    }
+    
+    return inverseFFT(toInvert, toFilt.length);
+    
+  }
+  
   /**
    * Given a list representing the FFT of a timeseries, do the inverse FFT on it
    * @param freqDomn Complex array (such as the result of a previous FFT calc)

@@ -1,5 +1,6 @@
 package asl.sensor;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
@@ -23,7 +24,7 @@ public class StepExperiment extends Experiment{
   double f, h; //corner and damping of output (uncorrected)
   double fCorr, hCorr; // fit parameters to turn output into cal input
   
-  int trimLength;
+  int trimmedLength, cutAmount;
   double[] freqs;
   Complex[] sensorFFTSeries; // FFT of step cal from sensor
   double[] stepCalSeries; // time series of raw step cal function
@@ -43,41 +44,30 @@ public class StepExperiment extends Experiment{
     
     stepCalSeries = new double[stepCalRaw.size()];
     
-
-    
     // resulting inverse fft should be this length
-    trimLength = stepCalRaw.size();
+    trimmedLength = stepCalRaw.size();
     long interval = stepCalRaw.getInterval();
     
     double[] stepCalUnfiltered = new double[stepCalRaw.size()];
-    for (int i = 0; i < trimLength; ++i) {
+    for (int i = 0; i < trimmedLength; ++i) {
       stepCalUnfiltered[i] = stepCalRaw.getData().get(i).doubleValue();
     }
     
-    
-    /*
-    Complex[] fftStepCal = FFTResult.simpleFFT(stepCalRaw);
-        double sps = TimeSeriesUtils.ONE_HZ_INTERVAL / interval;
-    
-    double freqPerCell = sps / (fftStepCal.length/2);
-    
-    Complex[] firstHalfStepCal = new Complex[fftStepCal.length/2];
-    
-    for (int i = 0; i < firstHalfStepCal.length; ++i) {
-      if ( i > 0.01 / sps * firstHalfStepCal.length) {
-        firstHalfStepCal[i] = Complex.ZERO;
-      } else {
-        firstHalfStepCal[i] = fftStepCal[i];
-      }
-    }
+    double sps = TimeSeriesUtils.ONE_HZ_INTERVAL / interval;
     
     double[] stepCalFiltered = 
-                            FFTResult.inverseFFT(firstHalfStepCal, trimLength);
-    */
+        FFTResult.bandFilter(stepCalUnfiltered, sps, 0., 0.1);
     
-    // stepCalSeries = stepCalFiltered;
+    // delete the last 10 seconds from the end (has filtering artifacts)
     
-    stepCalSeries = TimeSeriesUtils.normalize(stepCalUnfiltered);
+    cutAmount = (int) sps * 10;
+    int highBound = stepCalFiltered.length - cutAmount;
+    trimmedLength = highBound - cutAmount; // length - 2 * cutAmount
+    
+    double[] stepCalTrimmed = 
+        Arrays.copyOfRange(stepCalFiltered, cutAmount, highBound);
+    
+    stepCalSeries = TimeSeriesUtils.normalize(stepCalTrimmed);
     
     // FFTResult.detrend(toDetrend);
     
@@ -104,6 +94,8 @@ public class StepExperiment extends Experiment{
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
     
     double[] params = new double[]{f, h};
+    
+    
     
     // get FFT of datablock timeseries, deconvolve with response
     FFTResult sensorsFFT = FFTResult.simpleSingleSidedFFT(sensorOutput);
@@ -187,6 +179,11 @@ public class StepExperiment extends Experiment{
   
   public double[] calculate(double[] beta) {
     
+    // the original length of the timeseries data we've gotten the FFT of
+    int inverseTrim = trimmedLength + 2 * cutAmount;
+    // the upper bound on the returned data
+    int upperBound = inverseTrim - cutAmount;
+    
     double f = beta[0];
     double h = beta[1];
     
@@ -250,16 +247,17 @@ public class StepExperiment extends Experiment{
       toDeconvolve[i] = sensorFFTSeries[i].multiply(conjResp).divide(denom);
     }
     
-    double[] returnValue =  FFTResult.inverseFFT(toDeconvolve, trimLength);
+    double[] returnValue =  
+        FFTResult.inverseFFT(toDeconvolve, inverseTrim);
     
-    return returnValue;
+    return Arrays.copyOfRange(returnValue, cutAmount, upperBound);
     
   }
   
   private Pair<RealVector, RealMatrix> jacobian(RealVector variables) {
     
     // approximate through forward differences
-    double[][] jacobian = new double[trimLength][2];
+    double[][] jacobian = new double[trimmedLength][2];
     
     double f1 = variables.getEntry(0);
     double h1 = variables.getEntry(1);
@@ -274,7 +272,7 @@ public class StepExperiment extends Experiment{
     diffOnF = TimeSeriesUtils.normalize(diffOnF);
     diffOnH = TimeSeriesUtils.normalize(diffOnH);
     
-    for (int i = 0; i < trimLength; ++i) {
+    for (int i = 0; i < trimmedLength; ++i) {
       jacobian[i][0] = (diffOnF[i] - fInit[i]) / (f2 - f1);
       jacobian[i][1] = (diffOnH[i] - fInit[i]) / (h2 - h1);
     }
