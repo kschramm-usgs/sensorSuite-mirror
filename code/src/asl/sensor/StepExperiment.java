@@ -1,7 +1,6 @@
 package asl.sensor;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
@@ -254,6 +253,23 @@ public class StepExperiment extends Experiment{
     
   }
   
+  public double[] getCornerAndDamping() {
+    return new double[]{f, h};
+  }
+  
+  public double[] getFitCornerAndDamping() {
+    return new double[]{fCorr, hCorr};
+  }
+  
+  public MultivariateJacobianFunction getJacobianFunction() {
+    return new MultivariateJacobianFunction() {
+      private static final long serialVersionUID = -8673650298627399464L;
+      public Pair<RealVector, RealMatrix> value(RealVector point) {
+          return jacobian(point);
+      }
+    };
+  }
+  
   private Pair<RealVector, RealMatrix> jacobian(RealVector variables) {
     
     // approximate through forward differences
@@ -282,26 +298,9 @@ public class StepExperiment extends Experiment{
     
     return new Pair<RealVector, RealMatrix>(fnc, jMat);
   }
-  
-  public MultivariateJacobianFunction getJacobianFunction() {
-    return new MultivariateJacobianFunction() {
-      private static final long serialVersionUID = -8673650298627399464L;
-      public Pair<RealVector, RealMatrix> value(RealVector point) {
-          return jacobian(point);
-      }
-    };
-  }
-  
+
   public double[] value(double[] point) {
     return calculate(point);
-  }
-  
-  public double[] getFitCornerAndDamping() {
-    return new double[]{fCorr, hCorr};
-  }
-
-  public double[] getCornerAndDamping() {
-    return new double[]{f, h};
   }
   
 }

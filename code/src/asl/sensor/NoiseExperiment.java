@@ -46,15 +46,13 @@ public class NoiseExperiment extends Experiment {
     // TODO: make sure (i.e., when reading in data) that series lengths' match
     // rather than throwing the exceptions here
     Complex[][] spectra = new Complex[DataStore.FILE_COUNT][];
-    Complex[][] freqRespd = new Complex[DataStore.FILE_COUNT][];
     double[] freqs = new double[1]; // initialize to prevent later errors
     
     // initialize the values above to have relevant data
     for (int i = 0; i < dataIn.length; ++i) {
+      // note that frequency is applied during the ds
       spectra[i] = ds.getPSD(i).getFFT();
-      InstrumentResponse ir = responses[i];
       freqs = ds.getPSD(i).getFreqs();
-      freqRespd[i] = ir.applyResponseToInput( freqs );
     }
     
     addToPlot(ds, freqSpace, xySeriesData);

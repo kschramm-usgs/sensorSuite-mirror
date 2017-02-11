@@ -5,8 +5,6 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;

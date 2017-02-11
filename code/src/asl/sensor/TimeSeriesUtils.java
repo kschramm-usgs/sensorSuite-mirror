@@ -585,26 +585,6 @@ public class TimeSeriesUtils {
     return timeseriesdouble;
   }
 
-  /**
-   * Upsamples data by a multiple of passed factor, placing zeros
-   * between each data point. Result is data.length*factor cells in size.
-   * Requires use of a low-pass filter to remove discontinuities.
-   * @param data The timeseries to be upsampled
-   * @param factor The factor to increase the size by
-   * @return The upsampled series
-   */
-  public static List<Number> upsample(List<Number> data, int factor){
-
-    List<Number> upsamp = Arrays.asList(new Number[data.size()*factor]);
-
-    for(int i=0; i<data.size(); i++){
-      upsamp.set( i*factor, data.get(i) ); // index, element
-    }
-
-    return upsamp;
-  }
-
-  
   /** 
    * Scales data of an arbitrary range to lie within a 0-1 range
    * @param data Timeseries data
@@ -629,6 +609,26 @@ public class TimeSeriesUtils {
     
     return data;
     
+  }
+
+  
+  /**
+   * Upsamples data by a multiple of passed factor, placing zeros
+   * between each data point. Result is data.length*factor cells in size.
+   * Requires use of a low-pass filter to remove discontinuities.
+   * @param data The timeseries to be upsampled
+   * @param factor The factor to increase the size by
+   * @return The upsampled series
+   */
+  public static List<Number> upsample(List<Number> data, int factor){
+
+    List<Number> upsamp = Arrays.asList(new Number[data.size()*factor]);
+
+    for(int i=0; i<data.size(); i++){
+      upsamp.set( i*factor, data.get(i) ); // index, element
+    }
+
+    return upsamp;
   }
   
 }

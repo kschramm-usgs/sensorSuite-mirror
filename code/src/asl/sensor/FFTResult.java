@@ -28,6 +28,32 @@ public class FFTResult {
    */
   private static final double TAPER_WIDTH = 0.10;
   
+  public static double[] 
+      bandFilter(double[] toFilt, double sps, double low, double high) {
+    
+    Complex[] fft = simpleFFT(toFilt);
+    
+    int trim = fft.length/2;
+    
+    Complex[] toInvert = new Complex[trim];
+    
+    double freqDelta = sps/trim;
+    
+    for (int i = 0; i < trim; ++i) {
+      double x = i * freqDelta;
+      double scale = 1;
+      if ( x < low ) {
+        scale = x / low;
+      } else if (x > high) {
+        scale = 1 - ( x / (sps - high) );
+      }
+      
+      toInvert[i] = fft[i].multiply(scale);
+    }
+    
+    return inverseFFT(toInvert, toFilt.length);
+    
+  }
   /**
    * Calculates and performs an in-place cosine taper on an incoming data set.
    * Used for windowing for performing FFT.
@@ -52,6 +78,7 @@ public class FFTResult {
     
     return Wss;
   }
+  
   /**
    * Root funtion for calculating crosspower. Gets spectral calculation of data
    * from inputted data series by calling the spectralCalc function, and then
@@ -91,11 +118,32 @@ public class FFTResult {
     
   }
   
+  public static double[] demean(double[] dataSet) {
+    
+    List<Number> dataToProcess = new ArrayList<Number>();
+    
+    for (double number : dataSet) {
+      dataToProcess.add(number);
+    }
+    
+    demeanInPlace(dataToProcess);
+    
+    double[] out = new double[dataSet.length];
+    
+    for (int i = 0; i < out.length; ++i) {
+      out[i] = dataToProcess.get(i).doubleValue();
+    }
+    
+    return out;
+    
+  }
+  
   public static List<Number> demean(List<Number> dataSet) {
     List<Number> dataOut = new ArrayList<Number>(dataSet);
     demeanInPlace(dataOut);
     return dataOut;
   }
+  
   
   /**
    * In-place subtraction of mean from each point in an incoming data set.
@@ -124,27 +172,6 @@ public class FFTResult {
     
     // test shows this works as in-place method
   }
-  
-  public static double[] demean(double[] dataSet) {
-    
-    List<Number> dataToProcess = new ArrayList<Number>();
-    
-    for (double number : dataSet) {
-      dataToProcess.add(number);
-    }
-    
-    demeanInPlace(dataToProcess);
-    
-    double[] out = new double[dataSet.length];
-    
-    for (int i = 0; i < out.length; ++i) {
-      out[i] = dataToProcess.get(i).doubleValue();
-    }
-    
-    return out;
-    
-  }
-  
   
   /**
    * In-place subtraction of trend from each point in an incoming data set.
@@ -184,6 +211,39 @@ public class FFTResult {
     
   }
   
+  public static XYSeries getHighNoiseModel(boolean freqSpace) {
+    XYSeries xys = new XYSeries("NHNM");
+    try {
+      BufferedReader fr = new BufferedReader(
+                            new FileReader(
+                              new File(".resources/NHNM.txt") ) );
+      String str = fr.readLine();
+      while (str != null) {
+        String[] values = str.split("\\s+");
+        System.out.println(Arrays.toString(values));
+        double x = Double.parseDouble(values[0]); // period, in seconds
+        if (x > 1.0E3) {
+          break;
+        }
+        double y = Double.parseDouble(values[1]);
+        if (freqSpace) {
+          xys.add(1/x, y);
+        } else {
+          xys.add(x, y);
+        }
+        
+        str = fr.readLine();
+      }
+      fr.close();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    return xys;
+  }
+  
+  
   /**
    * Collects the data points in the Peterson new low noise model to be plotted
    * Assumes that there is a text file in the data folder that contains the
@@ -220,66 +280,6 @@ public class FFTResult {
       e.printStackTrace();
     }
     return xys;
-  }
-  
-  public static XYSeries getHighNoiseModel(boolean freqSpace) {
-    XYSeries xys = new XYSeries("NHNM");
-    try {
-      BufferedReader fr = new BufferedReader(
-                            new FileReader(
-                              new File(".resources/NHNM.txt") ) );
-      String str = fr.readLine();
-      while (str != null) {
-        String[] values = str.split("\\s+");
-        System.out.println(Arrays.toString(values));
-        double x = Double.parseDouble(values[0]); // period, in seconds
-        if (x > 1.0E3) {
-          break;
-        }
-        double y = Double.parseDouble(values[1]);
-        if (freqSpace) {
-          xys.add(1/x, y);
-        } else {
-          xys.add(x, y);
-        }
-        
-        str = fr.readLine();
-      }
-      fr.close();
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return xys;
-  }
-  
-  
-  public static double[] 
-      bandFilter(double[] toFilt, double sps, double low, double high) {
-    
-    Complex[] fft = simpleFFT(toFilt);
-    
-    int trim = fft.length/2;
-    
-    Complex[] toInvert = new Complex[trim];
-    
-    double freqDelta = sps/trim;
-    
-    for (int i = 0; i < trim; ++i) {
-      double x = i * freqDelta;
-      double scale = 1;
-      if ( x < low ) {
-        scale = x / low;
-      } else if (x > high) {
-        scale = 1 - ( x / (sps - high) );
-      }
-      
-      toInvert[i] = fft[i].multiply(scale);
-    }
-    
-    return inverseFFT(toInvert, toFilt.length);
-    
   }
   
   /**
@@ -360,6 +360,29 @@ public class FFTResult {
 
   }
   
+  public static Complex[] simpleFFT(double[] dataIn) {
+    
+    int padding = 2;
+    while ( padding < dataIn.length ) {
+      padding *= 2;
+    }
+    
+    double[] toFFT = new double[padding];
+    
+    for (int i = 0; i < dataIn.length; ++i) {
+      toFFT[i] = dataIn[i];
+    }
+    
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.UNITARY);
+    
+    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+    
+    
+    return frqDomn;
+  }
+  
+  
   public static double[] simpleFFTTrimmed(Complex[] dataIn, int trimLength) {
     int padding = 2;
     while ( padding < dataIn.length ) {
@@ -387,29 +410,6 @@ public class FFTResult {
     }
     
     return out;
-  }
-  
-  
-  public static Complex[] simpleFFT(double[] dataIn) {
-    
-    int padding = 2;
-    while ( padding < dataIn.length ) {
-      padding *= 2;
-    }
-    
-    double[] toFFT = new double[padding];
-    
-    for (int i = 0; i < dataIn.length; ++i) {
-      toFFT[i] = dataIn[i];
-    }
-    
-    FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.UNITARY);
-    
-    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-    
-    
-    return frqDomn;
   }
   
   public static FFTResult simpleSingleSidedFFT(DataBlock db) {
