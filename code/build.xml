@@ -70,12 +70,17 @@
 
     
 <!--JAR-->
-    <target name="jar" depends="compile, libraries" description="generate the distribution" >
+    <target name="jar" depends="compile, libraries" description="generate the distribution [depends = compile, libraries]" >
         <jar jarfile="${project.archive}" basedir="${build.root}">
             <manifest>
                 <attribute name="Main-Class" value="${project.main}"/>
             </manifest>
         </jar>
+    </target>
+
+<!--RUN-->
+    <target name="run" description="Run the jar file; requires ant jar to have already been run" >
+        <java jar="SensorTestSuite.jar" fork = "true" />
     </target>
 
 
