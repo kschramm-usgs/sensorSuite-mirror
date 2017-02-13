@@ -7,12 +7,77 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.transform.DftNormalization;
+import org.apache.commons.math3.transform.FastFourierTransformer;
+import org.apache.commons.math3.transform.TransformType;
+import org.jfree.data.xy.XYSeries;
 import org.junit.Test;
 
 import asl.sensor.FFTResult;
 
 public class FFTResultTest {
 
+  @Test
+  public void fftInversionTest() {
+    double[] timeSeries = {10, 11, 12, 11, 10, 11, 12, 11, 10, 11, 12};
+    
+    int padSize = 2;
+    while (padSize < timeSeries.length) {
+      padSize *= 2;
+    }
+    
+    double[] paddedTS = new double[padSize];
+    for (int i = 0; i < timeSeries.length; ++i) {
+      paddedTS[i] = timeSeries[i];
+    }
+    
+    // System.out.println(paddedTS.length);
+    
+    FastFourierTransformer fft = 
+        new FastFourierTransformer(DftNormalization.UNITARY);
+    
+    Complex[] frqDomn = fft.transform(paddedTS, TransformType.FORWARD);
+    
+    padSize = frqDomn.length/2 + 1;
+    // System.out.println(padSize);
+    
+    Complex[] trim = new Complex[padSize];
+    
+    for (int i = 0; i < trim.length; ++i) {
+      trim[i] = frqDomn[i];
+    }
+    
+    padSize = (trim.length - 1) * 2;
+    
+    // System.out.println(padSize);
+    
+    Complex[] frqDomn2 = new Complex[padSize];
+    
+    for (int i = 0; i < padSize; ++i) {
+      if (i < trim.length) {
+        frqDomn2[i] = trim[i];
+      } else {
+        int idx = padSize - i;
+        frqDomn2[i] = trim[idx].conjugate();
+      }
+      
+      // System.out.println(frqDomn[i]+"|"+frqDomn2[i]);
+      
+    }
+    
+    Complex[] inverseFrqDomn = fft.transform(frqDomn2, TransformType.INVERSE);
+    double[] result = new double[timeSeries.length];
+   
+    for (int i = 0; i < timeSeries.length; ++i) {
+      result[i] = Math.round( inverseFrqDomn[i].getReal() );
+    }
+   
+    System.out.println( Arrays.toString(timeSeries) );
+    System.out.println( Arrays.toString(result) );
+    
+  }
+  
   @Test
   public void rangeCopyTest() {
   

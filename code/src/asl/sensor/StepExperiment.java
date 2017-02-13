@@ -3,6 +3,7 @@ package asl.sensor;
 import java.util.Arrays;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.exception.ConvergenceException;
 import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer;
@@ -66,7 +67,9 @@ public class StepExperiment extends Experiment{
     double[] stepCalTrimmed = 
         Arrays.copyOfRange(stepCalFiltered, cutAmount, highBound);
     
-    stepCalSeries = TimeSeriesUtils.normalize(stepCalTrimmed);
+    stepCalSeries = FFTResult.demean(stepCalTrimmed);
+    
+    stepCalSeries = TimeSeriesUtils.normalize(stepCalSeries);
     
     // FFTResult.detrend(toDetrend);
     
@@ -94,15 +97,14 @@ public class StepExperiment extends Experiment{
     
     double[] params = new double[]{f, h};
     
-    
-    
     // get FFT of datablock timeseries, deconvolve with response
-    FFTResult sensorsFFT = FFTResult.simpleSingleSidedFFT(sensorOutput);
+    FFTResult sensorsFFT = FFTResult.singleSidedFFT(sensorOutput);
     sensorFFTSeries = sensorsFFT.getFFT();
     freqs = sensorsFFT.getFreqs();
     
     double[] toPlot = calculate(params);
 
+    toPlot = FFTResult.demean(toPlot);
     toPlot = TimeSeriesUtils.normalize(toPlot);
     
     long start = 0L; // was db.startTime();
@@ -132,24 +134,24 @@ public class StepExperiment extends Experiment{
     
     
     ConvergenceChecker<LeastSquaresProblem.Evaluation> svc = 
-        new EvaluationRmsChecker(1E-12, 1E-12);
+        new EvaluationRmsChecker(1E-50, 1E-50);
         
     LeastSquaresProblem lsp = new LeastSquaresBuilder().
         start(startVector).
         target(observedComponents).
         model( getJacobianFunction() ).
         lazyEvaluation(false).
-        maxEvaluations(1000000000).
-        maxIterations(1000000000).
+        maxEvaluations(Integer.MAX_VALUE).
+        maxIterations(Integer.MAX_VALUE).
         checker(svc).
         build();
     
     LeastSquaresProblem.Evaluation initEval = lsp.evaluate(startVector);
     System.out.println("INITIAL GUESS RMS: " +  initEval.getRMS() );
     
-    LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer();
-        //withCostRelativeTolerance(1.0E-17).
-        //withParameterRelativeTolerance(1.0E-16);
+    LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
+        withCostRelativeTolerance(1.0E-15).
+        withParameterRelativeTolerance(1.0E-15);
     
     LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
     
@@ -247,7 +249,7 @@ public class StepExperiment extends Experiment{
     }
     
     double[] returnValue =  
-        FFTResult.inverseFFT(toDeconvolve, inverseTrim);
+        FFTResult.singleSidedInverseFFT(toDeconvolve, inverseTrim);
     
     return Arrays.copyOfRange(returnValue, cutAmount, upperBound);
     

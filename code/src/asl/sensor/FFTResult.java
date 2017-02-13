@@ -33,7 +33,9 @@ public class FFTResult {
     
     Complex[] fft = simpleFFT(toFilt);
     
-    int trim = fft.length/2;
+    int trim = fft.length/2 + 1;
+    
+    System.out.println(trim);
     
     Complex[] toInvert = new Complex[trim];
     
@@ -51,9 +53,10 @@ public class FFTResult {
       toInvert[i] = fft[i].multiply(scale);
     }
     
-    return inverseFFT(toInvert, toFilt.length);
+    return singleSidedInverseFFT(toInvert, toFilt.length);
     
   }
+  
   /**
    * Calculates and performs an in-place cosine taper on an incoming data set.
    * Used for windowing for performing FFT.
@@ -211,6 +214,42 @@ public class FFTResult {
     
   }
   
+  public static double[] detrend (double[] dataSet) {
+    double sumX = 0.0;
+    double sumY = 0.0;
+    double sumXSqd = 0.0;
+    double sumXY = 0.0;
+    
+    for (int i = 0; i < dataSet.length; ++i) {
+      sumX += (double) i;
+      sumXSqd += (double) i * (double) i;
+      double value = dataSet[i];
+      sumXY += value * (double) i;
+      sumY += value;
+    }
+    
+    // brackets here so you don't get confused thinking this should be
+    // algebraic division (in which case we'd just factor out the size term)
+    // 
+    
+    double del = sumXSqd - ( sumX * sumX / dataSet.length );
+    
+    double slope = sumXY - ( sumX * sumY / dataSet.length );
+    slope /= del;
+    
+    double yOffset = (sumXSqd * sumY) - (sumX * sumXY);
+    yOffset /= del * dataSet.length;
+    
+    double[] detrended = new double[dataSet.length];
+    
+    for (int i = 0; i < dataSet.length; ++i) {
+      detrended[i] = dataSet[i] - ( (slope * i) + yOffset);
+    }
+    
+    return detrended;
+  }
+  
+  
   public static XYSeries getHighNoiseModel(boolean freqSpace) {
     XYSeries xys = new XYSeries("NHNM");
     try {
@@ -285,33 +324,29 @@ public class FFTResult {
   /**
    * Given a list representing the FFT of a timeseries, do the inverse FFT on it
    * @param freqDomn Complex array (such as the result of a previous FFT calc)
-   * @param trimLength How long the original input data was
+   * @param trim How long the original input data was
    * @return A list of doubles representing the original timeseries of the FFT
    */
-  public static double[] inverseFFT(Complex[] freqDomn, int trimLength) {
+  public static double[] singleSidedInverseFFT(Complex[] freqDomn, int trim) {
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.UNITARY);
-   
-    // we're going to assume the data coming in is a power of 2 (and symmetric)
-    
-    int padding = 2;
-    while (padding < trimLength || padding < freqDomn.length) {
-      padding *= 2;
-    }
+     
+    int padding = (freqDomn.length - 1) * 2;
     
     Complex[] padded = new Complex[padding];
     for (int i = 0; i < freqDomn.length; ++i) {
       padded[i] = freqDomn[i];
     }
-    for (int i = freqDomn.length; i < padding; ++i) {
-      padded[i] = Complex.ZERO;
+    for (int i = 1; i < padding/2; ++i) {
+      // System.out.println(freqDomn.length+","+i);
+      padded[padded.length - i] = padded[i].conjugate();
     }
     
     Complex[] timeSeriesCpx = 
         fft.transform(padded, TransformType.INVERSE);
     
-    double[] timeSeries = new double[trimLength];
-    for (int i = 0; i < trimLength; ++i) {
+    double[] timeSeries = new double[trim];
+    for (int i = 0; i < trim; ++i) {
       timeSeries[i] = timeSeriesCpx[i].getReal();
     }
     
@@ -382,42 +417,15 @@ public class FFTResult {
     return frqDomn;
   }
   
-  
-  public static double[] simpleFFTTrimmed(Complex[] dataIn, int trimLength) {
-    int padding = 2;
-    while ( padding < dataIn.length ) {
-      padding *= 2;
-    }
-    
-    Complex[] toFFT = new Complex[dataIn.length];
-    
-    for (int i = 0; i < toFFT.length; ++i) {
-      if (i < dataIn.length) {
-        toFFT[i] = dataIn[i].multiply(-1);
-      } else {
-        toFFT[i] = Complex.ZERO;
-      }
-    }
-    
-    FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.UNITARY);
-    
-    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-    
-    double[] out = new double[trimLength];
-    for (int i = 0; i < trimLength; ++i) {
-      out[i] = frqDomn[i].getReal() * -1;
-    }
-    
-    return out;
-  }
-  
-  public static FFTResult simpleSingleSidedFFT(DataBlock db) {
+  public static FFTResult singleSidedFFT(DataBlock db) {
     
     Complex[] frqDomn = simpleFFT(db);
     
     int padding = frqDomn.length;
-    int singleSide = padding/2;
+    int singleSide = padding/2 + 1;
+    
+    System.out.println(padding);
+    
     double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
     period *= db.getInterval();
     double deltaFrq = 1. / (period * padding);
