@@ -23,6 +23,7 @@ public class StepExperiment extends Experiment{
 
   double f, h; //corner and damping of output (uncorrected)
   double fCorr, hCorr; // fit parameters to turn output into cal input
+  double initResid, fitResid;
   
   int trimmedLength, cutAmount;
   double[] freqs;
@@ -95,17 +96,20 @@ public class StepExperiment extends Experiment{
     f = 1. / (2 * Math.PI / pole.abs() ); // corner frequency
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
     
+    // these manually-set parameters were used in testing convergence
+    // h = 0.707107;
+    // f = 0.002777;
+    
     double[] params = new double[]{f, h};
     
     // get FFT of datablock timeseries, deconvolve with response
+    // single sided FFT includes lowpass filter, demean, and normalization
     FFTResult sensorsFFT = FFTResult.singleSidedFFT(sensorOutput);
+    // these values used in calculating the response deconvolution
     sensorFFTSeries = sensorsFFT.getFFT();
     freqs = sensorsFFT.getFreqs();
     
     double[] toPlot = calculate(params);
-
-    toPlot = FFTResult.demean(toPlot);
-    toPlot = TimeSeriesUtils.normalize(toPlot);
     
     long start = 0L; // was db.startTime();
     long now = start;
@@ -147,7 +151,9 @@ public class StepExperiment extends Experiment{
         build();
     
     LeastSquaresProblem.Evaluation initEval = lsp.evaluate(startVector);
-    System.out.println("INITIAL GUESS RMS: " +  initEval.getRMS() );
+    System.out.println("INITIAL GUESS RESIDUAL: " +  initEval.getRMS() );
+    
+    initResid = initEval.getRMS() * 100;
     
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
         withCostRelativeTolerance(1.0E-15).
@@ -155,15 +161,17 @@ public class StepExperiment extends Experiment{
     
     LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
     
-    System.out.println("FIT PARAMS RMS: " +  optimum.getRMS() );
+    System.out.println("FIT PARAMS RESIDUAL: " +  optimum.getRMS() );
+    
+    fitResid = optimum.getRMS() * 100;
     
     double[] newParams = optimum.getPoint().toArray();
     
     fCorr = newParams[0];
     hCorr = newParams[1];
     
-    double[] fitPlot = FFTResult.demean( calculate(newParams) );
-    fitPlot = TimeSeriesUtils.normalize(fitPlot);
+    double[] fitPlot = calculate(newParams);
+    // fitPlot = TimeSeriesUtils.normalize(fitPlot);
     start = 0L; // was db.startTime();
     now = start;
     XYSeries bfs = new XYSeries("BEST FIT PLOT");
@@ -251,16 +259,35 @@ public class StepExperiment extends Experiment{
     double[] returnValue =  
         FFTResult.singleSidedInverseFFT(toDeconvolve, inverseTrim);
     
-    return Arrays.copyOfRange(returnValue, cutAmount, upperBound);
+    returnValue = TimeSeriesUtils.normalize(returnValue);
+    
+    returnValue = FFTResult.demean(returnValue);
+    
+    double sps = freqs[freqs.length - 1] * 2; // nyquist rate
+    returnValue = FFTResult.bandFilter(returnValue, sps, 0., freqs[1]);
+    
+    // trim out the ends which likely have noise due to filtering
+    returnValue = Arrays.copyOfRange(returnValue, cutAmount, upperBound);
+    
+    // System.out.println("MAX FREQ? " + freqs[freqs.length-1]);
+        
+    // normalize and demean
+
+    //return returnValue;
+    
+    return TimeSeriesUtils.normalize(returnValue);
+    
+    //return FFTResult.demean(returnValue);
+    
     
   }
   
   public double[] getCornerAndDamping() {
-    return new double[]{f, h};
+    return new double[]{f, h, initResid};
   }
   
   public double[] getFitCornerAndDamping() {
-    return new double[]{fCorr, hCorr};
+    return new double[]{fCorr, hCorr, fitResid};
   }
   
   public MultivariateJacobianFunction getJacobianFunction() {
@@ -282,14 +309,10 @@ public class StepExperiment extends Experiment{
     double f2 = f1 * STEP_FACTOR;
     double h2 = h1 * STEP_FACTOR;
     
-    double[] fInit = FFTResult.demean( calculate(new double[]{f1, h1}) );
-    double[] diffOnF = FFTResult.demean( calculate(new double[]{f2, h1}) );
-    double[] diffOnH = FFTResult.demean( calculate(new double[]{f1, h2}) );
-    
-    fInit = TimeSeriesUtils.normalize(fInit);
-    diffOnF = TimeSeriesUtils.normalize(diffOnF);
-    diffOnH = TimeSeriesUtils.normalize(diffOnH);
-    
+    double[] fInit = calculate(new double[]{f1, h1});
+    double[] diffOnF = calculate(new double[]{f2, h1});
+    double[] diffOnH = calculate(new double[]{f1, h2});
+
     for (int i = 0; i < trimmedLength; ++i) {
       jacobian[i][0] = (diffOnF[i] - fInit[i]) / (f2 - f1);
       jacobian[i][1] = (diffOnH[i] - fInit[i]) / (h2 - h1);

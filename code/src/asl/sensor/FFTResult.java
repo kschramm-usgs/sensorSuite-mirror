@@ -35,8 +35,6 @@ public class FFTResult {
     
     int trim = fft.length/2 + 1;
     
-    System.out.println(trim);
-    
     Complex[] toInvert = new Complex[trim];
     
     double freqDelta = sps/trim;
@@ -259,7 +257,6 @@ public class FFTResult {
       String str = fr.readLine();
       while (str != null) {
         String[] values = str.split("\\s+");
-        System.out.println(Arrays.toString(values));
         double x = Double.parseDouble(values[0]); // period, in seconds
         if (x > 1.0E3) {
           break;
@@ -322,7 +319,7 @@ public class FFTResult {
   }
   
   /**
-   * Given a list representing the FFT of a timeseries, do the inverse FFT on it
+   * Do the inverse FFT on the result of a single-sided FFT operation
    * @param freqDomn Complex array (such as the result of a previous FFT calc)
    * @param trim How long the original input data was
    * @return A list of doubles representing the original timeseries of the FFT
@@ -353,48 +350,6 @@ public class FFTResult {
     return timeSeries;
   }
   
-  /**
-   * Calculate the forward FFT of a data block
-   * @param db DataBlock to have FFT computed from
-   * @return Complex values representing double-sided FFT of input values
-   */
-  public static Complex[] simpleFFT(DataBlock db) {
-    ArrayList<Number> list1 = new ArrayList<Number>( db.getData() );
-        
-    int padding = 2;
-    while ( padding < list1.size() ) {
-      padding *= 2;
-    }
-    
-    // detrend(list1);
-    // demean(list1);
-    // double wss = cosineTaper(list1, TAPER_WIDTH);
-   
-    double[] toFFT = new double[padding];
-    
-    for (int i = 0; i < list1.size(); ++i) {
-      toFFT[i] = list1.get(i).doubleValue();
-    }
-    
-    FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.UNITARY);
-    
-    Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-    
-    
-    return frqDomn;
-    
-    //frequencies[singleSide] = (singleSide-1) * deltaFrq;
-    
-    /*
-    for (int i = 1; i < frqDomn.length-singleSide; ++i) {
-      frequencies[frequencies.length - i] = frequencies[i];
-    }
-    */
-
-
-  }
-  
   public static Complex[] simpleFFT(double[] dataIn) {
     
     int padding = 2;
@@ -419,12 +374,32 @@ public class FFTResult {
   
   public static FFTResult singleSidedFFT(DataBlock db) {
     
-    Complex[] frqDomn = simpleFFT(db);
+    double[] data = new double[db.size()];
+    
+    boolean mustFlip = db.needsSignFlip();
+    
+    for (int i = 0; i < db.size(); ++i) {
+      data[i] = db.getData().get(i).doubleValue();
+      
+      if (mustFlip) {
+        data[i] *= -1;
+      }
+    }
+    
+    long interval = db.getInterval();
+
+    double sps = TimeSeriesUtils.ONE_HZ_INTERVAL / interval;
+    
+    data = bandFilter(data, sps, 0.0, 0.1);
+    
+    data = demean(data);
+    
+    // data = TimeSeriesUtils.normalize(data);
+    
+    Complex[] frqDomn = simpleFFT(data);
     
     int padding = frqDomn.length;
     int singleSide = padding/2 + 1;
-    
-    System.out.println(padding);
     
     double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
     period *= db.getInterval();

@@ -164,6 +164,27 @@ public class DataBlock {
     
     return out;
   }
+  
+  /**
+   * Checks to see if the sensor's calibration is wired positively or not
+   * (i.e., if the result of a step-calibration is upside-down)
+   * @return 
+   */
+  public boolean needsSignFlip() {
+    
+    double max = Math.abs( data.get(0).doubleValue() );
+    int idx = 0;
+    
+    for (int i = 1; i < data.size() / 2; ++i) {
+      if ( Math.abs( data.get(i).doubleValue() ) > max ) {
+        max = Math.abs( data.get(i).doubleValue() );
+        idx = i;
+      }
+    }
+    
+    return Math.signum( data.get(idx).doubleValue() ) < 0;
+    
+  }
 
   /**
    * Trim data to a given range (start time, end time)

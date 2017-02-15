@@ -586,9 +586,9 @@ public class TimeSeriesUtils {
   }
 
   /** 
-   * Scales data of an arbitrary range to lie within a 0-1 range
+   * Scales data of an arbitrary range to lie within a [-1, 1] range
    * @param data Timeseries data
-   * @return Same data, over the range 0-1, linearly scaled
+   * @return Same data, over the range [-1, 1], linearly scaled
    */
   public static double[] normalize(double[] data) {
     double max = Double.NEGATIVE_INFINITY;
@@ -604,7 +604,8 @@ public class TimeSeriesUtils {
     }
     
     for (int i = 0; i < data.length; ++i) {
-      data[i] = (data[i] - min) / (max - min);
+      // scale to range (0,2) then to (-1, 1)
+      data[i] = ( 2 * (data[i] - min) / (max - min) ) - 1;
     }
     
     return data;
