@@ -77,16 +77,19 @@ implements ActionListener, ChangeListener {
   public static final int IMAGE_HEIGHT = 240;
   public static final int IMAGE_WIDTH = 480;
   
+  private static final int MARGIN = 10; // min space of the two sliders
+  private static final int SLIDER_MAX = 10000;
+  
   /**
    * Gets the value of start or end time from slider value and DataBlock
    * @param db DataBlock corresponding to one of the plots
-   * @param sliderValue Value of starting or ending time slider [0-1000]
+   * @param sliderValue Value of starting or ending time slider [0-SLIDER_MAX]
    * @return Long that represents start or end time matching slider's value
    */
   public static long getMarkerLocation(DataBlock db, int sliderValue) {
     long start = db.getStartTime();
     long len = (db.getInterval()) * db.size();
-    return start + (sliderValue * len) / 1000;
+    return start + (sliderValue * len) / SLIDER_MAX;
   }
   private DataStore ds;
   private DataStore zooms;
@@ -103,8 +106,7 @@ implements ActionListener, ChangeListener {
   private JPanel allCharts; // parent of the chartpanels, used for image saving
   private JSlider leftSlider;
   private JSlider rightSlider;
-  
-  private final int MARGIN = 10; // min space of the two sliders
+      
   private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
   private JTextComponent[] seedFileNames = 
       new JTextComponent[DataStore.FILE_COUNT];
@@ -231,7 +233,7 @@ implements ActionListener, ChangeListener {
     gbc.weightx = 1;
     gbc.gridwidth = 3;
     gbc.gridx = 0;
-    leftSlider = new JSlider(0, 1000, 0);
+    leftSlider = new JSlider(0, SLIDER_MAX, 0);
     leftSlider.setEnabled(false);
     leftSlider.addChangeListener(this);
     this.add(leftSlider, gbc);
@@ -241,7 +243,7 @@ implements ActionListener, ChangeListener {
     this.add(new JPanel(), gbc);
     
     gbc.gridx += 3;
-    rightSlider = new JSlider(0, 1000, 1000);
+    rightSlider = new JSlider(0, SLIDER_MAX, SLIDER_MAX);
     rightSlider.setEnabled(false);
     rightSlider.addChangeListener(this);
     this.add(rightSlider, gbc);
@@ -435,7 +437,7 @@ implements ActionListener, ChangeListener {
               seedFileNames[idx].setText("PLOTTING: " + file.getName());
               
               for (int j = 0; j < DataStore.FILE_COUNT; ++j) {
-                if (zooms.getBlock(j) == null) {
+                if ( !zooms.blockIsSet(j) ) {
                   continue;
                 }
                 resetPlotZoom(j);
@@ -455,7 +457,7 @@ implements ActionListener, ChangeListener {
               clearAll.setEnabled(true);
               
               leftSlider.setValue(0);
-              rightSlider.setValue(1000);
+              rightSlider.setValue(SLIDER_MAX);
               setVerticalBars();
               
               seedFileNames[idx].setText( 
@@ -544,7 +546,7 @@ implements ActionListener, ChangeListener {
         this.resetPlotZoom(i);
       }
       
-      leftSlider.setValue(0); rightSlider.setValue(1000);
+      leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
       setVerticalBars();
       zoomOut.setEnabled(false);
       return;
@@ -757,7 +759,7 @@ implements ActionListener, ChangeListener {
     // zooms.trimToCommonTime();
     
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      if ( null == ds.getBlock(i) ) {
+      if ( !ds.blockIsSet(i) ) {
         continue;
       }
       
@@ -772,6 +774,7 @@ implements ActionListener, ChangeListener {
       long startMarkerLocation = getMarkerLocation(db, leftValue);
       long endMarkerLocation = getMarkerLocation(db, rightValue);
       
+      // divide by 1000 here to get time value in ms
       Marker startMarker = new ValueMarker(startMarkerLocation/1000);
       startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
       Marker endMarker = new ValueMarker(endMarkerLocation/1000);
@@ -796,7 +799,7 @@ implements ActionListener, ChangeListener {
     // all data should have the same range
     DataBlock db = zooms.getXthLoadedBlock(1);
 
-    if ( leftSlider.getValue() != 0 || rightSlider.getValue() != 1000 ) {
+    if ( leftSlider.getValue() != 0 || rightSlider.getValue() != SLIDER_MAX ) {
       long start = getMarkerLocation(db, leftSlider.getValue() );
       long end = getMarkerLocation(db, rightSlider.getValue() );
       zooms = new DataStore(ds, start, end);
@@ -806,7 +809,7 @@ implements ActionListener, ChangeListener {
         }
         resetPlotZoom(i);
       }
-      leftSlider.setValue(0); rightSlider.setValue(1000);
+      leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
     }
     
 
@@ -841,9 +844,9 @@ implements ActionListener, ChangeListener {
       if (rightSliderValue < leftSliderValue ||
           rightSliderValue - MARGIN < leftSliderValue) {
         rightSliderValue = leftSliderValue + MARGIN;
-        if (rightSliderValue > 1000) {
-          rightSliderValue = 1000;
-          leftSliderValue = 1000-MARGIN;
+        if (rightSliderValue > SLIDER_MAX) {
+          rightSliderValue = SLIDER_MAX;
+          leftSliderValue = SLIDER_MAX - MARGIN;
         }
       }
     }

@@ -97,8 +97,8 @@ public class StepExperiment extends Experiment{
     h = Math.abs( pole.getReal() / pole.abs() ); // damping
     
     // these manually-set parameters were used in testing convergence
-    // h = 0.707107;
     // f = 0.002777;
+    // h = 0.707107;
     
     double[] params = new double[]{f, h};
     

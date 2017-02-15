@@ -22,7 +22,7 @@ public class DataStore {
   /**
    * Defines the maximum number of plots to be shown
    */
-  final static int FILE_COUNT = 3;
+  final static int FILE_COUNT = 4;
   private DataBlock[] dataBlockArray;
   private InstrumentResponse[] responses;
   private XYSeries[] outToPlots;

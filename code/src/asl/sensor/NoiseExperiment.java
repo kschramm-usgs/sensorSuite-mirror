@@ -45,7 +45,7 @@ public class NoiseExperiment extends Experiment {
     
     // TODO: make sure (i.e., when reading in data) that series lengths' match
     // rather than throwing the exceptions here
-    Complex[][] spectra = new Complex[DataStore.FILE_COUNT][];
+    Complex[][] spectra = new Complex[3][];
     double[] freqs = new double[1]; // initialize to prevent later errors
     
     // initialize the values above to have relevant data
