@@ -1,7 +1,19 @@
 package asl.sensor;
 
+/**
+ * Simple factory method for creating an experiment panel
+ * @author akearns
+ *
+ */
 public class ExperimentPanelFactory {
 
+  /**
+   * Instantiate an ExperimentPanel based on the enumerated type passed in
+   * This enumerated type is then used to instantiate a backend using
+   * the ExperimentFactory class.
+   * @param exp Type of experiment (see the enum for details on kinds)
+   * @return A concrete implementation of the ExperimentPanel abstract class
+   */
   public static ExperimentPanel createPanel(
       ExperimentEnum exp){
     switch(exp){

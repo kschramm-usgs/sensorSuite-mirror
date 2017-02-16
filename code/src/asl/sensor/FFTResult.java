@@ -18,6 +18,9 @@ import org.jfree.data.xy.XYSeries;
 /**
  * Holds the data returned from a power spectral density calculation
  * (The PSD data (without response correction) and frequencies of the FFT)
+ * Most methods that either calculate or involve FFT calculations exist here,
+ * such as raw PSD calculation, inverse and forward trimmed FFTs,
+ * and band-pass filtering.
  * @author akearns
  *
  */
@@ -212,6 +215,12 @@ public class FFTResult {
     
   }
   
+  /**
+   * Linear detrend applied to an array of doubles rather than a list.
+   * This operation is not done in-place.
+   * @param dataSet The double array to be detrended
+   * @return Array of doubles with linear detrend removed
+   */
   public static double[] detrend (double[] dataSet) {
     double sumX = 0.0;
     double sumY = 0.0;
@@ -247,7 +256,15 @@ public class FFTResult {
     return detrended;
   }
   
-  
+  /**
+   * Collects the data points in the Peterson new high noise model 
+   * into a plottable format.
+   * Assumes that there is a text file in the .resources folder that contains 
+   * the NHNM data points for given input frequencies.
+   * @param freqSpace True if the data's x-axis should be units of Hz
+   * (otherwise it is units of seconds, the interval between samples)
+   * @return Plottable data series representing the NHNM
+   */
   public static XYSeries getHighNoiseModel(boolean freqSpace) {
     XYSeries xys = new XYSeries("NHNM");
     try {
@@ -281,9 +298,12 @@ public class FFTResult {
   
   
   /**
-   * Collects the data points in the Peterson new low noise model to be plotted
-   * Assumes that there is a text file in the data folder that contains the
-   * NLNM data points for given input frequencies.
+   * Collects the data points in the Peterson new low noise model 
+   * into a plottable format.
+   * Assumes that there is a text file in the .resources folder that contains 
+   * the NLNM data points for given input frequencies. ("NLNM.txt")
+   * @param freqSpace True if the data's x-axis should be units of Hz
+   * (otherwise it is units of seconds, the interval between samples)
    * @return Plottable data series representing the NLNM
    */
   public static XYSeries getLowNoiseModel(boolean freqSpace) {
@@ -319,8 +339,10 @@ public class FFTResult {
   }
   
   /**
-   * Do the inverse FFT on the result of a single-sided FFT operation
-   * @param freqDomn Complex array (such as the result of a previous FFT calc)
+   * Do the inverse FFT on the result of a single-sided FFT operation.
+   * The negative frequencies are reconstructed as the complex conjugates of
+   * the positive corresponding frequencies
+   * @param freqDomn Complex array (i.e., the result of a previous FFT calc)
    * @param trim How long the original input data was
    * @return A list of doubles representing the original timeseries of the FFT
    */
@@ -350,6 +372,13 @@ public class FFTResult {
     return timeSeries;
   }
   
+  /**
+   * Function for padding and returning the result of a forward FFT.
+   * This does not trim the negative frequencies of the result; it returns
+   * the full FFT result as an array of Complex numbers
+   * @param dataIn Array of doubles representing timeseries data
+   * @return 
+   */
   public static Complex[] simpleFFT(double[] dataIn) {
     
     int padding = 2;
@@ -368,10 +397,16 @@ public class FFTResult {
     
     Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
     
-    
     return frqDomn;
   }
   
+  /**
+   * Calculates the FFT of the timeseries data in a DataBlock
+   * and returns the positive frequencies resulting from the FFT calculation
+   * @param db DataBlock to get the timeseries data from
+   * @return Complex array of FFT values and double array of corresponding 
+   * frequencies 
+   */
   public static FFTResult singleSidedFFT(DataBlock db) {
     
     double[] data = new double[db.size()];

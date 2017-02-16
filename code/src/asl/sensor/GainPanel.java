@@ -26,6 +26,15 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
+/**
+ * Panel to display the results of the gain experiment calculations.
+ * In addition to the expected components of the experiment panel,
+ * this also includes selectors to set reference and calculated gain timeseries
+ * targets, and sliders to set the window range over which to calculate
+ * the gain statistics
+ * @author akearns
+ *
+ */
 public class GainPanel extends ExperimentPanel 
 implements ChangeListener {
 
@@ -93,9 +102,7 @@ implements ChangeListener {
     firstSeries.setSelectedIndex(0);
     secondSeries.setSelectedIndex(1);
     
-    // create layout
-    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
-    
+    // create layout    
     this.setLayout( new GridBagLayout() );
     GridBagConstraints gbc = new GridBagConstraints();
     
@@ -136,9 +143,8 @@ implements ChangeListener {
   }
 
   /**
-   * Replots when a new data source is chosen (inc. check to prevent same data
-   * from being plotted twice -- which causes an error with JFreeChart)
-   * and recalculates stats when the recalculate button is hit
+   * Calls functions to do replotting and stat recalculations when different
+   * timeseries are selected or the recalculate button is hit
    */
   @Override
   public void actionPerformed(ActionEvent e) {
@@ -278,6 +284,7 @@ implements ChangeListener {
 
   /**
    * Displays the statistic results when the calculate button is hit
+   * in an inset box on the chart
    * @param mean Calculated mean value
    * @param sDev Calculated standard deviation value
    */
@@ -307,8 +314,8 @@ implements ChangeListener {
   }
   
   /**
-   * Used to get boundaries of chart window specified by this panel's slider
-   * and to draw the vertical lines matching the location of those bounds
+   * Called when one of the sliders has been adjusted, used to
+   * 
    */
   @Override
   public void stateChanged(ChangeEvent e) {
@@ -357,8 +364,8 @@ implements ChangeListener {
   }
   
   /**
-   * Sets the data and then calls function to update data based on
-   * the selected combo box entries
+   * Sets the data and then calls functions to produce backend calculations
+   * when data is loaded in
    */
   @Override
   public void updateData(DataStore ds) {
@@ -407,8 +414,11 @@ implements ChangeListener {
 
   /**
    * Given input data (including time series collection), get only the relevant
-   * ones to display based on combo boxes and then do the statistics on those
-   * Called when new data is fed in or when the combo box active entries change
+   * ones to display based on combo boxes and then do the statistics on those.
+   * Because the range of the sliders is not necessarily set on switch,
+   * the statistics are calculated over the octave centered at the plotted 
+   * peak value's frequency. This function is cal0led when new data is fed in 
+   * or when the combo box active entries change
    */
   private void updateDataDriver(int index0, int index1) {
     
@@ -467,6 +477,8 @@ implements ChangeListener {
       public void done() {
         
         displayInfoMessage("Data loaded...drawing chart");
+        
+        System.out.println(xysc.getSeriesCount());
         
         populateChart(xysc);
         

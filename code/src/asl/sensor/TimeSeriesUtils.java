@@ -5,6 +5,7 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,7 +32,7 @@ import edu.sc.seis.seisFile.mseed.SeedRecord;
 
 /**
  * Contains static methods for grabbing data from miniSEED files
- * and some basic signal processing tools (i.e., decimation)
+ * and some very basic timeseries processing tools (i.e., decimation)
  * @author akearns
  *
  */
@@ -45,131 +46,6 @@ public class TimeSeriesUtils {
    * Sample rate of a 1 Hz sample, in Hz, as a double (that is, 1.0)
    */
   public final static double ONE_HZ = 1.0;
-  
-  /**
-   * Implements bandpass filter for lowpassfilter()
-   * @param dt  Time step
-   * @param cx  Complex number form of time series
-   * @param fl  Low corner frequency
-   * @param fh  High corner frequency
-   * @return  Complex form of filtered time series
-   */
-  public static Complex[] apply(double dt, Complex[] cx, double fl, double fh)
-  {
-
-    int npts = cx.length;
-    // double fl = 0.01;
-    // double fh = 2.0;
-    int npole = 2;
-    int numPoles = npole;
-    int twopass = 2;
-    final double TWOPI = Math.PI * 2;
-    final double PI = Math.PI;
-
-    Complex c0 = new Complex(0., 0.);
-    Complex c1 = new Complex(1., 0.);
-
-    Complex[] sph = new Complex[numPoles];
-    Complex[] spl = new Complex[numPoles];
-
-    Complex cjw, cph, cpl;
-    int nop, nepp, np;
-    double wch, wcl, ak, ai, ar, w, dw;
-    int i, j;
-
-    if (npole % 2 != 0)
-    {
-      System.out.println("WARNING - Number of poles not a multiple of 2!");
-    }
-
-    nop = npole - 2 * (npole / 2);
-    nepp = npole / 2;
-    wch = TWOPI * fh;
-    wcl = TWOPI * fl;
-
-    np = -1;
-    if (nop > 0)
-    {
-      np = np + 1;
-      sph[np] = new Complex(1., 0.);
-    }
-    if (nepp > 0)
-    {
-      for (i = 0; i < nepp; i++)
-      {
-        ak = 2. * Math
-            .sin((2. * (double) i + 1.0) * PI / (2. * (double) npole));
-        ar = ak * wch / 2.;
-        ai = wch * Math.sqrt(4. - ak * ak) / 2.;
-        np = np + 1;
-        sph[np] = new Complex(-ar, -ai);
-        np = np + 1;
-        sph[np] = new Complex(-ar, ai);
-      }
-    }
-    np = -1;
-    if (nop > 0)
-    {
-      np = np + 1;
-      spl[np] = new Complex(1., 0.);
-    }
-    if (nepp > 0)
-    {
-      for (i = 0; i < nepp; i++)
-      {
-        ak = 2. * Math
-            .sin((2. * (double) i + 1.0) * PI / (2. * (double) npole));
-        ar = ak * wcl / 2.;
-        ai = wcl * Math.sqrt(4. - ak * ak) / 2.;
-        np = np + 1;
-        spl[np] = new Complex(-ar, -ai);
-        np = np + 1;
-        spl[np] = new Complex(-ar, ai);
-      }
-    }
-
-    cx[0] = c0;
-    dw = TWOPI / ((double) npts * dt);
-    w = 0.;
-    for (i = 1; i < npts / 2 + 1; i++)
-    {
-      w = w + dw;
-      cjw = new Complex(0., -w);
-      cph = c1;
-      cpl = c1;
-      for (j = 0; j < npole; j++)
-      {
-
-        cph = cph.multiply(sph[j]);
-        Complex div = new Complex(0.0, 0.0);
-        div = sph[j].add(cjw);
-        cph.divide(div);
-
-        cpl = cpl.multiply(cjw);
-        div = new Complex(0.0, 0.0);
-        div = spl[j].add(cjw);
-        cpl = cpl.divide(div);
-
-        /*
-        cph = Complex.div(Complex.mul(cph, sph[j]), Complex.add(sph[j], cjw));
-        cpl = Complex.div(Complex.mul(cpl, cjw), Complex.add(spl[j], cjw));
-         */
-      }
-      Complex prod = new Complex(0.0,0.0).add(cph).multiply(cpl).conjugate();
-      cx[i] = cx[i].multiply(prod);
-
-      // cx[i] = Complex.mul(cx[i], (Complex.mul(cph, cpl)).conjg());
-
-      if (twopass == 2)
-      {
-        cx[i] = cx[i].multiply( cph.add(cpl) );
-      }
-      cx[npts - i] = (cx[i]).conjugate();
-    }
-
-    return (cx);
-
-  }
   
   /**
    * Initial driver for the decimation utility
@@ -205,7 +81,7 @@ public class TimeSeriesUtils {
     // downsample neatly in some cases so we would first upsample,
     // filter out any noise terms, then downsample
     List<Number> upped = upsample(data,upf);
-    List<Number> lpfed = lowPassFilter(upped,src*upf);
+    List<Number> lpfed = lowPassFilter(upped, 1./src*upf, 1./tgt);
     List<Number> down = downsample(lpfed,dnf);
 
     return down;
@@ -250,7 +126,12 @@ public class TimeSeriesUtils {
 
     return euclidGCD(tgt, rem);
   }
-
+  
+  /**
+   * Extract SNCL data from a SEED data header
+   * @param dh found in a seed file
+   * @return String containing the SNCL identifier of the data
+   */
   private static String extractName(DataHeader dh) {
     StringBuilder fileID = new StringBuilder();
     String station = dh.getStationIdentifier();
@@ -542,7 +423,8 @@ public class TimeSeriesUtils {
    * @param sps         Samples per second
    * @return            The filtered data
    */
-  public static List<Number> lowPassFilter(List<Number> timeseries, long sps)
+  public static List<Number> 
+  lowPassFilter(List<Number> timeseries, double sps, double corner)
   {
     // apache fft requires input to be power of two
     int pow = 2;
@@ -552,37 +434,29 @@ public class TimeSeriesUtils {
 
     double[] timeseriesFilter = new double[pow];
 
-    List<Number> timeseriesdouble = 
-        Arrays.asList( new Number[timeseries.size()] );
-    double fl = 5; // allow all low-frequency data through
-    double fh = ONE_HZ_INTERVAL/2.0; // nyquist rate half of target frequency
+    // TODO: fix these to use frequency values instead of interval values
+    
+    double fl = 0; // allow all low-frequency data through
+    double fh = corner; // nyquist rate half of target frequency
     // note that this 1/2F where F is 1Hz frequency
     // we want the inverse of the target frequency
 
     for (int ind = 0; ind < timeseries.size(); ind++)
     {
       if( !(timeseries.get(ind) instanceof Double) ) {
-        timeseriesFilter[ind] = (double) timeseries.get(ind).intValue();
+        timeseriesFilter[ind] = timeseries.get(ind).doubleValue();
       }
     }
 
-    FastFourierTransformer fft = 
-        new FastFourierTransformer(DftNormalization.STANDARD);
-
-
-    Complex[] frqDomn = fft.transform(timeseriesFilter, TransformType.FORWARD);
-
-    frqDomn = apply((double) sps, frqDomn, fl, fh);
-
-    Complex[] timeDomn = fft.transform(frqDomn, TransformType.INVERSE);
-
-
-    for (int ind = 0; ind < timeseries.size(); ind++)
-    {
-      timeseriesdouble.set(ind, timeDomn[ind].getReal() );
+    timeseriesFilter = FFTResult.bandFilter(timeseriesFilter, sps, fl, fh);
+    
+    List<Number> timeseriesOut = new ArrayList<Number>();
+    
+    for (double point : timeseriesFilter) {
+      timeseriesOut.add(point);
     }
-
-    return timeseriesdouble;
+    
+    return timeseriesOut;
   }
 
   /** 

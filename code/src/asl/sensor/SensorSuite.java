@@ -30,7 +30,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  * Main window of the sensor test program and the program's launcher
- * Handles GUI for getting user-specified files and showing data plots
+ * Mainly used for handling the input (inputpanel) and output (experimentpanel)
+ * GUI frames and making sure they fit togther and cooperate
  * @author akearns
  *
  */

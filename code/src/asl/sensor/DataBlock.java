@@ -7,6 +7,7 @@ import org.jfree.data.xy.XYSeries;
 
 /**
  * Holds the time series and metadata for a miniSEED file loaded in by the user
+ * as well response files for the sensor associated with that miniseed
  * @author akearns
  *
  */
@@ -55,13 +56,18 @@ public class DataBlock {
     return data;
   }
   
+  /**
+   * Returns the end time of the data, used mainly in getting range bounds
+   * for things like setting end markers, etc.
+   * @return The time between two samples of data in microseconds
+   */
   public long getEndTime() {
     return startTime + ( interval * data.size() );
   }
   
   /**
    * Get the interval of the data. The timestamp for a given data point in the
-   * block can be calculated by startTime + (index * interval). This
+   * block can be calculated by startTime + (index * interval).
    * @return The time between two samples of data in microseconds
    */
   public long getInterval() {

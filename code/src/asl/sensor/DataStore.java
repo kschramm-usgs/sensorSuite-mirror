@@ -13,7 +13,19 @@ import org.jfree.data.xy.XYSeries;
 /**
  * Holds the inputted data from miniSEED files both as a simple struct
  * (see DataBlock) and as a plottable format for the DataPanel.
- * Also serves as container for loaded-in instrument response files
+ * Also serves as container for loaded-in instrument response files.
+ * 
+ * This structure is build around a series of arrays that hold the data loaded
+ * in from a miniseed file, from a response file, from PSD calculations
+ * (power spectral density) using the miniseed and response data, and for 
+ * plotting in a separate class. Each of these arrays is of the same length 
+ * (see the FILE_COUNT parameter).
+ * 
+ * Each subcomponent of this class is designed to match up by index. That is, 
+ * for index i, the DataBlock at index i will be associated with a response
+ * at i. Both of these will be used to calculate the power-spectral
+ * density at i.
+ *  
  * @author akearns
  *
  */
@@ -25,9 +37,10 @@ public class DataStore {
   final static int FILE_COUNT = 4;
   private DataBlock[] dataBlockArray;
   private InstrumentResponse[] responses;
-  private XYSeries[] outToPlots;
+  private XYSeries[] outToPlots; // used to cache graph data
   FFTResult[] powerSpectra; // used to cache PSD results to speed up calculation
   
+  // these are used to check to make sure data has been loaded
   private boolean[] thisBlockIsSet;
   private boolean[] thisResponseIsSet;
   private boolean[] thisPSDIsCalculated;
@@ -52,6 +65,13 @@ public class DataStore {
    }
   }
   
+  /**
+   * Create a copy of a datablock object that has been trimmed to a
+   * smaller range for the use of showing plot zooms, etc.
+   * @param ds DataStore object to be copied and trimmed from
+   * @param start Start time trim to
+   * @param end End time to trim to
+   */
   public DataStore(DataStore ds, long start, long end) {
     
     dataBlockArray = new DataBlock[FILE_COUNT];
@@ -88,6 +108,12 @@ public class DataStore {
     this.trimAll(start, end);
   }
   
+  /**
+   * Checks whether the data block (timeseries) at a given index
+   * contains data or is null/empty
+   * @param idx Index of the data to look at (between 0 and DATA_STORE)
+   * @return True if a seed file has been loaded in at the index
+   */
   public boolean blockIsSet(int idx) {
     return thisBlockIsSet[idx];
   }
@@ -95,16 +121,29 @@ public class DataStore {
   /**
    * Checks if both components at a specific index are set
    * @param idx Index of data to check if set or not
-   * @return True if a miniseed and response have been both loaded in
+   * @return True if a seed and response have been both loaded in
    */
   public boolean bothComponentsSet(int idx) {
     return (thisBlockIsSet[idx] && thisResponseIsSet[idx]);
   }
   
+  /**
+   * Returns the boolean array where each index shows if there is a DataBlock
+   * loaded into this datastore object at that index
+   * has had data loaded into it (see blockIsSet method)
+   * @return Array of booleans where an entry is true if data is loaded at
+   * the corresponding index
+   */
   public boolean[] dataIsSet() {
     return thisBlockIsSet;
   }
   
+  /**
+   * Returns the power-spectral density for each data set loaded in this object
+   * @return Array of PSD results, each an object holding a complex array of
+   * frequency values and a double arrays of the frequency at each index in that
+   * complex array
+   */
   public FFTResult[] getAllPSDs() {
     for (int i = 0; i < FILE_COUNT; ++i) {
       if (thisBlockIsSet[i] && thisResponseIsSet[i]) {
@@ -141,6 +180,14 @@ public class DataStore {
     return outToPlots[idx];
   }
   
+  /**
+   * Gets the power-spectral density of an index in this object.
+   * If a PSD has already been calculated, this will return that. If not,
+   * it will calculate the result, store it, and then return that data.
+   * @param idx Index of data to get the PSD of
+   * @return Complex array of frequency values and a 
+   * double array of the frequencies
+   */
   public FFTResult getPSD(int idx) {
     if (!thisPSDIsCalculated[idx]) {
       // need both a response and source data
@@ -158,6 +205,11 @@ public class DataStore {
     return powerSpectra[idx];
   }
   
+  /**
+   * Get the instrument response object at a given index
+   * @param idx Index to get the response for
+   * @return The instrument response data (gain, poles, zeros, etc.)
+   */
   public InstrumentResponse getResponse(int idx) {
     return responses[idx];
   }
@@ -166,7 +218,7 @@ public class DataStore {
    * Returns the instrument responses as an array, ordered such that the
    * response at index i is the response associated with the DataBlock at i
    * in the array of DataBlocks
-   * @return
+   * @return Array of instrument responses
    */
   public InstrumentResponse[] getResponses() {
     return responses;
@@ -176,7 +228,7 @@ public class DataStore {
    * Used to get the first, second, etc. data set loaded. Used when operations
    * reading in data don't require all the inputs to be loaded.
    * Requires both SEED and RESP to be loaded for this to be valid.
-   * @param x x-th set of loaded data to get, starting at 1
+   * @param x x-th set of loaded data to get, starting at 1 (NOT 0) 
    * @return index of the loaded data
    */
   public int getXthFullyLoadedIndex(int x) {
@@ -202,7 +254,7 @@ public class DataStore {
    * Used to get the first, second, etc. loaded block, whether or not it has
    * a loaded response file as well.
    * Used to find the panel where a step calibration is loaded
-   * @param x x-th set of data to get, starting at 1
+   * @param x x-th set of data to get, starting at 1 (NOT 0)
    * @return The Xth DataBlock in this object that is not null
    */
   public DataBlock getXthLoadedBlock(int x) {
@@ -224,6 +276,11 @@ public class DataStore {
     throw new IndexOutOfBoundsException(errMsg);
   }
   
+  /**
+   * Checks if there is any data at all loaded into this object so far,
+   * either data or response
+   * @return True if there is anything loaded into this datastore object.
+   */
   public boolean isAnythingSet() {
     for (int i = 0; i< FILE_COUNT; ++i) {
       if (thisBlockIsSet[i] || thisResponseIsSet[i]) {
@@ -233,10 +290,21 @@ public class DataStore {
     return false;
   }
   
+  /**
+   * Checks if a PSD has been calculated for the object at this index
+   * used mainly to see if a PSD still needs to be calculated or if a
+   * cached result can be returned
+   * @param idx Index of the data to see if the PSD has been calculated
+   * @return True if there is a PSD calculated in an 
+   */
   public boolean isPSDSet(int idx) {
     return thisPSDIsCalculated[idx];
   }
   
+  /**
+   * Gives the count of indices where both a miniseed and response are loaded
+   * @return the number of entries of miniseeds with a matching response
+   */
   public int numberFullySet() {
     int loaded = 0;
     for (int i = 0; i < FILE_COUNT; ++i) {
@@ -247,7 +315,11 @@ public class DataStore {
     return loaded;
   }
 
-  public int numberOfBlocksLoaded() {
+  /**
+   * Gives the number of DataBlocks (miniseed files) read in to this object
+   * @return number of files read in
+   */
+  public int numberOfBlocksSet() {
     int loaded = 0;
     for (int i = 0; i < FILE_COUNT; ++i) {
       if (thisBlockIsSet[i]){
@@ -257,6 +329,11 @@ public class DataStore {
     return loaded;
   }
 
+  /**
+   * Removes all data at a specific index -- miniseed, response, and any
+   * data generated from them
+   * @param idx
+   */
   public void removeData(int idx) {
     dataBlockArray[idx] = null;
     responses[idx] = null;
@@ -266,6 +343,14 @@ public class DataStore {
     thisResponseIsSet[idx] = false;
   }
   
+  /**
+   
+   * Returns the boolean array where each index shows if there is a response
+   * loaded into this datastore object at that index
+   * has had data loaded into it (see blockIsSet, dataIsSet methods)
+   * @return Array of booleans where an entry is true if a response is loaded 
+   * at the corresponding index
+   */
   public boolean[] responsesAreSet() {
     return thisResponseIsSet;
   }
@@ -290,7 +375,7 @@ public class DataStore {
       e.printStackTrace();
     }
 
-    if (numberOfBlocksLoaded() > 1) {
+    if (numberOfBlocksSet() > 1) {
       // loading in multiple series of data? trim to common time now
       long start = dataBlockArray[idx].getStartTime();
       long end = dataBlockArray[idx].getEndTime();
@@ -332,6 +417,11 @@ public class DataStore {
     }
   }
   
+  /**
+   * Alias to blockIsSet function
+   * @param idx Index of a datablock to check
+   * @return True if a seed file has been loaded in there
+   */
   public boolean timeSeriesSet(int idx) {
     return thisBlockIsSet[idx];
   }
@@ -357,7 +447,7 @@ public class DataStore {
   public void trimToCommonTime() {
     // trims the data to only plot the overlapping time of each input set
     
-    if ( numberOfBlocksLoaded() <= 1 ) {
+    if ( numberOfBlocksSet() <= 1 ) {
       return;
     }
     

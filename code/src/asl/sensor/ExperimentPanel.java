@@ -11,8 +11,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
@@ -28,11 +31,19 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.title.TextTitle;
+import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
 /**
- * Panel used to display the data produced from a specified sensor test
+ * Panel used to display the data produced from a specified sensor test.
+ * This primarily exists as a chartpanel, plus a filechooser and button used
+ * in saving the chart held in the panel to a file.
+ * 
+ * A default construction of the GUI components exists in this class, but
+ * implementing methods are suggested to override this in their constructor
+ * (see existing classes such as GainPanel and NoisePanel for examples).
+ * 
  * @author akearns
  *
  */
@@ -55,15 +66,15 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   
   protected String xAxisTitle, yAxisTitle;
   protected ValueAxis xAxis, yAxis;
-  protected String[] plotTheseInBold;
+  protected String[] plotTheseInBold; // given in the implementing function
   
   protected Map<String, Color> seriesColorMap;
-  protected Map<String, Boolean> seriesDashedMap;
+  protected Set<String> seriesDashedSet; // TODO: make this a set
   
   public ExperimentPanel(ExperimentEnum exp) {
     
     seriesColorMap = new HashMap<String, Color>();
-    seriesDashedMap = new HashMap<String, Boolean>();
+    seriesDashedSet = new HashSet<String>();
     
     expType = exp;
     expResult = ExperimentFactory.createExperiment(exp);
@@ -78,7 +89,11 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     save = new JButton("Save plot (PNG)");
     save.addActionListener(this);
     
-    this.setLayout( new GridBagLayout() );
+    
+    // basic layout for components (recommended to override in concrete class)
+    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
+    this.add(chartPanel);
+    this.add(save);
   }
   
   /**
@@ -109,7 +124,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   }
   
   /**
-   * Since the constructor here must call the 
+   * Gets the axes to be used to plot the data 
    */
   protected void applyAxesToChart() {
     XYPlot xyp = chart.getXYPlot();
@@ -117,6 +132,10 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     xyp.setRangeAxis( getYAxis() );
   }
   
+  /**
+   * Overlay an error message in the event of an exception or other issue
+   * @param errMsg Text of the message to be displayed
+   */
   public void displayErrorMessage(String errMsg) {
     XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
     TextTitle result = new TextTitle();
@@ -129,6 +148,10 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     xyp.addAnnotation(xyt);
   }
   
+  /**
+   * Overlay informational text, such as extra results and statistics for plots
+   * @param infoMsg
+   */
   public void displayInfoMessage(String infoMsg) {
     XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
     TextTitle result = new TextTitle();
@@ -163,18 +186,34 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     return bi;
   }
 
+  /**
+   * Default x-axis return function.
+   * Though the x-axis is a local variable, some panels may have multiple unit
+   * types for the x-axis (i.e., for units of seconds vs. Hz); accessing
+   * the x-axis object through this function allows for overrides allowing for
+   * more flexibility.
+   * @return
+   */
   public ValueAxis getXAxis() {
-    // TODO Auto-generated method stub
     return xAxis;
   }
   
 
+  /**
+   * Default x-axis title return. Displays the string used for the x-axis, 
+   * which is set when the panel's chart is constructed.
+   * @return
+   */
   public String getXTitle() {
     return xAxisTitle;
   }
 
+  /**
+   * Default y-axis return function. As with x-axis, designed to be overridden
+   * for charts that may use multiple scales
+   * @return
+   */
   public ValueAxis getYAxis() {
-    // TODO Auto-generated method stub
     return yAxis;
   }
 
@@ -184,11 +223,18 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   }
 
 
+  /**
+   * Function check to make sure that the experiment has enough data to calc.
+   * Used to prevent the main window generate button from being active when
+   * there isn't enough data loaded in.
+   * @param ds DataStore holding read-in seed and resp data
+   * @return True if there is enough data to run this experiment
+   */
   public boolean haveEnoughData(DataStore ds) {
     if ( ds.numberFullySet() < expType.fullDataNeeded() ) {
       return false;
     }
-    if ( ds.numberOfBlocksLoaded() < expType.blocksNeeded() ) {
+    if ( ds.numberOfBlocksSet() < expType.blocksNeeded() ) {
       return false;
     }
     
@@ -196,20 +242,19 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
   }
 
-  
   /**
-   * Defines the type of test results this panel's chart will display
-   * @param expT The type of experiment (refer to the enum for valid types)
-   * @param expR The experiment to be performed
-   * @return A chart displaying the data from the performed experiment
+   * Used to plot the results of a backend function from an experiment
+   * using a collection of XYSeries mapped by strings.
+   * If the color and dashed maps have been updated by the concrete class
+   * extending this one, the corresponding XYSeries will have their data
+   * displayed in the specified color or dashing, etc.
+   * @param data collection of XYSeries to plot
    */
-  public void populateChart(XYSeriesCollection data) {
-    
-    String xTitle = getXTitle();
+  protected void populateChart(XYSeriesCollection data) {
     
     JFreeChart chart = ChartFactory.createXYLineChart(
         expType.getName(),
-        xTitle,
+        getXTitle(),
         getYTitle(),
         data,
         PlotOrientation.VERTICAL,
@@ -217,15 +262,16 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
         false, 
         false);
     
-    // apply bolding to the components that require it (i.e., NLNM time series)
+    // apply effects to the components that require it (i.e., NLNM time series)
     XYPlot xyPlot = chart.getXYPlot();
     XYItemRenderer xyir = xyPlot.getRenderer();
     
+    // force certain colors and whether or not a line should be dashed
     for ( String series : seriesColorMap.keySet() ) {
       int seriesIdx = data.getSeriesIndex(series);
       xyir.setSeriesPaint( seriesIdx, seriesColorMap.get(series) );
       
-      if ( seriesDashedMap.get(series) ) {
+      if ( seriesDashedSet.contains(series) ) {
         xyir.setSeriesPaint( seriesIdx, seriesColorMap.get(series).darker() );
         
         BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
@@ -246,6 +292,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
 
     for (String series : plotTheseInBold) {
       int seriesIdx = data.getSeriesIndex(series);
+      
       BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
       if (stroke == null) {
         stroke = (BasicStroke) xyir.getBaseStroke();
@@ -261,6 +308,11 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     this.chart = chart;
   }
   
+  /**
+   * Function template for sending input to a backend fucntion and collecting
+   * the corresponding data
+   * @param ds DataStore object containing seed and resp files
+   */
   public abstract void updateData(DataStore ds);
   
   // details of how to run updateData are left up to the implementing panel

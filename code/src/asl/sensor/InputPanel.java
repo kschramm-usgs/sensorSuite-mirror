@@ -299,7 +299,16 @@ implements ActionListener, ChangeListener {
   }
   
   /**
-   * Dispatches commands based on save and zoom buttons clicked
+   * Dispatches commands when interface buttons are clicked.
+   * When the save button is clicked, dispatches the command to save plots as
+   * an image. When the zoom buttons are clicked, scales the plot to only
+   * contain the data within a specific range. Resets plots and removes 
+   * underlying data when the clear buttons are clicked. Prompts user to
+   * load in a file for miniseed and resp data when the corresponding
+   * buttons are clicked; because seed files can be large and contian a lot
+   * of data to plot, runs seed-loading code backend in a separate thread.
+   * 
+   * When new data is loaded in, this also fires a change event to any listeners
    */
   @Override
   public void actionPerformed(ActionEvent e) {
@@ -553,6 +562,10 @@ implements ActionListener, ChangeListener {
     }
   }
   
+  /**
+   * Used to add objects to the list that will be informed when data is loaded
+   * @param listener
+   */
   public void addChangeListener(ChangeListener listener) {
     listenerList.add(ChangeListener.class, listener);
   }
@@ -587,6 +600,11 @@ implements ActionListener, ChangeListener {
     
   }
   
+  /**
+   * Informs listening objects that the state of the inputs has changed
+   * This is done when new seed or resp data has been loaded in, mainly
+   * to tell whether enough data exists to run one of the experiments
+   */
   protected void fireStateChanged() {
     ChangeListener[] lsners = listenerList.getListeners(ChangeListener.class);
     if (lsners != null && lsners.length > 0) {
@@ -622,7 +640,7 @@ implements ActionListener, ChangeListener {
     // width = Math.min( width, chartPanels[0].getWidth() );
     // height = Math.max( height, shownHeight );
     
-    int loaded = ds.numberOfBlocksLoaded();
+    int loaded = ds.numberOfBlocksSet();
     // cheap way to make sure height is a multiple of the chart count
     height = (height*loaded)/loaded;
     
@@ -679,11 +697,14 @@ implements ActionListener, ChangeListener {
   /**
    * Returns the selected region of underlying DataStore, to be fed 
    * into experiments for processing (the results of which will be plotted)
+   * When this function is called, the graphs zoom to the currently active
+   * range to display selected by the sliders, which is also the range
+   * passed into an experiment
    * @return A DataStore object (contains arrays of DataBlocks & Responses)
    */
   public DataStore getData() {
     
-    if ( ds.numberOfBlocksLoaded() < 1 ) {
+    if ( ds.numberOfBlocksSet() < 1 ) {
       return new DataStore();
     }
     
@@ -692,14 +713,27 @@ implements ActionListener, ChangeListener {
     return zooms;
   }
 
+  /**
+   * Gets the height of resulting image of plots given default parameters,
+   * so that it only needs to fit the plots that have data in them 
+   * @return height of image to output
+   */
   public int getImageHeight() {
-    return IMAGE_HEIGHT * ds.numberOfBlocksLoaded();
+    return IMAGE_HEIGHT * ds.numberOfBlocksSet();
   }
   
+  /**
+   * Returns a default image width for writing plots to file
+   * @return width of image to output
+   */
   public int getImageWidth()  {
     return allCharts.getWidth();
   }
   
+  /**
+   * Instantiates the underlying chart of a chartpanel with default data
+   * @param idx Index of the chartpanel to instantiate
+   */
   private void instantiateChart(int idx) {
     JFreeChart chart = ChartFactory.createXYLineChart(
         "SEED input " + (idx + 1),
@@ -718,12 +752,17 @@ implements ActionListener, ChangeListener {
     chartPanels[idx].setMouseZoomable(true);
   }
   
+  /**
+   * Used to remove an object from the list of those informed when
+   * data is loaded in or cleared out
+   * @param listener
+   */
   public void removeChangeListener(ChangeListener listener) {
     listenerList.remove(ChangeListener.class, listener);
   }
   
   /**
-   * Does the work to reset the zoom of each chart
+   * Does the work to reset the zoom of a chart when the zoom button is hit
    * @param idx Index of appropriate chart/panel
    */
   private void resetPlotZoom(int idx) {
@@ -731,7 +770,8 @@ implements ActionListener, ChangeListener {
     XYSeriesCollection xys = new XYSeriesCollection();
     xys.addSeries( zooms.getBlock(idx).toXYSeries() );
     xyp.setDataset( xys );
-    xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+    xyp.getRenderer().setSeriesPaint(0,
+        defaultColor[idx % defaultColor.length]);
     if ( xyp.getSeriesCount() > 1 ) {
       throw new RuntimeException("TOO MUCH DATA");
     }
@@ -789,9 +829,13 @@ implements ActionListener, ChangeListener {
     
   }
 
+  /**
+   * Zooms in on the current range of data, which will be passed into
+   * backend functions for experiment calculations
+   */
   public void showRegionForGeneration() {
     
-    if ( ds.numberOfBlocksLoaded() < 1 ) {
+    if ( ds.numberOfBlocksSet() < 1 ) {
       return;
     }
     

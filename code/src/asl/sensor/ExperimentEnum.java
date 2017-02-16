@@ -26,14 +26,26 @@ public enum ExperimentEnum {
     this.fullDataNeeded = fullDataNeeded;
   }
   
+  /**
+   * Get the amount of data blocks needed for the calculation
+   * @return
+   */
   public int blocksNeeded() {
     return blocksNeeded;
   }
   
+  /**
+   * Get the amount of data and response pairs needed for the calculation
+   * @return
+   */
   public int fullDataNeeded() {
     return fullDataNeeded;
   }
   
+  /**
+   * Get the full name of this experiment (used for plot & tab names)
+   * @return
+   */
   public String getName() {
     return name;
   }

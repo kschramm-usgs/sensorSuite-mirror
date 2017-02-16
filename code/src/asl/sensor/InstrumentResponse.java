@@ -13,6 +13,15 @@ import java.util.Map;
 
 import org.apache.commons.math3.complex.Complex;
 
+/**
+ * This class is used to read in and store data from instrument response files
+ * such as those found on the IRIS RESP database. This includes functions used
+ * to parse in relevant data from those files to get values such as poles and
+ * zeros and the gain stages of the detector/sensor setup.
+ * See also: http://ds.iris.edu/ds/nodes/dmc/data/formats/resp/
+ * @author akearns
+ *
+ */
 public class InstrumentResponse {
 
   

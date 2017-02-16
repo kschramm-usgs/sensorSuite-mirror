@@ -28,10 +28,14 @@ public class NoisePanel extends ExperimentPanel {
   private final int NOISE_PLOT_COUNT = 6;
   // three PSDs, three self-noise calcs
   
-  private final Color[] COLORS = {Color.RED, Color.GREEN, Color.BLUE};
+  private final Color[] COLORS = {Color.RED, Color.BLUE, Color.GREEN};
   
-  private String freqAxisTitle;
+  private String freqAxisTitle; // name to use when plotting in units of Hz
   
+  /**
+   * Constructs a new panel and lays out all the components in it
+   * @param exp
+   */
   public NoisePanel(ExperimentEnum exp) {
     
     // create chart, chartPanel, save button & file chooser, 
@@ -100,6 +104,12 @@ public class NoisePanel extends ExperimentPanel {
     super.actionPerformed(e); // only actionlistener here
   }
   
+  /**
+   * Gets the x-axis for this panel based on whether or not the
+   * selection box to plot in units of Hz is selected. If it is, this
+   * plot will have frequency units of Hz in the x-axis, otherwise it will have
+   * interval units of seconds in it
+   */
   @Override
   public ValueAxis getXAxis() {
     
@@ -112,6 +122,12 @@ public class NoisePanel extends ExperimentPanel {
     
   }
   
+  /**
+   * As with the getXAxis function, if the selection box to use Hz is selected,
+   * this will not return the default x-axis title but instead will return one
+   * reflecting the use of frequency/Hz units (the default is using the 
+   * interval (time)).
+   */
   @Override
   public String getXTitle() {
     if (freqSpaceBox.isSelected()) {
@@ -120,6 +136,9 @@ public class NoisePanel extends ExperimentPanel {
     return xAxisTitle;
   }
 
+  /**
+   * Initially called function to calculate self-noise when data is passed in
+   */
   @Override
   public void updateData(DataStore ds) {
     
@@ -138,6 +157,18 @@ public class NoisePanel extends ExperimentPanel {
   }
   
 
+  /**
+   * Uses a threaded call to run the self-noise calculations in the background,
+   * to be plotted. In the process of getting these, the names of the data
+   * are used to populate the color of the input data, as well as whether or not
+   * data should be dashed or solid (the color choices are designed to
+   * match the first three input plots, where the data is expected from, and
+   * the dashes are used to distinguish the PSD from the self-noise plot)
+   * @param ds 
+   *  DataStore object that contains the seed and resp files to calculate
+   * @param freqSpace Boolean matching whether or not to plot in units of
+   * frequency if true (Hz) or in units of interval if false (s) 
+   */
   private void updateDriver(DataStore ds, boolean freqSpace) {
     
     final DataStore dsImmutable = ds;
@@ -156,7 +187,10 @@ public class NoisePanel extends ExperimentPanel {
           String name = (String) xysc.getSeriesKey(i);
           Color plotColor = COLORS[i%3];
           seriesColorMap.put(name, plotColor);
-          seriesDashedMap.put(name, (i >= 3) );
+          if (i >= 3) {
+            seriesDashedSet.add(name);
+          }
+
         }
         
         return 0;

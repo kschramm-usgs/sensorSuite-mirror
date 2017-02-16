@@ -5,6 +5,16 @@ import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
 
+/**
+ * Gain experiment does tests to determine a relative gain value of a sensor's
+ * PSD as compared to a reference sensor over the same range of frequencies.
+ * The ratio of the means of the data over that range is taken, as is the
+ * standard deviation of the ratio; assuming fixed reference center gain, the
+ * result of the calculated gain is given as gain2/ratio where gain2 is the
+ * gain of the sensor we want to calculate (that is, not the reference sensor).
+ * @author akearns
+ *
+ */
 public class GainExperiment extends Experiment {
 
   /**
@@ -108,7 +118,9 @@ public class GainExperiment extends Experiment {
   private double ratio, sigma;
   
   /**
-   * Constructor for the gain experiment
+   * Constructor for the gain experiment; effectively the same as that of the
+   * superclass, as all components unique to this class are populated at time
+   * of calculation
    */
   public GainExperiment() {
     super();
@@ -116,9 +128,26 @@ public class GainExperiment extends Experiment {
 
   /**
    * Populate XYSeriesCollection with all input data (will be trimmed on plot)
+   * This gets the (possibly cached) PSDs from available data in the
+   * passed-in DataStore object, builds plottable series from them, and
+   * generates statistics about gain calculation, defaulting to the
+   * octave around the peak-value frequency.
+   * The data to be plotted consists of the data from a reference series held
+   * as constant and a second series for which a gain estimation is done.
+   * The specific statistics being calculated are the mean and standard dev.
+   * of the ratios of the series within the given frequency range, used to
+   * calculate an estimation of gain from the second series.
    */
   @Override
   protected void backend(final DataStore ds, final boolean freqSpace) {
+    
+    int numberToLoad = ds.numberFullySet();
+    
+    int[] indices = new int[numberToLoad];
+    
+    for (int i = 1; i <= numberToLoad; ++i) {
+      indices[i-1] = ds.getXthFullyLoadedIndex(i);
+    }
     
     gainStage1 = new ArrayList<Double>();
     otherGainStages = new ArrayList<Double>();
@@ -140,21 +169,27 @@ public class GainExperiment extends Experiment {
     fftResults = new ArrayList<FFTResult>();
     ArrayList<DataBlock> blocksPlotting = new ArrayList<DataBlock>();
     
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      if ( ds.bothComponentsSet(i) ) {
-        fftResults.add( ds.getPSD(i) );
-        blocksPlotting.add( ds.getBlock(i) );
-      }
+    for (int i = 0; i < indices.length; ++i) {
+      int idx = indices[i];
+      fftResults.add( ds.getPSD(idx) );
+      blocksPlotting.add( ds.getBlock(idx) );
     }
     
     xySeriesData.setAutoWidth(true);
     
-    addToPlot(ds, false, xySeriesData); // don't plot in frequency space
+    addToPlot(ds, false, indices, xySeriesData); 
+    // false, because we don't want to plot in frequency space
     
     xySeriesData.addSeries( FFTResult.getLowNoiseModel(false) );
     
   }
   
+  /**
+   * Gets the octave centered around the frequency at the plotted PSD peak
+   * @param idx Index of inputted data to get the peak of
+   * @return Array containing 2 elements, the values of the low and high 
+   * frequencies bounding the octave
+   */
   public double[] getOctaveCenteredAtPeak(int idx) {
     
     int center = getPeakIndex(idx);
@@ -168,7 +203,7 @@ public class GainExperiment extends Experiment {
   }
   
   /**
-   * Finds the maximum value of PSD plot curve
+   * Finds the maximum value of PSD plot curve, by its index in the array
    * @param fft PSD calculation, including both FFT function and matching
    * frequencies
    * @return The index of the peak location
@@ -224,11 +259,11 @@ public class GainExperiment extends Experiment {
   /**
    * Given indices to specific PSD data sets and indices to the corresponding
    * frequency boundaries, gets the mean and standard deviation ratios
-   * @param idx0 Index of numerator PSD
+   * @param idx0 Index of numerator PSD (reference sensor)
    * @param idx1 Index of denominator PSD
    * @param lowBnd Lower-bound index of PSDs' frequency array
    * @param higBnd Upper-bound index of PSDs' frequency array
-   * @return
+   * @return 2-entry array of form {mean, standard deviation}
    */
   private double[] getStatsFromIndices(int idx0, int idx1,
       int lowBnd, int higBnd) {
@@ -258,6 +293,13 @@ public class GainExperiment extends Experiment {
     return new double[]{Math.sqrt(ratio), sigma, gain1, gain2};
   }
   
+  /**
+   * Find the peak frequency of the reference series and use it to get the
+   * gain statistics
+   * @param idx0 Index of the reference sensor's FFT data
+   * @param idx1 Index of the other sensor's FFT data
+   * @return
+   */
   public double[] getStatsFromPeak(int idx0, int idx1) {
     double[] freqBounds = getOctaveCenteredAtPeak(idx0);
     double freq1 = freqBounds[0];
