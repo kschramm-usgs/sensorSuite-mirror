@@ -1,7 +1,5 @@
 package asl.sensor;
 
-import java.util.Arrays;
-
 import org.apache.commons.math3.complex.Complex;
 import org.jfree.data.xy.XYSeries;
 

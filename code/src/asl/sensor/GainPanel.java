@@ -6,8 +6,9 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
+import java.util.HashSet;
+import java.util.Set;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JSlider;
@@ -253,11 +254,16 @@ implements ChangeListener {
     firstSeries.removeAllItems();
     secondSeries.removeAllItems();
     
+    Set<String> preventDuplicates = new HashSet<String>();
+    
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( ds.bothComponentsSet(i) ) {
         String name = ds.getBlock(i).getName();
-        firstSeries.addItem( name );
-        secondSeries.addItem( name );
+        if ( !preventDuplicates.contains(name) ) {
+          preventDuplicates.add(name);
+          firstSeries.addItem(name);
+          secondSeries.addItem(name);
+        }
       }
     }
     
