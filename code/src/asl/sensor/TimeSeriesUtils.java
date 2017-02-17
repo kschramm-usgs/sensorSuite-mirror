@@ -374,6 +374,40 @@ public class TimeSeriesUtils {
       // now we have all the data in a convenient map timestamp -> value
       // which we can then convert into an easy array
       Set<Long> times = timeMap.keySet();
+      
+      // get the min value in the set, the start time for the series
+      long startTime = Long.MAX_VALUE;
+      // when can we stop trying to read in data?
+      long endTime = Long.MIN_VALUE;
+      for (long time : times) {
+        if (time < startTime) {
+         startTime = time;
+        }
+        if (time > endTime) {
+          endTime = time;
+        }
+      }
+      
+      // read in data from the records as long as they exist
+      // if no data exists (there's a gap in the record), set value to 0
+      
+      // this is done to handle cases where multiplexed files have non-matching
+      // gaps and similar issues that previous code was not able to handle
+      List<Number> timeList = new ArrayList<Number>();
+      long currentTime = startTime;
+      while (currentTime <= endTime) {
+        if ( timeMap.containsKey(currentTime) ) {
+          timeList.add( timeMap.get(currentTime) );
+        } else {
+          timeList.add(0.);
+        }
+        
+        currentTime += interval;
+      }
+      
+      
+      
+      /*
       Long[] timeList = times.toArray(new Long[times.size()]);
       // the rest of the code assumes a sorted list, so we sort by timestamp
       Arrays.sort(timeList);
@@ -385,10 +419,10 @@ public class TimeSeriesUtils {
         // (is point i+1's time difference from point i greater than interval?)
         sampleList[i] = timeMap.get(timeList[i]);
       }
+      */
       
       // demean the input to remove DC offset before adding it to the data
-      List<Number> listOut = 
-          FFTResult.demean( Arrays.asList(sampleList) );
+      List<Number> listOut = FFTResult.demean( timeList );
       db = new DataBlock(listOut, interval, filter, startTime);
       return db;
 
