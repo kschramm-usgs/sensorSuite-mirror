@@ -18,6 +18,29 @@ import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
+/**
+ * Basic outline of what this does
+ * Given a seed file timeseries representing the calibration function passed
+ * into a sensor (placed in first timeseries input in the inputpanel / 
+ * datastore) and one of the output of that function by the sensor (in the
+ * following timeseries input) with a corresponding response, this function
+ * calculates corner frequency and damping parameters from the response,
+ * deconvolves that from the sensor's output (using frequency space, thus
+ * doable by simple division of the FFT of the sensor data divided by the
+ * response FFT), and then produces a normalized function that should match
+ * the step function.
+ * In addition to finding the output produced by the response file, this
+ * experiment also uses the Apache Commons least-squares solver with a
+ * Levenberg-Marquardt optimizer in order to find the best-fit parameters for
+ * the corner and damping. In order to do this, the function defines a further
+ * backend function that calculates the forward-approximation of the derivative
+ * of the function given a sample point.
+ * In addition to the deconvolved and best-fit timeseries, this class is
+ * also able to return the values for the corner frequency and damping that 
+ * produce them, as well as their corresponding residual values.
+ * @author akearns
+ *
+ */
 public class StepExperiment extends Experiment{
 
   double f, h; //corner and damping of output (uncorrected)
@@ -31,6 +54,9 @@ public class StepExperiment extends Experiment{
   
   final double STEP_FACTOR = Math.nextUp( Math.nextUp(1.0) );
   
+  /**
+   * Calls superconstructor; all other fields are created at runtime
+   */
   public StepExperiment() {
     super();
   }
@@ -150,7 +176,7 @@ public class StepExperiment extends Experiment{
         build();
     
     LeastSquaresProblem.Evaluation initEval = lsp.evaluate(startVector);
-    System.out.println("INITIAL GUESS RESIDUAL: " +  initEval.getRMS() );
+    // System.out.println("INITIAL GUESS RESIDUAL: " +  initEval.getRMS() );
     
     initResid = initEval.getRMS() * 100;
     
@@ -160,7 +186,7 @@ public class StepExperiment extends Experiment{
     
     LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
     
-    System.out.println("FIT PARAMS RESIDUAL: " +  optimum.getRMS() );
+    // System.out.println("FIT PARAMS RESIDUAL: " +  optimum.getRMS() );
     
     fitResid = optimum.getRMS() * 100;
     
@@ -185,6 +211,13 @@ public class StepExperiment extends Experiment{
     
   }
   
+  /**
+   * Does the deconvolution of the response calculated from the corner freq. (f)
+   * and damping (h) parameters passed in
+   * @param beta Double array of form {f,h}
+   * @return The timeseries resulting from deconvolution of the calculated
+   * response from the sensor-input timeseries (done in frequency space)
+   */
   public double[] calculate(double[] beta) {
     
     // the original length of the timeseries data we've gotten the FFT of
@@ -258,37 +291,40 @@ public class StepExperiment extends Experiment{
     double[] returnValue =  
         FFTResult.singleSidedInverseFFT(toDeconvolve, inverseTrim);
     
-    returnValue = TimeSeriesUtils.normalize(returnValue);
-    
     returnValue = FFTResult.demean(returnValue);
     
-    double sps = freqs[freqs.length - 1] * 2; // nyquist rate
-    returnValue = FFTResult.bandFilter(returnValue, sps, 0., freqs[1]);
-    
-    // trim out the ends which likely have noise due to filtering
+    // trim out the ends
     returnValue = Arrays.copyOfRange(returnValue, cutAmount, upperBound);
     
-    // System.out.println("MAX FREQ? " + freqs[freqs.length-1]);
-        
-    // normalize and demean
-
-    //return returnValue;
-    
+    // normalize in order to fit the plot    
     return TimeSeriesUtils.normalize(returnValue);
-    
-    //return FFTResult.demean(returnValue);
     
     
   }
   
+  /**
+   * Returns the corner, damping, and residual from the initial parameters
+   * calculated from the resp input as a double array in that order
+   * @return Double array with the specified f, h, r values
+   */
   public double[] getCornerAndDamping() {
     return new double[]{f, h, initResid};
   }
   
+  /**
+   * Returns the corner, damping, and residual values 
+   * @return
+   */
   public double[] getFitCornerAndDamping() {
     return new double[]{fCorr, hCorr, fitResid};
   }
   
+  /**
+   * Passes a handle to this object's jacobian function, used to get the
+   * partial-differential values and current solution at a given point
+   * for the Commons curve-fitting functions
+   * @return jacobian function according to the Apache Commons fitting library
+   */
   public MultivariateJacobianFunction getJacobianFunction() {
     return new MultivariateJacobianFunction() {
       private static final long serialVersionUID = -8673650298627399464L;
@@ -298,6 +334,15 @@ public class StepExperiment extends Experiment{
     };
   }
   
+  
+  /**
+   * Computes the forward change in value of the calculations for response
+   * formed from a given corner and damping value
+   * @param variables Vector with the corner and damping values from which the
+   * derivatives are calculated
+   * @return The result at the passed-in point plus the approximate derivative
+   * of these points, as a vector and matrix respectively
+   */
   private Pair<RealVector, RealMatrix> jacobian(RealVector variables) {
     
     // approximate through forward differences
@@ -321,10 +366,6 @@ public class StepExperiment extends Experiment{
     RealVector fnc = MatrixUtils.createRealVector(fInit);
     
     return new Pair<RealVector, RealMatrix>(fnc, jMat);
-  }
-
-  public double[] value(double[] point) {
-    return calculate(point);
   }
   
 }

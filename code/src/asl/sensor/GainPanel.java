@@ -259,11 +259,12 @@ implements ChangeListener {
     for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
       if ( ds.bothComponentsSet(i) ) {
         String name = ds.getBlock(i).getName();
-        if ( !preventDuplicates.contains(name) ) {
-          preventDuplicates.add(name);
-          firstSeries.addItem(name);
-          secondSeries.addItem(name);
+        while ( preventDuplicates.contains(name) ) {
+          name += "_";
         }
+        preventDuplicates.add(name);
+        firstSeries.addItem(name);
+        secondSeries.addItem(name);
       }
     }
     

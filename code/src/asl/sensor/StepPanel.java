@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Font;
 
 import javax.swing.BoxLayout;
-import javax.swing.JFileChooser;
 
 import org.jfree.chart.annotations.XYTitleAnnotation;
 import org.jfree.chart.axis.NumberAxis;
@@ -13,15 +12,26 @@ import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
+/**
+ * Holds the plot results of a step experiment. Gets the timeseries data from it
+ * as well as the corner and damping values gotten in the process of its
+ * calculations. See the step experiment class for more details.
+ * @author akearns
+ *
+ */
 public class StepPanel extends ExperimentPanel {
 
   /**
    * 
    */
   private static final long serialVersionUID = 3693391540945130688L;
-  
-  JFileChooser fc;
 
+  /**
+   * StepPanel does not have any extra components beyond the abstract panel it
+   * is derived from. The constructor initializes its axes and lays out the
+   * components derived from the superconstructor
+   * @param exp
+   */
   public StepPanel(ExperimentEnum exp) {
     super(exp);
     
@@ -50,6 +60,12 @@ public class StepPanel extends ExperimentPanel {
     
   }
 
+
+  /**
+   * Pass in and retrieve data from the step experiment backend, to plot;
+   * this is both the timeseries data as well as a title inset displaying
+   * the parameters used in the plot calculations
+   */
   @Override
   public void updateData(DataStore ds) {
     
