@@ -36,7 +36,7 @@ public class StepPanel extends ExperimentPanel {
     super(exp);
     
     xAxisTitle = "Time (s)";
-    yAxisTitle = "Counts (normalized)";
+    yAxisTitle = "Signal amplitude differences (counts)";
     xAxis = new NumberAxis(xAxisTitle);
     xAxis.setAutoRange(true);
     //SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
