@@ -41,7 +41,7 @@ public class OrthogonalExperiment extends Experiment {
     double[] rhsArray = new double[len * 2];
     double[][] lhsArray = new double[len * 2][4];
     
-    for (int i = 0; i < len * 2; ++i) {
+    for (int i = 0; i < len; ++i) {
       rhsArray[i] = refLH1.get(i).doubleValue();
       rhsArray[i + len] = refLH2.get(i).doubleValue();
       

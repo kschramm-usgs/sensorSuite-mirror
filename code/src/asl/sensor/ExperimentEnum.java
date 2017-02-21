@@ -13,7 +13,7 @@ public enum ExperimentEnum {
   NOISE ("Self-noise", 3, 3),
   RGAIN ("Relative gain", 2, 2),
   STCAL ("Step calibration", 2, 1),
-  ORTHO ("Orthogonality", 3, 3);
+  ORTHO ("Orthogonality", 4, 0  );
 
   private String name;
   private int blocksNeeded;
