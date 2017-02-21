@@ -62,17 +62,22 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   protected Experiment expResult;
           // used to get the actual data from loaded-in files
   
+  // axes and titles must be instantiated in implementing functino
   protected String xAxisTitle, yAxisTitle;
   protected ValueAxis xAxis, yAxis;
+  
   protected String[] plotTheseInBold; // given in the implementing function
+  // this is a String because bolded names are intended to be fixed
   
   protected Map<String, Color> seriesColorMap;
-  protected Set<String> seriesDashedSet; // TODO: make this a set
+  protected Set<String> seriesDashedSet;
+  // these are map/set because they are based on the data read in, not fixed
   
   public ExperimentPanel(ExperimentEnum exp) {
     
     seriesColorMap = new HashMap<String, Color>();
     seriesDashedSet = new HashSet<String>();
+    plotTheseInBold = new String[]{};
     
     expType = exp;
     expResult = ExperimentFactory.createExperiment(exp);
@@ -86,7 +91,6 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     save = new JButton("Save plot (PNG)");
     save.addActionListener(this);
-    
     
     // basic layout for components (recommended to override in concrete class)
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
@@ -288,16 +292,18 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
       
     }
 
-    for (String series : plotTheseInBold) {
-      int seriesIdx = data.getSeriesIndex(series);
-      
-      BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
-      if (stroke == null) {
-        stroke = (BasicStroke) xyir.getBaseStroke();
+    if ( !(plotTheseInBold.length == 0) ) {
+      for (String series : plotTheseInBold) {
+        int seriesIdx = data.getSeriesIndex(series);
+        
+        BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
+        if (stroke == null) {
+          stroke = (BasicStroke) xyir.getBaseStroke();
+        }
+        stroke = new BasicStroke( stroke.getLineWidth()*2 );
+        xyir.setSeriesStroke(seriesIdx, stroke);
+        xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
       }
-      stroke = new BasicStroke( stroke.getLineWidth()*2 );
-      xyir.setSeriesStroke(seriesIdx, stroke);
-      xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
     }
     
     xyPlot.setDomainAxis( getXAxis() );
