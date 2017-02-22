@@ -2,6 +2,7 @@ package asl.sensor.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +19,27 @@ import asl.sensor.FFTResult;
 
 public class FFTResultTest {
 
+  @Test
+  public void lowPassFilterTest() {
+    double[] timeSeries = new double[400];
+    
+    for (int i = 0; i < timeSeries.length; ++i) {
+      if (i % 2 == 0) {
+        timeSeries[i] = -10;
+      } else
+        timeSeries[i] = 10;
+    }
+    
+    double sps = 40.;
+    
+    double[] lowPassed = FFTResult.bandFilter(timeSeries, sps, 0., 1.);
+    
+    for (int i = 1; i < (lowPassed.length - 1); ++i) {
+      assertTrue( Math.abs( lowPassed[i] ) < 1. );
+    }
+    
+  }
+  
   @Test
   public void fftInversionTest() {
     double[] timeSeries = {10, 11, 12, 11, 10, 11, 12, 11, 10, 11, 12};
@@ -71,10 +93,9 @@ public class FFTResultTest {
    
     for (int i = 0; i < timeSeries.length; ++i) {
       result[i] = Math.round( inverseFrqDomn[i].getReal() );
+      
+      assertEquals(timeSeries[i], result[i], 10.);
     }
-   
-    System.out.println( Arrays.toString(timeSeries) );
-    System.out.println( Arrays.toString(result) );
     
   }
   
