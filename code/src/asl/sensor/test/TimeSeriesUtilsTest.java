@@ -41,6 +41,26 @@ public class TimeSeriesUtilsTest {
   public String filename1 = "./data/"+fileID+".512.seed";
   
   @Test
+  public void decimationTest() {
+    
+    long interval = (long) (TimeSeriesUtils.ONE_HZ_INTERVAL / 40);
+    
+    List<Number> timeSeries = new ArrayList<Number>();
+    
+    for (int i = 0; i < 160; ++i) {
+      timeSeries.add(i);
+    }
+    
+    timeSeries = TimeSeriesUtils.decimate(timeSeries, interval);
+    
+    assertEquals(timeSeries.size(), 4);
+    for (int i = 0; i < timeSeries.size(); ++i) {
+      assertEquals(timeSeries.get(i).doubleValue(), 40*i, 0.5);
+    }
+  }
+  
+  
+  @Test
   public void canGetFile() {
     try{
       FileInputStream fis = new FileInputStream(filename1);

@@ -6,14 +6,14 @@ import java.util.List;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
-import org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
-import org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
-import org.apache.commons.math3.linear.DecompositionSolver;
+import 
+org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
+import 
+org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.RealVectorFormat;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
@@ -34,7 +34,7 @@ public class OrthogonalExperiment extends Experiment {
     
     // assume the first two are the reference and the second two are the test?
     
-    // TODO: replace with calls to get Xth block in case we expand plots again
+    // we just need four timeseries, don't actually care about response
     DataBlock refLH1Block = ds.getXthLoadedBlock(1);
     DataBlock refLH2Block = ds.getXthLoadedBlock(2);
     DataBlock testLH1Block = ds.getXthLoadedBlock(3);
@@ -51,6 +51,20 @@ public class OrthogonalExperiment extends Experiment {
     FFTResult.detrend(refLH2);
     FFTResult.detrend(testLH1);
     FFTResult.detrend(testLH2);
+    
+    double sps = TimeSeriesUtils.ONE_HZ_INTERVAL / refLH1Block.getInterval();
+    double low = 0.125;
+    double high = 0.25;
+    
+    refLH1 = FFTResult.bandFilter(refLH1, sps, low, high);
+    refLH2 = FFTResult.bandFilter(refLH2, sps, low, high);
+    testLH1 = FFTResult.bandFilter(testLH1, sps, low, high);
+    testLH2 = FFTResult.bandFilter(testLH2, sps, low, high);
+    
+    refLH1 = TimeSeriesUtils.normalize(refLH1);
+    refLH2 = TimeSeriesUtils.normalize(refLH2);
+    testLH1 = TimeSeriesUtils.normalize(testLH1);
+    testLH2 = TimeSeriesUtils.normalize(testLH2);
     
     // System.out.println(refLH1);
     
@@ -96,8 +110,9 @@ public class OrthogonalExperiment extends Experiment {
     LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
     
     RealVector solution = optimum.getPoint();
-    double sum = solution.getEntry(0) + solution.getEntry(1);
-    solution = solution.mapDivide( sum );
+    double divisor = solution.getEntry(0) + solution.getEntry(1);
+        // solution.getMaxValue();
+    solution = solution.mapDivide(divisor);
     
     RealVectorFormat rvf = new RealVectorFormat("[","]",", ");
     System.out.println(rvf.format(solution));

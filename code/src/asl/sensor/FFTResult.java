@@ -31,7 +31,7 @@ public class FFTResult {
   private static final double TAPER_WIDTH = 0.10;
   
   public static double[] 
-      bandFilter(double[] toFilt, double sps, double low, double high) {
+  bandFilter(double[] toFilt, double sps, double low, double high) {
     
     Complex[] fft = simpleFFT(toFilt);
     
@@ -54,6 +54,26 @@ public class FFTResult {
     }
     
     return singleSidedInverseFFT(toInvert, toFilt.length);
+    
+  }
+  
+  public static List<Number> 
+  bandFilter(List<Number> toFilt, double sps, double low, double high) {
+    
+    double[] toFFT = new double[toFilt.size()];
+    
+    for (int i = 0; i < toFFT.length; ++i) {
+      toFFT[i] = toFilt.get(i).doubleValue();
+    }
+    
+    toFFT = bandFilter(toFFT, sps, low, high);
+    
+    List<Number> out = new ArrayList<Number>();
+    for (double value : toFFT) {
+      out.add(value);
+    }
+    
+    return out;
     
   }
   

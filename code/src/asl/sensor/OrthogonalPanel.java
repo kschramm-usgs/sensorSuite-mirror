@@ -64,9 +64,9 @@ public class OrthogonalPanel extends ExperimentPanel {
     
     StringBuilder sb = new StringBuilder();
     sb.append("Parameters for fit relative to reference sensor:\n");
-    sb.append(fit[0] + " (rel. input #1)");
+    sb.append(fit[0] + " (rel. reference #1)");
     sb.append('\n');
-    sb.append(fit[1] + " (rel. input #2)");
+    sb.append(fit[1] + " (rel. reference #2)");
     TextTitle result = new TextTitle();
     result.setText( sb.toString() );
     result.setBackgroundPaint(Color.white);

@@ -70,7 +70,7 @@ public class TimeSeriesUtils {
     // as an int
     int upf = (int)(src/gcd);
     int dnf = (int)(tgt/gcd);
-
+    
     // one valid sample rate for data is 2.5Hz
     // with 1Hz that comes out as a ratio of 5/2, which won't
     // downsample neatly in some cases so we would first upsample,
@@ -92,7 +92,7 @@ public class TimeSeriesUtils {
    * @return The downsampled series
    */
   public static List<Number> downsample(List<Number> data, int factor){
-
+    
     List<Number> downsamp = Arrays.asList(new Number[data.size()/factor]);
     for(int i=0; i < downsamp.size(); i++){
       downsamp.set( i, data.get(i*factor) ); 
@@ -481,7 +481,8 @@ public class TimeSeriesUtils {
     
     List<Number> timeseriesOut = new ArrayList<Number>();
     
-    for (double point : timeseriesFilter) {
+    for (int i = 0; i < timeseries.size(); ++i) {
+      double point = timeseriesFilter[i];
       timeseriesOut.add(point);
     }
     
@@ -515,6 +516,29 @@ public class TimeSeriesUtils {
     
   }
 
+  public static List<Number> normalize(List<Number> data) {
+    double max = Double.NEGATIVE_INFINITY;
+    double min = Double.POSITIVE_INFINITY;
+    
+    for (Number point : data) {
+      if (point.doubleValue() < min) {
+        min = point.doubleValue();
+      }
+      if (point.doubleValue() > max) {
+        max = point.doubleValue();
+      }
+    }
+    
+    for (int i = 0; i < data.size(); ++i) {
+      // scale to range (0,2) then to (-1, 1)
+      Double previous = data.get(i).doubleValue();
+      data.set(i, 2 * ( (previous - min) / (max-min) ) - 1 );
+    }
+    
+    return data;
+    
+  }
+  
   
   /**
    * Upsamples data by a multiple of passed factor, placing zeros
