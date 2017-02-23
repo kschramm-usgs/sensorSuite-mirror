@@ -188,7 +188,7 @@ public class DataStore {
    * @return Complex array of frequency values and a 
    * double array of the frequencies
    */
-  public FFTResult getPSD(int idx) {
+  public synchronized FFTResult getPSD(int idx) {
     if (!thisPSDIsCalculated[idx]) {
       // need both a response and source data
       if (!thisBlockIsSet[idx] || !thisResponseIsSet[idx]) {
@@ -375,27 +375,27 @@ public class DataStore {
       e.printStackTrace();
     }
 
-    if (numberOfBlocksSet() > 1) {
-      // loading in multiple series of data? trim to common time now
-      long start = dataBlockArray[idx].getStartTime();
-      long end = dataBlockArray[idx].getEndTime();
-      
-      // there's clearly already another block loaded, let's make sure they
-      // actually have an intersecting time range
-      for (int i = 0; i < FILE_COUNT; ++i) {
-        if (i != idx && thisBlockIsSet[i]) {
-          // whole block either comes before or after the data set
-          if (end < dataBlockArray[i].getStartTime() || 
-              start > dataBlockArray[i].getEndTime() ) {
-            thisBlockIsSet[idx] = false;
-            outToPlots[idx] = null;
-            dataBlockArray[idx] = null;
-            throw new RuntimeException("Time range does not intersect");
+    synchronized(this) {
+      if (numberOfBlocksSet() > 1) {
+        // loading in multiple series of data? trim to common time now
+        long start = dataBlockArray[idx].getStartTime();
+        long end = dataBlockArray[idx].getEndTime();
+
+        // there's clearly already another block loaded, let's make sure they
+        // actually have an intersecting time range
+        for (int i = 0; i < FILE_COUNT; ++i) {
+          if (i != idx && thisBlockIsSet[i]) {
+            // whole block either comes before or after the data set
+            if (end < dataBlockArray[i].getStartTime() || 
+                start > dataBlockArray[i].getEndTime() ) {
+              thisBlockIsSet[idx] = false;
+              outToPlots[idx] = null;
+              dataBlockArray[idx] = null;
+              throw new RuntimeException("Time range does not intersect");
+            }
           }
         }
       }
-      
-      trimToCommonTime();
     }
     
   }

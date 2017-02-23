@@ -43,7 +43,7 @@ public class TimeSeriesUtilsTest {
   @Test
   public void decimationTest() {
     
-    long interval = (long) (TimeSeriesUtils.ONE_HZ_INTERVAL / 40);
+    long interval = (TimeSeriesUtils.ONE_HZ_INTERVAL / 40);
     
     List<Number> timeSeries = new ArrayList<Number>();
     

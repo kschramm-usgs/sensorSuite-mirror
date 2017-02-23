@@ -10,10 +10,13 @@ import
 org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
 import 
 org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
+import org.apache.commons.math3.linear.DecompositionSolver;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.RealVectorFormat;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
+import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
@@ -109,15 +112,15 @@ public class OrthogonalExperiment extends Experiment {
     
     LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
     
-    RealVector solution = optimum.getPoint();
-    double divisor = solution.getEntry(0) + solution.getEntry(1);
+    RealVector fitSolution = optimum.getPoint();
+    // double divisor = solution.getEntry(0) + solution.getEntry(1);
         // solution.getMaxValue();
-    solution = solution.mapDivide(divisor);
+    // solution = solution.mapDivide(divisor);
     
     RealVectorFormat rvf = new RealVectorFormat("[","]",", ");
-    System.out.println(rvf.format(solution));
+    System.out.println(rvf.format(fitSolution));
     
-    diffs = solution.toArray();
+    diffs = fitSolution.toArray();
     
     double timeAtPoint = 0.;
     double tick = interval / TimeSeriesUtils.ONE_HZ_INTERVAL;
@@ -126,6 +129,17 @@ public class OrthogonalExperiment extends Experiment {
     
     XYSeries diffSrs = new XYSeries("Diff(" + testName + ", " + refName + ")");
     XYSeries diffRotSrs = new XYSeries("Diff(" + testName + ", Rotated Ref.)");
+    
+    double ang1 = FastMath.toDegrees( FastMath.acos(diffs[0]) );
+    double ang2 = FastMath.toDegrees( FastMath.asin(diffs[1]) );
+    double ang3 = FastMath.toDegrees( FastMath.asin(-diffs[2]) );
+    double ang4 = FastMath.toDegrees( FastMath.acos(diffs[3]) );
+    
+    double avg = ang1 + ang2 + ang3 + ang4;
+    avg /= 4;
+    
+    System.out.println(ang1+" | "+ang2+" | "+ang3+" | "+ang4);
+    System.out.println(avg);
     
     for (int i = 0; i < len; ++i) {
       double rotSubt = rhsArray[i] * scale1 + rhsArray[len + i] * scale2;

@@ -332,153 +332,7 @@ implements ActionListener, ChangeListener {
       }
       
       if ( e.getSource() == seed ) {
-        final int idx = i;
-        fc.setCurrentDirectory( new File(seedDirectory) );
-        fc.resetChoosableFileFilters();
-        fc.setDialogTitle("Load SEED file...");
-        int returnVal = fc.showOpenDialog(seed);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          final File file = fc.getSelectedFile();
-          seedDirectory = file.getParent();
-          String oldName = seedFileNames[idx].getText();
-          // TODO: clearly facing some issues with threading here
-          seedFileNames[idx].setText("LOADING: " + file.getName());
-          final String filePath = file.getAbsolutePath();
-          String filterName = "";
-          try {
-            Set<String> nameSet = TimeSeriesUtils.getMplexNameSet(filePath);
-            
-            if (nameSet.size() > 1) {
-              // more than one series in the file? prompt user for it
-              String[] names = nameSet.toArray(new String[0]);
-              Arrays.sort(names);
-              JDialog dialog = new JDialog();
-              Object result = JOptionPane.showInputDialog(
-                  dialog,
-                  "Select the subseries to load:",
-                  "Multiplexed File Selection",
-                  JOptionPane.PLAIN_MESSAGE,
-                  null, names,
-                  names[0]);
-              if (result instanceof String) {
-                filterName = (String) result;
-              } else {
-                // if the user cnacelled selecting a subseries
-                seedFileNames[idx].setText(oldName);
-                return;
-              }
-            } else {
-              // just get the first one; it's the only one in the list
-              filterName = new ArrayList<String>(nameSet).get(0);
-            }
-            
-          } catch (FileNotFoundException e1) {
-            e1.printStackTrace();
-            return;
-          }
-
-          final String immutableFilter = filterName;
-          
-          // create swingworker to load large files in the background
-          SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
-            
-            JFreeChart chart;
-            boolean caughtException = false;
-            
-            @Override
-            public Integer doInBackground() {
-              
-              try {
-                ds.setData(idx, filePath, immutableFilter);
-              } catch (RuntimeException e) {
-                caughtException = true;
-                return 1;
-              }
-
-              XYSeries ts = ds.getPlotSeries(idx);
-              chart = ChartFactory.createXYLineChart(
-                  ts.getKey().toString(),
-                  "Time",
-                  "Counts",
-                  new XYSeriesCollection(ts),
-                  PlotOrientation.VERTICAL,
-                  false, false, false);
-
-              XYPlot xyp = (XYPlot) chart.getPlot();
-              DateAxis da = new DateAxis();
-              SimpleDateFormat sdf = new SimpleDateFormat("Y.DDD.HH:mm");
-              sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-              da.setLabel("UTC Time (Year.Day.Hour:Minute)");
-              Font bold = da.getLabelFont();
-              bold = bold.deriveFont(Font.BOLD);
-              da.setLabelFont(bold);
-              da.setDateFormatOverride(sdf);
-              xyp.setDomainAxis(da);
-              xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
-
-              zooms = ds;
-              
-              return 0;
-              // setData(idx, filePath, immutableFilter);
-              // return 0;
-            }
-            
-            public void done() {
-              
-              if (caughtException) {
-                instantiateChart(idx);
-                XYPlot xyp = (XYPlot) chartPanels[idx].getChart().getPlot();
-                TextTitle result = new TextTitle();
-                String errMsg = "COULD NOT LOAD IN " + file.getName();
-                errMsg += "\nTIME RANGE DOES NOT INTERSECT";
-                result.setText(errMsg);
-                result.setBackgroundPaint(Color.red);
-                result.setPaint(Color.white);
-                XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
-                    RectangleAnchor.CENTER);
-                xyp.clearAnnotations();
-                xyp.addAnnotation(xyt);
-                seedFileNames[idx].setText("NO FILE LOADED");
-                clearButton[idx].setEnabled(true);
-                return;
-              }
-              
-              seedFileNames[idx].setText("PLOTTING: " + file.getName());
-              
-              for (int j = 0; j < DataStore.FILE_COUNT; ++j) {
-                if ( !zooms.blockIsSet(j) ) {
-                  continue;
-                }
-                resetPlotZoom(j);
-              }
-              
-              chartPanels[idx].setChart(chart);
-              chartPanels[idx].setMouseZoomable(true);
-
-              clearButton[idx].setEnabled(true);
-              
-              showRegionForGeneration();
-
-              zoomIn.setEnabled(true);
-              leftSlider.setEnabled(true);
-              rightSlider.setEnabled(true);
-              save.setEnabled(true);
-              clearAll.setEnabled(true);
-              
-              leftSlider.setValue(0);
-              rightSlider.setValue(SLIDER_MAX);
-              setVerticalBars();
-              
-              seedFileNames[idx].setText( 
-                  file.getName() + ": " + immutableFilter);
-              
-              fireStateChanged();
-            }
-          };
-          
-          worker.execute();
-          return;
-        }
+        loadData(i, seed);
       }
       
       if ( e.getSource() == resp ) {
@@ -548,6 +402,7 @@ implements ActionListener, ChangeListener {
       
       // restore original loaded datastore
       zooms = ds;
+      zooms.trimToCommonTime();
       for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
         if (zooms.getBlock(i) == null) {
           continue;
@@ -900,6 +755,157 @@ implements ActionListener, ChangeListener {
     
     setVerticalBars();
     
+  }
+  
+  private void loadData(final int idx, final JButton seed) {
+
+    fc.setCurrentDirectory( new File(seedDirectory) );
+    fc.resetChoosableFileFilters();
+    fc.setDialogTitle("Load SEED file...");
+    int returnVal = fc.showOpenDialog(seed);
+    if (returnVal == JFileChooser.APPROVE_OPTION) {
+      final File file = fc.getSelectedFile();
+      seedDirectory = file.getParent();
+      String oldName = seedFileNames[idx].getText();
+      // TODO: clearly facing some issues with threading here
+      seedFileNames[idx].setText("LOADING: " + file.getName());
+      final String filePath = file.getAbsolutePath();
+      String filterName = "";
+      try {
+        Set<String> nameSet = TimeSeriesUtils.getMplexNameSet(filePath);
+
+        if (nameSet.size() > 1) {
+          // more than one series in the file? prompt user for it
+          String[] names = nameSet.toArray(new String[0]);
+          Arrays.sort(names);
+          JDialog dialog = new JDialog();
+          Object result = JOptionPane.showInputDialog(
+              dialog,
+              "Select the subseries to load:",
+              "Multiplexed File Selection",
+              JOptionPane.PLAIN_MESSAGE,
+              null, names,
+              names[0]);
+          if (result instanceof String) {
+            filterName = (String) result;
+          } else {
+            // if the user cnacelled selecting a subseries
+            seedFileNames[idx].setText(oldName);
+            return;
+          }
+        } else {
+          // just get the first one; it's the only one in the list
+          filterName = new ArrayList<String>(nameSet).get(0);
+        }
+
+      } catch (FileNotFoundException e1) {
+        e1.printStackTrace();
+        return;
+      }
+
+      final String immutableFilter = filterName;
+
+      // create swingworker to load large files in the background
+      SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
+
+        JFreeChart chart;
+        boolean caughtException = false;
+
+        @Override
+        public Integer doInBackground() {
+
+          try {
+            ds.setData(idx, filePath, immutableFilter);
+          } catch (RuntimeException e) {
+            caughtException = true;
+            return 1;
+          }
+
+          XYSeries ts = ds.getPlotSeries(idx);
+          chart = ChartFactory.createXYLineChart(
+              ts.getKey().toString(),
+              "Time",
+              "Counts",
+              new XYSeriesCollection(ts),
+              PlotOrientation.VERTICAL,
+              false, false, false);
+
+          XYPlot xyp = (XYPlot) chart.getPlot();
+          DateAxis da = new DateAxis();
+          SimpleDateFormat sdf = new SimpleDateFormat("Y.DDD.HH:mm");
+          sdf.setTimeZone( TimeZone.getTimeZone("UTC") );
+          da.setLabel("UTC Time (Year.Day.Hour:Minute)");
+          Font bold = da.getLabelFont();
+          bold = bold.deriveFont(Font.BOLD);
+          da.setLabelFont(bold);
+          da.setDateFormatOverride(sdf);
+          xyp.setDomainAxis(da);
+          xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
+
+          zooms = ds;
+          zooms.trimToCommonTime();
+
+          return 0;
+          // setData(idx, filePath, immutableFilter);
+          // return 0;
+        }
+
+        public void done() {
+
+          if (caughtException) {
+            instantiateChart(idx);
+            XYPlot xyp = (XYPlot) chartPanels[idx].getChart().getPlot();
+            TextTitle result = new TextTitle();
+            String errMsg = "COULD NOT LOAD IN " + file.getName();
+            errMsg += "\nTIME RANGE DOES NOT INTERSECT";
+            result.setText(errMsg);
+            result.setBackgroundPaint(Color.red);
+            result.setPaint(Color.white);
+            XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
+                RectangleAnchor.CENTER);
+            xyp.clearAnnotations();
+            xyp.addAnnotation(xyt);
+            seedFileNames[idx].setText("NO FILE LOADED");
+            clearButton[idx].setEnabled(true);
+            return;
+          }
+
+          seedFileNames[idx].setText("PLOTTING: " + file.getName());
+
+          for (int j = 0; j < DataStore.FILE_COUNT; ++j) {
+            if ( !zooms.blockIsSet(j) ) {
+              continue;
+            }
+            resetPlotZoom(j);
+          }
+
+          chartPanels[idx].setChart(chart);
+          chartPanels[idx].setMouseZoomable(true);
+
+          clearButton[idx].setEnabled(true);
+
+          showRegionForGeneration();
+
+          zoomIn.setEnabled(true);
+          leftSlider.setEnabled(true);
+          rightSlider.setEnabled(true);
+          save.setEnabled(true);
+          clearAll.setEnabled(true);
+
+          leftSlider.setValue(0);
+          rightSlider.setValue(SLIDER_MAX);
+          setVerticalBars();
+
+          seedFileNames[idx].setText( 
+              file.getName() + ": " + immutableFilter);
+
+          fireStateChanged();
+        }
+      };
+
+      worker.execute();
+      return;
+    }
   }
   
 }
