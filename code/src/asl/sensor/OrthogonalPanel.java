@@ -61,12 +61,13 @@ public class OrthogonalPanel extends ExperimentPanel {
     XYPlot xyp = (XYPlot) chart.getPlot();
     
     double[] fit = ( (OrthogonalExperiment) expResult ).getSolutionParams();
+    double angle = ( (OrthogonalExperiment) expResult ).getFitAngle();
     
     StringBuilder sb = new StringBuilder();
-    sb.append("Parameters for fit relative to reference sensor:\n");
-    sb.append(fit[0] + " (rel. reference #1)");
+    sb.append("Calculated rotation angle from least-squares best fit:\n");
+    sb.append(angle);
     sb.append('\n');
-    sb.append(fit[1] + " (rel. reference #2)");
+    
     TextTitle result = new TextTitle();
     result.setText( sb.toString() );
     result.setBackgroundPaint(Color.white);

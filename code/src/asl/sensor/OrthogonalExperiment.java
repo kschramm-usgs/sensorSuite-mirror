@@ -1,6 +1,7 @@
 package asl.sensor;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
@@ -23,6 +24,7 @@ import org.jfree.data.xy.XYSeries;
 public class OrthogonalExperiment extends Experiment {
 
   double[] diffs;
+  double angle;
   
   public OrthogonalExperiment() {
     super();
@@ -55,19 +57,19 @@ public class OrthogonalExperiment extends Experiment {
     FFTResult.detrend(testLH1);
     FFTResult.detrend(testLH2);
     
+    refLH1 = TimeSeriesUtils.normalize(refLH1);
+    refLH2 = TimeSeriesUtils.normalize(refLH2);
+    testLH1 = TimeSeriesUtils.normalize(testLH1);
+    testLH2 = TimeSeriesUtils.normalize(testLH2);
+    
     double sps = TimeSeriesUtils.ONE_HZ_INTERVAL / refLH1Block.getInterval();
-    double low = 0.125;
-    double high = 0.25;
+    double low = 1./8;
+    double high = 1./4;
     
     refLH1 = FFTResult.bandFilter(refLH1, sps, low, high);
     refLH2 = FFTResult.bandFilter(refLH2, sps, low, high);
     testLH1 = FFTResult.bandFilter(testLH1, sps, low, high);
     testLH2 = FFTResult.bandFilter(testLH2, sps, low, high);
-    
-    refLH1 = TimeSeriesUtils.normalize(refLH1);
-    refLH2 = TimeSeriesUtils.normalize(refLH2);
-    testLH1 = TimeSeriesUtils.normalize(testLH1);
-    testLH2 = TimeSeriesUtils.normalize(testLH2);
     
     // System.out.println(refLH1);
     
@@ -92,13 +94,14 @@ public class OrthogonalExperiment extends Experiment {
     
     MultivariateJacobianFunction mjf = new MultivariateJacobianFunction() {
       public Pair<RealVector, RealMatrix> value(final RealVector point) {
+        
         RealVector result = lhsMatrix.operate(point);
         return new Pair<RealVector, RealMatrix>(result, lhsMatrix);
       }
     };
     
     LeastSquaresProblem lsp = new LeastSquaresBuilder().
-        start(new double[] {0.,0.,0.,0.}).
+        start(new double[] {1.,0.,0.,1.}).
         model(mjf).
         target(rhsVector).
         maxEvaluations(Integer.MAX_VALUE).
@@ -130,16 +133,37 @@ public class OrthogonalExperiment extends Experiment {
     XYSeries diffSrs = new XYSeries("Diff(" + testName + ", " + refName + ")");
     XYSeries diffRotSrs = new XYSeries("Diff(" + testName + ", Rotated Ref.)");
     
-    double ang1 = FastMath.toDegrees( FastMath.acos(diffs[0]) );
-    double ang2 = FastMath.toDegrees( FastMath.asin(diffs[1]) );
-    double ang3 = FastMath.toDegrees( FastMath.asin(-diffs[2]) );
-    double ang4 = FastMath.toDegrees( FastMath.acos(diffs[3]) );
+    double[] angs = new double[4];
     
-    double avg = ang1 + ang2 + ang3 + ang4;
-    avg /= 4;
+    angs[0] = FastMath.toDegrees( FastMath.acos(diffs[0]) ) % 360;
+    angs[1] = FastMath.toDegrees( FastMath.asin(diffs[1]) ) % 360;
+    angs[2] = FastMath.toDegrees( -FastMath.asin(diffs[2]) ) % 360;
+    angs[3] = FastMath.toDegrees( FastMath.acos(diffs[3]) ) % 360;
     
-    System.out.println(ang1+" | "+ang2+" | "+ang3+" | "+ang4);
-    System.out.println(avg);
+    
+    double avg = 0.;
+    for (int i = 0; i < angs.length; ++i) {
+      if ( angs[i] < 0 ) {
+        angs[i] += 360; // it's not modulo in java; results can be negative
+      }
+      
+      avg += angs[i];
+    }
+    
+    avg /= angs.length;
+    
+    angle = avg;
+    
+    double sDev = 0.;
+    
+    for (double ang : angs) {
+      sDev += Math.pow( avg - ang, 2 );
+    }
+    
+    sDev = Math.sqrt(sDev / 4);
+    
+    System.out.println(Arrays.toString(angs));
+    System.out.println(sDev);
     
     for (int i = 0; i < len; ++i) {
       double rotSubt = rhsArray[i] * scale1 + rhsArray[len + i] * scale2;
@@ -160,6 +184,10 @@ public class OrthogonalExperiment extends Experiment {
 
   public double[] getSolutionParams() {
     return diffs;
+  }
+  
+  public double getFitAngle() {
+    return angle;
   }
   
 
