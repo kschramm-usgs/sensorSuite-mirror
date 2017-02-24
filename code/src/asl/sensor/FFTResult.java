@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -287,9 +290,12 @@ public class FFTResult {
   public static XYSeries getHighNoiseModel(boolean freqSpace) {
     XYSeries xys = new XYSeries("NHNM");
     try {
-      BufferedReader fr = new BufferedReader(
-                            new FileReader(
-                              new File(".resources/NHNM.txt") ) );
+      ClassLoader cl = FFTResult.class.getClassLoader();
+      
+      InputStream is = 
+          FFTResult.class.getClassLoader().getResourceAsStream("NLNM.txt");
+      
+      BufferedReader fr = new BufferedReader( new InputStreamReader(is) );
       String str = fr.readLine();
       while (str != null) {
         String[] values = str.split("\\s+");
@@ -329,9 +335,14 @@ public class FFTResult {
     // TODO: define NLNM as an array or something in a different class?
     XYSeries xys = new XYSeries("NLNM");
     try {
-      BufferedReader fr = new BufferedReader(
-                            new FileReader(
-                              new File(".resources/NLNM.txt") ) );
+      
+      ClassLoader cl = FFTResult.class.getClassLoader();
+      URL url = cl.getResource("NLNM.txt");
+      
+      InputStream is = 
+          FFTResult.class.getClassLoader().getResourceAsStream("NLNM.txt");
+      
+      BufferedReader fr = new BufferedReader( new InputStreamReader(is) );
       String str = fr.readLine();
       while (str != null) {
         String[] values = str.split("\\s+");

@@ -485,8 +485,6 @@ implements ChangeListener {
         
         displayInfoMessage("Data loaded...drawing chart");
         
-        System.out.println(xysc.getSeriesCount());
-        
         populateChart(xysc);
         
         // obviously, set the chart

@@ -42,6 +42,13 @@
 
 <!--COMPILE-->
     <target name="compile" depends="init" description="Compile the source [depends = init]">
+
+	<copy todir="${build.root}">
+	     <fileset dir="${src.dir}">
+	          <exclude name="**/*.java"/>
+	     </fileset>
+	</copy>
+
         <javac srcdir="${src.dir}" destdir="${build.root}" encoding="utf-8" debug="true" includeantruntime="no">
             <classpath refid="compile.class.path"/>
             <compilerarg value="-Xlint" />

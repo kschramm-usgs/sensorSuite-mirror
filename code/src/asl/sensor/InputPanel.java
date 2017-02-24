@@ -368,7 +368,7 @@ implements ActionListener, ChangeListener {
         String resultStr = (String) result;
         
         if ( respFileMap.containsKey(resultStr) ) {
-          // TODO: load string
+          // TODO: load response
         } else {
           fc.setCurrentDirectory( new File(respDirectory) );
           fc.resetChoosableFileFilters();
