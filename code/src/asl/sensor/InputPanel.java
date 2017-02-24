@@ -16,6 +16,9 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -342,21 +345,49 @@ implements ActionListener, ChangeListener {
       
       if ( e.getSource() == resp ) {
         // don't need a new thread because resp loading is pretty prompt
-        fc.setCurrentDirectory( new File(respDirectory) );
-        fc.resetChoosableFileFilters();
-        fc.setDialogTitle("Load response file...");
-        int returnVal = fc.showOpenDialog(resp);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fc.getSelectedFile();
-          respDirectory = file.getParent();
-          ds.setResponse(i, file.getAbsolutePath() );
-          zooms.setResponse(i, file.getAbsolutePath() );
-          respFileNames[i].setText( file.getName() );
-          clear.setEnabled(true);
-          clearAll.setEnabled(true);
-          
-          fireStateChanged();
+        Map<String, String> respFileMap = new HashMap<String, String>();
+        
+        // TODO: populate map with compiled data from responses
+        
+        List<String> names = 
+            new ArrayList<String>( respFileMap.keySet() );
+        
+        String custom = "Load custom response...";
+        
+        names.add(custom);
+        
+        JDialog dialog = new JDialog();
+        Object result = JOptionPane.showInputDialog(
+            dialog,
+            "Select a response to load:",
+            "RESP File Selection (provided or custom)",
+            JOptionPane.PLAIN_MESSAGE,
+            null, names.toArray(),
+            names.get( names.size() - 1 ) );
+        
+        String resultStr = (String) result;
+        
+        if ( respFileMap.containsKey(resultStr) ) {
+          // TODO: load string
+        } else {
+          fc.setCurrentDirectory( new File(respDirectory) );
+          fc.resetChoosableFileFilters();
+          fc.setDialogTitle("Load response file...");
+          int returnVal = fc.showOpenDialog(resp);
+          if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File file = fc.getSelectedFile();
+            respDirectory = file.getParent();
+            ds.setResponse(i, file.getAbsolutePath() );
+            zooms.setResponse(i, file.getAbsolutePath() );
+            respFileNames[i].setText( file.getName() );
+            clear.setEnabled(true);
+            clearAll.setEnabled(true);
+            
+            fireStateChanged();
+          }
         }
+        
+
         return;
       }
       
@@ -727,7 +758,6 @@ implements ActionListener, ChangeListener {
    * Handles changes in value by the sliders below the charts
    */
   public void stateChanged(ChangeEvent e) {
-    // TODO Auto-generated method stub
     
     int leftSliderValue = leftSlider.getValue();
     int rightSliderValue = rightSlider.getValue();
@@ -772,7 +802,7 @@ implements ActionListener, ChangeListener {
       final File file = fc.getSelectedFile();
       seedDirectory = file.getParent();
       String oldName = seedFileNames[idx].getText();
-      // TODO: clearly facing some issues with threading here
+
       seedFileNames[idx].setText("LOADING: " + file.getName());
       final String filePath = file.getAbsolutePath();
       String filterName = "";
