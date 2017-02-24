@@ -291,9 +291,7 @@ public class FFTResult {
     XYSeries xys = new XYSeries("NHNM");
     try {
       ClassLoader cl = FFTResult.class.getClassLoader();
-      
-      InputStream is = 
-          FFTResult.class.getClassLoader().getResourceAsStream("NLNM.txt");
+      InputStream is = cl.getResourceAsStream("NLNM.txt");
       
       BufferedReader fr = new BufferedReader( new InputStreamReader(is) );
       String str = fr.readLine();
@@ -337,10 +335,8 @@ public class FFTResult {
     try {
       
       ClassLoader cl = FFTResult.class.getClassLoader();
-      URL url = cl.getResource("NLNM.txt");
       
-      InputStream is = 
-          FFTResult.class.getClassLoader().getResourceAsStream("NLNM.txt");
+      InputStream is = cl.getResourceAsStream("NLNM.txt");
       
       BufferedReader fr = new BufferedReader( new InputStreamReader(is) );
       String str = fr.readLine();

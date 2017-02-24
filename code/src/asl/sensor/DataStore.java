@@ -430,6 +430,13 @@ public class DataStore {
     }
   }
   
+  public void setResponse(int idx, InstrumentResponse ir) {
+    responses[idx] = ir;
+    thisResponseIsSet[idx] = true;
+    thisPSDIsCalculated[idx] = false;
+    powerSpectra[idx] = null;
+  }
+  
   /**
    * Alias to blockIsSet function
    * @param idx Index of a datablock to check

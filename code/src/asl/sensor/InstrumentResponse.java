@@ -88,6 +88,10 @@ public class InstrumentResponse {
     parseResponseFile(filename);
   }
   
+  public InstrumentResponse(BufferedReader br) throws IOException {
+    parserDriver(br);
+  }
+  
   /**
    * Apply the values of this response object to a list of frequencies and
    * return the resulting (complex) frequencies
@@ -99,8 +103,6 @@ public class InstrumentResponse {
     Complex[] resps = new Complex[frequencies.length];
     
     // precalculate gain for scaling the response
-    // TODO: use sensitivity if differs from gain product by more than 10%
-    // (apparently an issue with Q680 detectors)
     double scale = 1.;
     // stage 0 is sensitivity (supposed to be product of all gains)
     // we will get scale by multiplying all gain stages except for it
@@ -251,133 +253,8 @@ public class InstrumentResponse {
     
     BufferedReader br;
     try {
-      // <gain stage, gain value>
-      Map<Integer, Double> gainMap = new HashMap<Integer, Double>();
       br = new BufferedReader( new FileReader(filename) );
-      String line = br.readLine();
-      
-      int gainStage = -1;
-      Complex[] polesArr = null;
-      Complex[] zerosArr = null;
-      
-      while (line != null) {
-        
-        if( line.length() == 0 ) {
-          // empty line? need to skip it
-          line = br.readLine();
-          continue;
-        }
-        
-        if (line.charAt(0) == '#') {
-          // comment -- skip
-          line = br.readLine();
-          continue;
-        } else {
-          // the components of each line, assuming split by 2 or more spaces
-          String[] words = line.split("\\s\\s+");
-          String hexIdentifier = words[0];
-          
-          switch (hexIdentifier) {
-          case "B053F03":
-            // transfer function type specified
-            // first character of third component of words
-            switch ( words[2].charAt(0) ) {
-            case 'A':
-              transferType = TransferFunction.LAPLACIAN;
-              break;
-            case 'B':
-              transferType = TransferFunction.LINEAR;
-              break;
-            default:
-              // TODO: want to make sure that we're setting this right
-              // because if a Fourier is specified, we should set to LAPLACIAN
-              transferType = TransferFunction.LAPLACIAN;
-            }
-            break;
-          case "B053F05":
-            // parse the units of the transfer function (usually velocity)
-            // first *word* of the third component of words
-            // TODO support more unit types
-            String[] unitString = words[2].split("\\s");
-            String unit = unitString[0];
-            switch (unit.toLowerCase()) {
-            case "m/s":
-              unitType = Unit.VELOCITY;
-              break;
-            case "m/s**2":
-              unitType = Unit.ACCELERATION;
-              break;
-            default:
-              String e = "Unit type was given as " + unit + ".\n";
-              e += "Nonstandard unit, or not a velocity or acceleration";
-              throw new IOException(e);
-            }
-            break;
-          case "B053F07":
-            // this is the normalization factor A0
-            // this is the entire third word of the line, as a double
-            normalization = Double.parseDouble(words[2]);
-            break;
-          case "B053F08":
-            // this is the normalization frequency
-            // once again the entire third word of the line as double
-            normalFreq = Double.parseDouble(words[2]);
-            break;
-          case "B053F09":
-            // the number of zeros listed in reponse pole/zero lines
-            // again, this is the entire third word, as an int
-            int numZero = Integer.parseInt(words[2]);
-            zerosArr = new Complex[numZero];
-            break;
-          case "B053F14":
-            // same as above line but for the number of poles
-            int numPole = Integer.parseInt(words[2]);
-            polesArr = new Complex[numPole];
-            break;
-          case "B053F10-13":
-            // these are the lists of response zeros, in order with index,
-            // real (double), imaginary (double), & corresponding error terms
-            parseTermAsComplex(line,zerosArr);
-            break;
-          case "B053F15-18":
-            // as above but for poles
-            parseTermAsComplex(line, polesArr);
-            break;
-          case "B058F03":
-            // gain stage sequence number; again, full third word as int
-            // this is used to map the gain value to an index
-            gainStage = Integer.parseInt(words[2]);
-            break;
-          case "B058F04":
-            
-            // should come immediately and only after the gain sequence number
-            // again, it's the third full word, this time as a double
-            // map allows us to read in the stages in whatever order
-            // in the event they're not sorted in the response file
-            // and allows us to have basically arbitrarily many stages
-            gainMap.put( gainStage, Double.parseDouble(words[2]) );
-            
-            // reset the stage to prevent data being overwritten
-            gainStage = -1;
-            break;
-          }
-          
-          line = br.readLine();
-        } // else
-        
-      } // end of file-read loop (EOF reached, line is null)
-      
-      // turn map of gain stages into list
-      List<Integer> stages = new ArrayList<Integer>( gainMap.keySet() );
-      Collections.sort( stages );
-      gain = new ArrayList<Double>();
-      for (int stage : stages) {
-        gain.add( gainMap.get(stage) );
-      }
-      // turn pole/zero arrays into lists
-      zeros = Arrays.asList(zerosArr);
-      poles = Arrays.asList(polesArr);
-      
+      parserDriver(br);
       br.close();
     } catch (FileNotFoundException e) {
       // TODO Auto-generated catch block
@@ -386,7 +263,134 @@ public class InstrumentResponse {
     
   }
   
-  
+  private void parserDriver(BufferedReader br) throws IOException {
+    
+    String line = br.readLine();
+    
+    // <gain stage, gain value>
+    Map<Integer, Double> gainMap = new HashMap<Integer, Double>();
+    int gainStage = -1;
+    Complex[] polesArr = null;
+    Complex[] zerosArr = null;
+    
+    while (line != null) {
+      
+      if( line.length() == 0 ) {
+        // empty line? need to skip it
+        line = br.readLine();
+        continue;
+      }
+      
+      if (line.charAt(0) == '#') {
+        // comment -- skip
+        line = br.readLine();
+        continue;
+      } else {
+        // the components of each line, assuming split by 2 or more spaces
+        String[] words = line.split("\\s\\s+");
+        String hexIdentifier = words[0];
+        
+        switch (hexIdentifier) {
+        case "B053F03":
+          // transfer function type specified
+          // first character of third component of words
+          switch ( words[2].charAt(0) ) {
+          case 'A':
+            transferType = TransferFunction.LAPLACIAN;
+            break;
+          case 'B':
+            transferType = TransferFunction.LINEAR;
+            break;
+          default:
+            // TODO: want to make sure that we're setting this right
+            // because if a Fourier is specified, we should set to LAPLACIAN
+            transferType = TransferFunction.LAPLACIAN;
+          }
+          break;
+        case "B053F05":
+          // parse the units of the transfer function (usually velocity)
+          // first *word* of the third component of words
+          // TODO support more unit types
+          String[] unitString = words[2].split("\\s");
+          String unit = unitString[0];
+          switch (unit.toLowerCase()) {
+          case "m/s":
+            unitType = Unit.VELOCITY;
+            break;
+          case "m/s**2":
+            unitType = Unit.ACCELERATION;
+            break;
+          default:
+            String e = "Unit type was given as " + unit + ".\n";
+            e += "Nonstandard unit, or not a velocity or acceleration";
+            throw new IOException(e);
+          }
+          break;
+        case "B053F07":
+          // this is the normalization factor A0
+          // this is the entire third word of the line, as a double
+          normalization = Double.parseDouble(words[2]);
+          break;
+        case "B053F08":
+          // this is the normalization frequency
+          // once again the entire third word of the line as double
+          normalFreq = Double.parseDouble(words[2]);
+          break;
+        case "B053F09":
+          // the number of zeros listed in reponse pole/zero lines
+          // again, this is the entire third word, as an int
+          int numZero = Integer.parseInt(words[2]);
+          zerosArr = new Complex[numZero];
+          break;
+        case "B053F14":
+          // same as above line but for the number of poles
+          int numPole = Integer.parseInt(words[2]);
+          polesArr = new Complex[numPole];
+          break;
+        case "B053F10-13":
+          // these are the lists of response zeros, in order with index,
+          // real (double), imaginary (double), & corresponding error terms
+          parseTermAsComplex(line,zerosArr);
+          break;
+        case "B053F15-18":
+          // as above but for poles
+          parseTermAsComplex(line, polesArr);
+          break;
+        case "B058F03":
+          // gain stage sequence number; again, full third word as int
+          // this is used to map the gain value to an index
+          gainStage = Integer.parseInt(words[2]);
+          break;
+        case "B058F04":
+          
+          // should come immediately and only after the gain sequence number
+          // again, it's the third full word, this time as a double
+          // map allows us to read in the stages in whatever order
+          // in the event they're not sorted in the response file
+          // and allows us to have basically arbitrarily many stages
+          gainMap.put( gainStage, Double.parseDouble(words[2]) );
+          
+          // reset the stage to prevent data being overwritten
+          gainStage = -1;
+          break;
+        }
+        
+        line = br.readLine();
+      } // else
+      
+    } // end of file-read loop (EOF reached, line is null)
+    
+    // turn map of gain stages into list
+    List<Integer> stages = new ArrayList<Integer>( gainMap.keySet() );
+    Collections.sort( stages );
+    gain = new ArrayList<Double>();
+    for (int stage : stages) {
+      gain.add( gainMap.get(stage) );
+    }
+    // turn pole/zero arrays into lists
+    zeros = Arrays.asList(zerosArr);
+    poles = Arrays.asList(polesArr);
+  }
   
 }
 
