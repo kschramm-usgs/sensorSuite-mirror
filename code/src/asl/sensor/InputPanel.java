@@ -133,7 +133,7 @@ implements ActionListener, ChangeListener {
     GridBagConstraints gbc = new GridBagConstraints();
    
     ds = new DataStore();
-    zooms = ds;
+    zooms = new DataStore();
     
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;
@@ -325,8 +325,13 @@ implements ActionListener, ChangeListener {
         seedFileNames[i].setText("NO FILE LOADED");
         respFileNames[i].setText("NO FILE LOADED");
         
+        // plot all valid range of loaded-in data or else
         // disable clearAll button if there's no other data loaded in
         clearAll.setEnabled( ds.isAnythingSet() );
+        zooms = new DataStore(ds);
+        zooms.trimToCommonTime();
+        
+        showRegionForGeneration();
         
         fireStateChanged();
       }
@@ -401,13 +406,13 @@ implements ActionListener, ChangeListener {
     if ( e.getSource() == zoomOut ) {
       
       // restore original loaded datastore
-      zooms = ds;
+      zooms = new DataStore(ds);
       zooms.trimToCommonTime();
       for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
         if (zooms.getBlock(i) == null) {
           continue;
         }
-        this.resetPlotZoom(i);
+        resetPlotZoom(i);
       }
       
       leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
@@ -430,7 +435,7 @@ implements ActionListener, ChangeListener {
    */
   public void clearAllData() {
     ds = new DataStore();
-    zooms = ds;
+    zooms = new DataStore();
     
     zoomIn.setEnabled(false);
     zoomOut.setEnabled(false);
@@ -702,18 +707,18 @@ implements ActionListener, ChangeListener {
       long start = getMarkerLocation(db, leftSlider.getValue() );
       long end = getMarkerLocation(db, rightSlider.getValue() );
       zooms = new DataStore(ds, start, end);
-      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-        if (zooms.getBlock(i) == null) {
-          continue;
-        }
-        resetPlotZoom(i);
-      }
       leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
+      zoomOut.setEnabled(true);
     }
     
+    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+      if (zooms.getBlock(i) == null) {
+        continue;
+      }
+      resetPlotZoom(i);
+    }
 
     setVerticalBars();
-    zoomOut.setEnabled(true);
     
   }
 
@@ -842,7 +847,7 @@ implements ActionListener, ChangeListener {
           xyp.setDomainAxis(da);
           xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
 
-          zooms = ds;
+          zooms = new DataStore(ds);
           zooms.trimToCommonTime();
 
           return 0;
@@ -872,20 +877,24 @@ implements ActionListener, ChangeListener {
 
           seedFileNames[idx].setText("PLOTTING: " + file.getName());
 
-          for (int j = 0; j < DataStore.FILE_COUNT; ++j) {
-            if ( !zooms.blockIsSet(j) ) {
-              continue;
-            }
-            resetPlotZoom(j);
-          }
-
           chartPanels[idx].setChart(chart);
           chartPanels[idx].setMouseZoomable(true);
 
           clearButton[idx].setEnabled(true);
 
-          showRegionForGeneration();
+          zooms = new DataStore(ds);
+          zooms.trimToCommonTime();
+          for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+            if ( !zooms.blockIsSet(i) ) {
+              continue;
+            }
+            resetPlotZoom(i);
+          }
+          
+          leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
+          setVerticalBars();
 
+          zoomOut.setEnabled(false);
           zoomIn.setEnabled(true);
           leftSlider.setEnabled(true);
           rightSlider.setEnabled(true);

@@ -65,6 +65,37 @@ public class DataStore {
    }
   }
   
+  public DataStore(DataStore ds) {
+    dataBlockArray = new DataBlock[FILE_COUNT];
+    responses = new InstrumentResponse[FILE_COUNT];
+    powerSpectra = new FFTResult[FILE_COUNT];
+    thisBlockIsSet = new boolean[FILE_COUNT];
+    thisResponseIsSet = new boolean[FILE_COUNT];
+    thisPSDIsCalculated = new boolean[FILE_COUNT];
+    outToPlots = new XYSeries[FILE_COUNT];
+    boolean[] setBlocks = ds.dataIsSet();
+    boolean[] setResps = ds.responsesAreSet();
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (setBlocks[i]) {
+        dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
+        thisBlockIsSet[i] = true;
+        outToPlots[i] = ds.getPlotSeries(i);
+      }
+      if (setResps[i]) {
+        responses[i] = ds.getResponse(i);
+        thisResponseIsSet[i] = true;
+      }
+      if (setBlocks[i] && setResps[i]) {
+        thisPSDIsCalculated[i] = ds.isPSDSet(i);
+          if (thisPSDIsCalculated[i]) {
+            powerSpectra[i] = ds.getPSD(i);
+          }
+      } else {
+        thisPSDIsCalculated[i] = false;
+      }
+    }
+  }
+  
   /**
    * Create a copy of a datablock object that has been trimmed to a
    * smaller range for the use of showing plot zooms, etc.
@@ -73,38 +104,20 @@ public class DataStore {
    * @param end End time to trim to
    */
   public DataStore(DataStore ds, long start, long end) {
-    
-    dataBlockArray = new DataBlock[FILE_COUNT];
-    responses = new InstrumentResponse[FILE_COUNT];
-    powerSpectra = new FFTResult[FILE_COUNT];
-    thisBlockIsSet = new boolean[FILE_COUNT];
-    thisResponseIsSet = new boolean[FILE_COUNT];
-    thisPSDIsCalculated = new boolean[FILE_COUNT];
+    this(ds);
     for (int i = 0; i < FILE_COUNT; ++i) {
-      boolean[] setBlocks = ds.dataIsSet();
-      boolean[] setResps = ds.responsesAreSet();
-      if (setBlocks[i]) {
-        dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
-        thisBlockIsSet[i] = true;
-      }
-      if (setResps[i]) {
-        responses[i] = ds.getResponse(i);
-        thisResponseIsSet[i] = true;
-      }
-      if (setBlocks[i] && setResps[i]) {
+      if (thisPSDIsCalculated[i]) {
         DataBlock db = dataBlockArray[i];
         long blockStart = db.getStartTime();
         long blockEnd = db.getEndTime();
         if (start == blockStart && end == blockEnd) {
-          thisPSDIsCalculated[i] = ds.isPSDSet(i);
-          if (thisPSDIsCalculated[i]) {
-            powerSpectra[i] = ds.getPSD(i);
-          }
+          powerSpectra[i] = ds.getPSD(i);
         }
       } else {
         thisPSDIsCalculated[i] = false;
       }
     }
+    
     this.trimAll(start, end);
   }
   
@@ -377,7 +390,7 @@ public class DataStore {
 
     synchronized(this) {
       if (numberOfBlocksSet() > 1) {
-        // loading in multiple series of data? trim to common time now
+        // don't trim data here, that way we don't lose data
         long start = dataBlockArray[idx].getStartTime();
         long end = dataBlockArray[idx].getEndTime();
 
@@ -455,8 +468,9 @@ public class DataStore {
     long firstEndTime = Long.MAX_VALUE;
     
     // first pass to get the limits of the time data
-    for (DataBlock data : dataBlockArray) {
-      if (data == null) {
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      DataBlock data = dataBlockArray[i];
+      if (!thisBlockIsSet[i]) {
         continue;
       }
       long start = data.getStartTime();
@@ -471,10 +485,10 @@ public class DataStore {
     
     // second pass to trim the data to the limits given
     for (int i = 0; i < FILE_COUNT; ++i) {
-      DataBlock data = dataBlockArray[i];
-      if (data == null) {
+      if (!thisBlockIsSet[i]) {
         continue;
       }
+      DataBlock data = dataBlockArray[i];
       data.trim(lastStartTime, firstEndTime);
       outToPlots[i] = data.toXYSeries();
     }
