@@ -371,7 +371,7 @@ implements ActionListener, ChangeListener {
         String resultStr = (String) result;
         
         if ( respFileMap.containsKey(resultStr) ) {
-          // TODO: load response
+          // TODO: load response mappings (need responses first)
           String fname = respFileMap.get(resultStr);
           ClassLoader cl = InputPanel.class.getClassLoader();
           InputStream is = cl.getResourceAsStream(fname);

@@ -11,18 +11,16 @@ import
 org.apache.commons.math3.fitting.leastsquares.LevenbergMarquardtOptimizer;
 import 
 org.apache.commons.math3.fitting.leastsquares.MultivariateJacobianFunction;
-import org.apache.commons.math3.linear.DecompositionSolver;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.RealVectorFormat;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
 public class OrthogonalExperiment extends Experiment {
 
+  final static double TAU = Math.PI * 2;
+  
   double[] diffs;
   double angle;
   
@@ -33,7 +31,6 @@ public class OrthogonalExperiment extends Experiment {
 
   @Override
   protected void backend(final DataStore ds, final boolean freqSpace) {
-    // TODO auto generated method stub
     
     long interval = ds.getXthLoadedBlock(1).getInterval();
     
@@ -71,10 +68,98 @@ public class OrthogonalExperiment extends Experiment {
     testLH1 = FFTResult.bandFilter(testLH1, sps, low, high);
     testLH2 = FFTResult.bandFilter(testLH2, sps, low, high);
     
-    // System.out.println(refLH1);
-    
-    // will assume all vectors are trimmed to the same size
     int len = refLH1.size();
+    
+    double[] refYArr = new double[len];
+    double[] refXArr = new double[len];
+    double[] testYArr = new double[len];
+    double[] testXArr = new double[len];
+    
+    for (int i = 0; i < len; ++i) {
+      refYArr[i] = refLH1.get(i).doubleValue();
+      refXArr[i] = refLH2.get(i).doubleValue();
+      testYArr[i] = testLH1.get(i).doubleValue();
+      testXArr[i] = testLH2.get(i).doubleValue();
+    }
+    
+    RealVector refX = MatrixUtils.createRealVector(refXArr);
+    RealVector refY = MatrixUtils.createRealVector(refYArr);
+    RealVector testX = MatrixUtils.createRealVector(testXArr);
+    RealVector testY = MatrixUtils.createRealVector(testYArr);
+    
+    MultivariateJacobianFunction jacobian = new MultivariateJacobianFunction() {
+      public Pair<RealVector, RealMatrix> value(final RealVector point) {
+        double theta = ( point.getEntry(0) % TAU );
+        
+        if (theta < 0) {
+          theta += TAU; 
+        }
+        
+        double sinTheta = Math.sin(theta);
+        double cosTheta = Math.cos(theta);
+        
+        RealVector curValue = 
+            refX.mapMultiply(sinTheta).add( refY.mapMultiply(cosTheta) );
+        
+        RealMatrix jbn = MatrixUtils.createRealMatrix(len, 1);
+        RealVector jbnValue = 
+            refX.mapMultiply(cosTheta).add( refY.mapMultiply(-sinTheta) );
+        jbn.setColumnVector(0, jbnValue);
+        
+        return new Pair<RealVector, RealMatrix>(curValue, jbn);
+      }
+    };
+    
+    LeastSquaresProblem findAngleX = new LeastSquaresBuilder().
+        start(new double[] {Math.PI / 2}).
+        model(jacobian).
+        target(testX).
+        maxEvaluations(Integer.MAX_VALUE).
+        maxIterations(Integer.MAX_VALUE).
+        lazyEvaluation(false).
+        build();
+    
+    LeastSquaresProblem findAngleY = new LeastSquaresBuilder().
+        start(new double[] {0}).
+        model(jacobian).
+        target(testY).
+        maxEvaluations(Integer.MAX_VALUE).
+        maxIterations(Integer.MAX_VALUE).
+        lazyEvaluation(false).
+        build();
+        
+    LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
+        withCostRelativeTolerance(1.0E-15).
+        withParameterRelativeTolerance(1.0E-15);
+    
+    LeastSquaresOptimizer.Optimum optimumX = optimizer.optimize(findAngleX);
+    LeastSquaresOptimizer.Optimum optimumY = optimizer.optimize(findAngleY);
+    
+    RealVector solvedX = optimumX.getPoint();
+    RealVector solvedY = optimumY.getPoint();
+    RealVector angleBetween = solvedY.subtract(solvedX);
+    
+    angle = Math.toDegrees( angleBetween.getEntry(0) );
+    angle = ( (angle % 360) + 360 ) % 360;
+    // get the INTERNAL angle of the two components
+    if (angle > 180) {
+      angle = (360-angle) % 360;
+    }
+    diffs = new double[2];
+    diffs[0] = Math.toDegrees( solvedX.getEntry(0) );
+    diffs[0] = ( (diffs[0] % 360) + 360 ) % 360;
+    diffs[1] = Math.toDegrees( solvedY.getEntry(0) );
+    diffs[1] = ( (diffs[1] % 360) + 360 ) % 360;
+    
+    // if x-plot chart way above y-plot, plot negative angle
+    if (diffs[1] > diffs[0]) {
+      diffs[1] -= 360;
+    }
+    
+    System.out.println( Arrays.toString(diffs) );
+    
+    /*
+    // will assume all vectors are trimmed to the same size
     double[] rhsArray = new double[len * 2];
     double[][] lhsArray = new double[len * 2][4];
     
@@ -109,10 +194,6 @@ public class OrthogonalExperiment extends Experiment {
         lazyEvaluation(false).
         build();
     
-    LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
-        withCostRelativeTolerance(1.0E-15).
-        withParameterRelativeTolerance(1.0E-15);
-    
     LeastSquaresOptimizer.Optimum optimum = optimizer.optimize(lsp);
     
     RealVector fitSolution = optimum.getPoint();
@@ -125,61 +206,29 @@ public class OrthogonalExperiment extends Experiment {
     
     diffs = fitSolution.toArray();
     
-    double timeAtPoint = 0.;
-    double tick = interval / TimeSeriesUtils.ONE_HZ_INTERVAL;
+
     double scale1 = diffs[0];
     double scale2 = diffs[1];
+    */
+    
+    double timeAtPoint = 0.;
+    double tick = interval / TimeSeriesUtils.ONE_HZ_INTERVAL;
     
     XYSeries diffSrs = new XYSeries("Diff(" + testName + ", " + refName + ")");
     XYSeries diffRotSrs = new XYSeries("Diff(" + testName + ", Rotated Ref.)");
     
-    double[] angs = new double[4];
-    
-    angs[0] = FastMath.toDegrees( FastMath.acos(diffs[0]) ) % 360;
-    angs[1] = FastMath.toDegrees( FastMath.asin(diffs[1]) ) % 360;
-    angs[2] = FastMath.toDegrees( -FastMath.asin(diffs[2]) ) % 360;
-    angs[3] = FastMath.toDegrees( FastMath.acos(diffs[3]) ) % 360;
-    
-    
-    double avg = 0.;
-    for (int i = 0; i < angs.length; ++i) {
-      if ( angs[i] < 0 ) {
-        angs[i] += 360; // it's not modulo in java; results can be negative
-      }
-      
-      avg += angs[i];
-    }
-    
-    avg /= angs.length;
-    
-    angle = avg;
-    
-    double sDev = 0.;
-    
-    for (double ang : angs) {
-      sDev += Math.pow( avg - ang, 2 );
-    }
-    
-    sDev = Math.sqrt(sDev / 4);
-    
-    System.out.println(Arrays.toString(angs));
-    System.out.println(sDev);
+    RealVector diffLH1 = testY.subtract(refY);
+    RealVector diffComponents = jacobian.value(solvedY).getFirst();
     
     for (int i = 0; i < len; ++i) {
-      double rotSubt = rhsArray[i] * scale1 + rhsArray[len + i] * scale2;
-      
-      double unrotatedDiff = lhsArray[i][0] - rhsArray[i];
-      double rotatedDiff = lhsArray[i][0] - rotSubt;
-      
-      diffSrs.add(timeAtPoint, unrotatedDiff);
-      diffRotSrs.add(timeAtPoint, rotatedDiff);
+      diffSrs.add (timeAtPoint, diffLH1.getEntry(i) );
+      diffRotSrs.add( timeAtPoint, diffComponents.getEntry(i) );
       
       timeAtPoint += tick;
     }
     
     xySeriesData.addSeries(diffSrs);
     xySeriesData.addSeries(diffRotSrs);
-    
   }
 
   public double[] getSolutionParams() {

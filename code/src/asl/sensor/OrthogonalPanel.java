@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.Arrays;
 
 import org.jfree.chart.annotations.XYTitleAnnotation;
 import org.jfree.chart.axis.NumberAxis;
@@ -64,9 +65,11 @@ public class OrthogonalPanel extends ExperimentPanel {
     double angle = ( (OrthogonalExperiment) expResult ).getFitAngle();
     
     StringBuilder sb = new StringBuilder();
-    sb.append("Calculated rotation angle from least-squares best fit:\n");
+    sb.append("Calculated angle between non-reference sensors:\n");
     sb.append(angle);
     sb.append('\n');
+    sb.append("Offset angles for LH1 and LH2 sensor outputs:\n");
+    sb.append( Arrays.toString(fit) );
     
     TextTitle result = new TextTitle();
     result.setText( sb.toString() );
