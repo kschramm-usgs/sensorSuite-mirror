@@ -140,7 +140,7 @@ public class NoisePanel extends ExperimentPanel {
    * Initially called function to calculate self-noise when data is passed in
    */
   @Override
-  public void updateData(DataStore ds) {
+  public void updateData(final DataStore ds) {
     
     // TODO: replace with try-catch, put this check in the experiment backend?
     if (ds.numberFullySet() < 3) {
@@ -169,9 +169,8 @@ public class NoisePanel extends ExperimentPanel {
    * @param freqSpace Boolean matching whether or not to plot in units of
    * frequency if true (Hz) or in units of interval if false (s) 
    */
-  private void updateDriver(DataStore ds, boolean freqSpace) {
+  private void updateDriver(final DataStore ds, boolean freqSpace) {
     
-    final DataStore dsImmutable = ds;
     final boolean freqSpaceImmutable = freqSpace;
     
     displayInfoMessage("Calculating data...");
@@ -179,7 +178,7 @@ public class NoisePanel extends ExperimentPanel {
     SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
       @Override
       public Integer doInBackground() {
-        expResult.setData(dsImmutable, freqSpaceImmutable);
+        expResult.setData(ds, freqSpaceImmutable);
         
         XYSeriesCollection xysc = expResult.getData();
         

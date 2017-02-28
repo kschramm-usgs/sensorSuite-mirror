@@ -68,7 +68,7 @@ public class StepPanel extends ExperimentPanel {
    * the parameters used in the plot calculations
    */
   @Override
-  public void updateData(DataStore ds) {
+  public void updateData(final DataStore ds) {
     
     // TODO: threading?
     

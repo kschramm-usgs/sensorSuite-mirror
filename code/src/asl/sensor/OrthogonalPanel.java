@@ -52,7 +52,7 @@ public class OrthogonalPanel extends ExperimentPanel {
   }
 
   @Override
-  public void updateData(DataStore ds) {
+  public void updateData(final DataStore ds) {
     // TODO Auto-generated method stub
     
     expResult.setData(ds, false);

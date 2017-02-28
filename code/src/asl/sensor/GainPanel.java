@@ -375,7 +375,7 @@ implements ChangeListener {
    * when data is loaded in
    */
   @Override
-  public void updateData(DataStore ds) {
+  public void updateData(final DataStore ds) {
     
     setDataNames(ds);
     

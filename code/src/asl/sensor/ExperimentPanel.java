@@ -317,7 +317,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
    * the corresponding data
    * @param ds DataStore object containing seed and resp files
    */
-  public abstract void updateData(DataStore ds);
+  public abstract void updateData(final DataStore ds);
   
   // details of how to run updateData are left up to the implementing panel
   // however, it is advised to wrap the code inside a swingworker,

@@ -51,9 +51,9 @@ public class TimeSeriesUtils {
    * @param src The source frequency as interval between samples (microseconds)
    * @return A timeseries decimated to the correct frequency
    */
-  public static List<Number> decimate(List<Number> data, long src){
+  public static List<Number> decimate(List<Number> data, long src, long tgt){
 
-    long tgt = ONE_HZ_INTERVAL; // target frequency
+    // long tgt = ONE_HZ_INTERVAL; // target frequency
     // a sample lower than 1Hz frq has longer time between samples
     // since it's an inverse relationship and all
     if(src >= tgt){

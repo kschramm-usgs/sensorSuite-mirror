@@ -327,7 +327,6 @@ public class FFTResult {
    * @return Plottable data series representing the NLNM
    */
   public static XYSeries getLowNoiseModel(boolean freqSpace) {
-    // TODO: define NLNM as an array or something in a different class?
     XYSeries xys = new XYSeries("NLNM");
     try {
       
@@ -667,9 +666,9 @@ public class FFTResult {
     
   }
   
-  private Complex[] transform; // the FFT data
+  final private Complex[] transform; // the FFT data
   
-  private double[] freqs; // array of frequencies matching the fft data
+  final private double[] freqs; // array of frequencies matching the fft data
   
   /**
    * Instantiate the structure holding an FFT and its frequency range

@@ -621,6 +621,7 @@ implements ActionListener, ChangeListener {
     
 
     showRegionForGeneration();
+    zooms.matchIntervals();
     return zooms;
   }
 

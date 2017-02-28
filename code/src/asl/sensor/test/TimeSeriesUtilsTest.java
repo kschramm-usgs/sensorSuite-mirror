@@ -43,7 +43,8 @@ public class TimeSeriesUtilsTest {
   @Test
   public void decimationTest() {
     
-    long interval = (TimeSeriesUtils.ONE_HZ_INTERVAL / 40);
+    long interval40Hz = (TimeSeriesUtils.ONE_HZ_INTERVAL / 40);
+    long interval = TimeSeriesUtils.ONE_HZ_INTERVAL;
     
     List<Number> timeSeries = new ArrayList<Number>();
     
@@ -51,7 +52,7 @@ public class TimeSeriesUtilsTest {
       timeSeries.add(i);
     }
     
-    timeSeries = TimeSeriesUtils.decimate(timeSeries, interval);
+    timeSeries = TimeSeriesUtils.decimate(timeSeries, interval40Hz, interval);
     
     assertEquals(timeSeries.size(), 4);
     for (int i = 0; i < timeSeries.size(); ++i) {

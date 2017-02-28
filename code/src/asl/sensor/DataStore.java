@@ -453,11 +453,31 @@ public class DataStore {
    * @param end End time, relative to epoch (nanoseconds)
    */
   public void trimAll(long start, long end) {
-    for (DataBlock data : dataBlockArray) {
-      if (data != null) {
-        data.trim(start, end);
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if (thisBlockIsSet[i]) {
+        getBlock(i).trim(start, end);
       }
     }
+  }
+  
+  /**
+   * Get lowest-frequency data and downsample all data to it
+   */
+  public void matchIntervals() {
+    long interval = 0;
+    // first loop to get lowest-frequency data
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if ( thisBlockIsSet[i] && getBlock(i).getInterval() > interval ) {
+        interval = getBlock(i).getInterval();
+      }
+    }
+    // second loop to downsample
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if ( thisBlockIsSet[i] && getBlock(i).getInterval() != interval ) {
+        getBlock(i).resample(interval);
+      }
+    }
+    
   }
   
   /**

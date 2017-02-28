@@ -97,12 +97,11 @@ public class DataBlock {
    * Replace the time series data with a new list of Java numeric types.
    * This is the preferred call when data is resampled as it requires a new
    * interval to be specified, so that the old sample rate does not persist.
-   * @param data New time series data, such as the result of decimation
    * @param interval The new interval (time between samples in microseconds)
    */
-  public void resample(List<Number> data, long interval) {
-    this.data = data;
-    this.interval = interval;
+  public void resample(long newInterval) {
+    data = TimeSeriesUtils.decimate(data, interval, newInterval);
+    interval = newInterval;
   }
 
   /**
