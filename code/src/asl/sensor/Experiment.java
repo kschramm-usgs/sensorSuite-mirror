@@ -127,7 +127,7 @@ public abstract class Experiment {
       }
       
       if ( data.getInterval() != interval ) {
-        throw new RuntimeException("Interval mismatch on datasets.");
+        ds.matchIntervals();
       }
     }
     
