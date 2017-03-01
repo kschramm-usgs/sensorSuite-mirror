@@ -7,6 +7,7 @@
     <property name="project.main"               value="asl.sensor.SensorSuite" />
     <property name="project.archive"            value="SensorTestSuite.jar" />
     <property name="src.dir"                    location="src"/>
+    <property name="res.dir"                    location="src/asl/sensor/resources"/>
     <property name="libs.dir"                   location="lib"/>
     <property name="build.root"                 location="build"/>
     <property name="manifest.file"              value="${src.dir}/META-INF/MANIFEST.MF" />
@@ -42,6 +43,13 @@
 
 <!--COMPILE-->
     <target name="compile" depends="init" description="Compile the source [depends = init]">
+
+	<copy todir="${build.root}">
+	     <fileset dir="${res.dir}">
+	          <exclude name="**/*.java"/>
+	     </fileset>
+	</copy>
+
         <javac srcdir="${src.dir}" destdir="${build.root}" encoding="utf-8" debug="true" includeantruntime="no">
             <classpath refid="compile.class.path"/>
             <compilerarg value="-Xlint" />
@@ -70,12 +78,17 @@
 
     
 <!--JAR-->
-    <target name="jar" depends="compile, libraries" description="generate the distribution" >
+    <target name="jar" depends="compile, libraries" description="generate the distribution [depends = compile, libraries]" >
         <jar jarfile="${project.archive}" basedir="${build.root}">
             <manifest>
                 <attribute name="Main-Class" value="${project.main}"/>
             </manifest>
         </jar>
+    </target>
+
+<!--RUN-->
+    <target name="run" description="Run the jar file; requires ant jar to have already been run" >
+        <java jar="SensorTestSuite.jar" fork = "true" />
     </target>
 
 

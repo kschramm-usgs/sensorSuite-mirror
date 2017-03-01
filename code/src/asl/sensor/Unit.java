@@ -27,15 +27,6 @@ public enum Unit {
   }
   
   /**
-   * Returns the power of seconds in the denominator (i.e., 2 for acceleration,
-   * which has units of seconds-squared in the denominator)
-   * @return The exponent for the seconds of this unit
-   */
-  public int getSecondsUnit() {
-    return this.secondsExponent;
-  }
-  
-  /**
    * Returns the number of times that data must be differentiated
    * in order to convert from an inputted unit to this unit (i.e., if the 
    * passed parameter is VELOCITY and this is ACCELERATION, this returns 1, 
@@ -48,6 +39,15 @@ public enum Unit {
    */
   public int getDifferentiations(Unit convertFrom) {
     return this.secondsExponent - convertFrom.getSecondsUnit();
+  }
+  
+  /**
+   * Returns the power of seconds in the denominator (i.e., 2 for acceleration,
+   * which has units of seconds-squared in the denominator)
+   * @return The exponent for the seconds of this unit
+   */
+  public int getSecondsUnit() {
+    return this.secondsExponent;
   }
   
 }

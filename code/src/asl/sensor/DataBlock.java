@@ -7,6 +7,7 @@ import org.jfree.data.xy.XYSeries;
 
 /**
  * Holds the time series and metadata for a miniSEED file loaded in by the user
+ * as well response files for the sensor associated with that miniseed
  * @author akearns
  *
  */
@@ -18,6 +19,17 @@ public class DataBlock {
   private long interval;
   private String name;
   private long startTime;
+  
+  /**
+   * Creates a copy of a given DataBlock, which has the same parameters
+   * @param in The datablock to be copied
+   */
+  public DataBlock(DataBlock in) {
+    setInterval(in.getInterval());
+    setData( new ArrayList<Number>( in.getData() ) );
+    name = in.getName();
+    setStartTime(in.getStartTime());
+  }
   
   /**
    * Creates a new DataBlock based on the given parameters
@@ -34,17 +46,33 @@ public class DataBlock {
     setStartTime(timeIn);
   }
   
+
   /**
-   * Creates a copy of a given DataBlock, which has the same parameters
-   * @param in The datablock to be copied
+   * Returns the time series object as a list of Java numeric types.
+   * The underlying data can be any numeric type, likely Doubles or Integers
+   * @return A list representing the miniSEED time series
    */
-  public DataBlock(DataBlock in) {
-    setInterval(in.getInterval());
-    setData( new ArrayList<Number>( in.getData() ) );
-    name = in.getName();
-    setStartTime(in.getStartTime());
+  public List<Number> getData() {
+    return data;
   }
   
+  /**
+   * Returns the end time of the data, used mainly in getting range bounds
+   * for things like setting end markers, etc.
+   * @return The time between two samples of data in microseconds
+   */
+  public long getEndTime() {
+    return startTime + ( interval * data.size() );
+  }
+  
+  /**
+   * Get the interval of the data. The timestamp for a given data point in the
+   * block can be calculated by startTime + (index * interval).
+   * @return The time between two samples of data in microseconds
+   */
+  public long getInterval() {
+    return interval;
+  }
 
   /**
    * Get the name of the dataset (used as a key in dataseries, etc.)
@@ -54,34 +82,70 @@ public class DataBlock {
   public String getName() {
     return name;
   }
-  
+
   /**
-   * Trim data to a given range (start time, end time)
-   * @param start Start time to trim to in nanoseconds from epoch
-   * @param end End time to trim to in nanoseconds from epoch
+   * Gives the start timestamp of the miniSEED data. This is a long compatible
+   * with the Java System Library's Date and Calendar objects and expressed
+   * as microseconds from the UTC epoch
+   * @return When the miniSEED data logging started in microseconds 
    */
-  public void trim(long start, long end) {
-    int startIdx = 0, endIdx = data.size();
-    if (startTime < start) {
-      long diff = start - startTime;
-      // how many data points in the time range we're removing? 
-      startIdx = (int) (diff / interval); // (start offset = 0)
-    }
-    long endTime = startTime + ( interval * data.size() );
-    if ( end < endTime ) {
-      long diff = endTime - end;
-      // diff/interval is number of points from ending index, need to subtract
-      // (quick reminder that upper index of sublist method is exclusive)
-      endIdx = endIdx - (int) (diff / interval); // (end offset = size)
-    }
-    if ( startIdx == 0 && endIdx >= data.size() ){
-      return;
-    }
-    data = new ArrayList<Number>( data.subList(startIdx, endIdx) );
-    startTime = start;
-    
+  public long getStartTime() {
+    return startTime;
+  }
+
+  /**
+   * Replace the time series data with a new list of Java numeric types.
+   * This is the preferred call when data is resampled as it requires a new
+   * interval to be specified, so that the old sample rate does not persist.
+   * @param interval The new interval (time between samples in microseconds)
+   */
+  public void resample(long newInterval) {
+    System.out.println(name + " SAMPLE RATE CHANGE");
+    System.out.println("Interval target: " + newInterval + ", was " + interval);
+    System.out.println("OLD SIZE: " + data.size());
+    data = TimeSeriesUtils.decimate(data, interval, newInterval);
+    System.out.println("NEW SIZE: " + data.size());
+    interval = newInterval;
+  }
+
+  /**
+   * Replace the time series data with a new list of Java numeric types.
+   * If the data has been resampled somehow, the resample method is preferred,
+   * as it requires a new interval to be resampled
+   * @param dataIn New time series data, as from a miniSEED file
+   */
+  public void setData(List<Number> dataIn) {
+    data = dataIn;
+  }
+
+  /**
+   * Used to set the interval of the data (to be used, for example, when the
+   * time series has had decimation applied)
+   * @param interval The time between two samples of data in microseconds
+   */
+  public void setInterval(long interval) {
+    this.interval = interval;
+  }
+
+  /**
+   * Set the start timestamp of the data with a given long, expressed as
+   * microseconds from UTC epoch (compatible with Java System Library Date and
+   * Calendar objects)
+   * @param startTime The start time in microseconds
+   */
+  public void setStartTime(long startTime) {
+    this.startTime = startTime;
   }
   
+  /**
+   * Alias to function to get size of list in this data block.
+   * Equivalent to calling getData().size()
+   * @return The size of the list in this structure
+   */
+  public int size() {
+    return data.size();
+  }
+
   /**
    * Converts this object's time series data into a form plottable by a chart.
    * The format is a pair of data: the time of a sample and that sample's value.
@@ -109,83 +173,53 @@ public class DataBlock {
     
     return out;
   }
-
-  /**
-   * Gives the start timestamp of the miniSEED data. This is a long compatible
-   * with the Java System Library's Date and Calendar objects and expressed
-   * as microseconds from the UTC epoch
-   * @return When the miniSEED data logging started in microseconds 
-   */
-  public long getStartTime() {
-    return startTime;
-  }
-
-  /**
-   * Set the start timestamp of the data with a given long, expressed as
-   * microseconds from UTC epoch (compatible with Java System Library Date and
-   * Calendar objects)
-   * @param startTime The start time in microseconds
-   */
-  public void setStartTime(long startTime) {
-    this.startTime = startTime;
-  }
-
-  /**
-   * Get the interval of the data. The timestamp for a given data point in the
-   * block can be calculated by startTime + (index * interval). This
-   * @return The time between two samples of data in microseconds
-   */
-  public long getInterval() {
-    return interval;
-  }
-
-  /**
-   * Used to set the interval of the data (to be used, for example, when the
-   * time series has had decimation applied)
-   * @param interval The time between two samples of data in microseconds
-   */
-  public void setInterval(long interval) {
-    this.interval = interval;
-  }
-
-  /**
-   * Returns the time series object as a list of Java numeric types.
-   * The underlying data can be any numeric type, likely Doubles or Integers
-   * @return A list representing the miniSEED time series
-   */
-  public List<Number> getData() {
-    return data;
-  }
-
-  /**
-   * Replace the time series data with a new list of Java numeric types.
-   * If the data has been resampled somehow, the resample method is preferred,
-   * as it requires a new interval to be resampled
-   * @param dataIn New time series data, as from a miniSEED file
-   */
-  public void setData(List<Number> dataIn) {
-    data = dataIn;
-  }
   
   /**
-   * Replace the time series data with a new list of Java numeric types.
-   * This is the preferred call when data is resampled as it requires a new
-   * interval to be specified, so that the old sample rate does not persist.
-   * @param data New time series data, such as the result of decimation
-   * @param interval The new interval (time between samples in microseconds)
+   * Checks to see if the sensor's calibration is wired positively or not
+   * (i.e., if the result of a step-calibration is upside-down)
+   * @return 
    */
-  public void resample(List<Number> data, long interval) {
-    this.data = data;
-    this.interval = interval;
+  public boolean needsSignFlip() {
+    
+    double max = Math.abs( data.get(0).doubleValue() );
+    int idx = 0;
+    
+    for (int i = 1; i < data.size() / 2; ++i) {
+      if ( Math.abs( data.get(i).doubleValue() ) > max ) {
+        max = Math.abs( data.get(i).doubleValue() );
+        idx = i;
+      }
+    }
+    
+    return Math.signum( data.get(idx).doubleValue() ) < 0;
+    
   }
 
   /**
-   * Alias to function to get size of list in this data block.
-   * Equivalent to calling getData().size()
-   * @return The size of the list in this structure
+   * Trim data to a given range (start time, end time)
+   * @param start Start time to trim to in nanoseconds from epoch
+   * @param end End time to trim to in nanoseconds from epoch
    */
-  public int size() {
-    return data.size();
+  public void trim(long start, long end) {
+    int startIdx = 0, endIdx = data.size();
+    if (startTime < start) {
+      long diff = start - startTime;
+      // how many data points in the time range we're removing? 
+      startIdx = (int) (diff / interval); // (start offset = 0)
+    }
+    long endTime = getEndTime();
+    if ( end < endTime ) {
+      long diff = endTime - end;
+      // diff/interval is number of points from ending index, need to subtract
+      // (quick reminder that upper index of sublist method is exclusive)
+      endIdx = endIdx - (int) (diff / interval); // (end offset = size)
+    }
+    if ( startIdx == 0 && endIdx >= data.size() ){
+      return;
+    }
+    data = new ArrayList<Number>( data.subList(startIdx, endIdx) );
+    startTime = start;
+    
   }
   
 }

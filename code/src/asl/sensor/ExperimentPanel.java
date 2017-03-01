@@ -9,7 +9,12 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
@@ -20,6 +25,7 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.annotations.XYTitleAnnotation;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
@@ -28,7 +34,14 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
 /**
- * Panel used to display the data produced from a specified sensor test
+ * Panel used to display the data produced from a specified sensor test.
+ * This primarily exists as a chartpanel, plus a filechooser and button used
+ * in saving the chart held in the panel to a file.
+ * 
+ * A default construction of the GUI components exists in this class, but
+ * implementing methods are suggested to override this in their constructor
+ * (see existing classes such as GainPanel and NoisePanel for examples).
+ * 
  * @author akearns
  *
  */
@@ -49,13 +62,28 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   protected Experiment expResult;
           // used to get the actual data from loaded-in files
   
+  // axes and titles must be instantiated in implementing functino
+  protected String xAxisTitle, yAxisTitle;
+  protected ValueAxis xAxis, yAxis;
+  
+  protected String[] plotTheseInBold; // given in the implementing function
+  // this is a String because bolded names are intended to be fixed
+  
+  protected Map<String, Color> seriesColorMap;
+  protected Set<String> seriesDashedSet;
+  // these are map/set because they are based on the data read in, not fixed
+  
   public ExperimentPanel(ExperimentEnum exp) {
+    
+    seriesColorMap = new HashMap<String, Color>();
+    seriesDashedSet = new HashSet<String>();
+    plotTheseInBold = new String[]{};
     
     expType = exp;
     expResult = ExperimentFactory.createExperiment(exp);
     
     chart = ChartFactory.createXYLineChart(expType.getName(), 
-        expResult.getXTitle(), expResult.getYTitle(), null);
+        "", "", null);
     chartPanel = new ChartPanel(chart);
     // chartPanel.setMouseZoomable(false);
     
@@ -63,6 +91,11 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     
     save = new JButton("Save plot (PNG)");
     save.addActionListener(this);
+    
+    // basic layout for components (recommended to override in concrete class)
+    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
+    this.add(chartPanel);
+    this.add(save);
   }
   
   /**
@@ -92,12 +125,39 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     }
   }
   
+  /**
+   * Gets the axes to be used to plot the data 
+   */
+  protected void applyAxesToChart() {
+    XYPlot xyp = chart.getXYPlot();
+    xyp.setDomainAxis( getXAxis() );
+    xyp.setRangeAxis( getYAxis() );
+  }
+  
+  /**
+   * Overlay an error message in the event of an exception or other issue
+   * @param errMsg Text of the message to be displayed
+   */
   public void displayErrorMessage(String errMsg) {
     XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
     TextTitle result = new TextTitle();
     result.setText(errMsg);
     result.setBackgroundPaint(Color.red);
     result.setPaint(Color.white);
+    XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
+        RectangleAnchor.CENTER);
+    xyp.clearAnnotations();
+    xyp.addAnnotation(xyt);
+  }
+  
+  /**
+   * Overlay informational text, such as extra results and statistics for plots
+   * @param infoMsg
+   */
+  public void displayInfoMessage(String infoMsg) {
+    XYPlot xyp = (XYPlot) chartPanel.getChart().getPlot();
+    TextTitle result = new TextTitle();
+    result.setText(infoMsg);
     XYTitleAnnotation xyt = new XYTitleAnnotation(0.5, 0.5, result,
         RectangleAnchor.CENTER);
     xyp.clearAnnotations();
@@ -128,49 +188,136 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     return bi;
   }
 
-  public boolean isTwoInput() {
-    return expType.isTwoInput();
+  /**
+   * Default x-axis return function.
+   * Though the x-axis is a local variable, some panels may have multiple unit
+   * types for the x-axis (i.e., for units of seconds vs. Hz); accessing
+   * the x-axis object through this function allows for overrides allowing for
+   * more flexibility.
+   * @return
+   */
+  public ValueAxis getXAxis() {
+    return xAxis;
   }
   
+
   /**
-   * Defines the type of test results this panel's chart will display
-   * @param expT The type of experiment (refer to the enum for valid types)
-   * @param expR The experiment to be performed
-   * @return A chart displaying the data from the performed experiment
+   * Default x-axis title return. Displays the string used for the x-axis, 
+   * which is set when the panel's chart is constructed.
+   * @return
    */
-  public JFreeChart populateChart(XYSeriesCollection data) {
+  public String getXTitle() {
+    return xAxisTitle;
+  }
+
+  /**
+   * Default y-axis return function. As with x-axis, designed to be overridden
+   * for charts that may use multiple scales
+   * @return
+   */
+  public ValueAxis getYAxis() {
+    return yAxis;
+  }
+
+
+  public String getYTitle() {
+    return yAxisTitle;
+  }
+
+
+  /**
+   * Function check to make sure that the experiment has enough data to calc.
+   * Used to prevent the main window generate button from being active when
+   * there isn't enough data loaded in.
+   * @param ds DataStore holding read-in seed and resp data
+   * @return True if there is enough data to run this experiment
+   */
+  public boolean haveEnoughData(DataStore ds) {
+    if ( ds.numberFullySet() < expType.fullDataNeeded() ) {
+      return false;
+    }
+    if ( ds.numberOfBlocksSet() < expType.blocksNeeded() ) {
+      return false;
+    }
     
-    String xTitle = expResult.getXTitle();
+    return true;
+    
+  }
+
+  /**
+   * Used to plot the results of a backend function from an experiment
+   * using a collection of XYSeries mapped by strings.
+   * If the color and dashed maps have been updated by the concrete class
+   * extending this one, the corresponding XYSeries will have their data
+   * displayed in the specified color or dashing, etc.
+   * @param data collection of XYSeries to plot
+   */
+  protected void populateChart(XYSeriesCollection data) {
     
     JFreeChart chart = ChartFactory.createXYLineChart(
         expType.getName(),
-        xTitle,
-        expResult.getYTitle(),
+        getXTitle(),
+        getYTitle(),
         data,
         PlotOrientation.VERTICAL,
         true, // include legend
         false, 
         false);
     
-    // apply bolding to the components that require it (i.e., NLNM time series)
+    // apply effects to the components that require it (i.e., NLNM time series)
     XYPlot xyPlot = chart.getXYPlot();
-    String[] bold = expResult.getBoldSeriesNames();
     XYItemRenderer xyir = xyPlot.getRenderer();
-    for (String series : bold) {
+    
+    // force certain colors and whether or not a line should be dashed
+    for ( String series : seriesColorMap.keySet() ) {
       int seriesIdx = data.getSeriesIndex(series);
-      BasicStroke stroke = (BasicStroke) xyir.getBaseStroke();
-      stroke = new BasicStroke( stroke.getLineWidth()*2 );
-      xyir.setSeriesStroke(seriesIdx, stroke);
-      xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
+      xyir.setSeriesPaint( seriesIdx, seriesColorMap.get(series) );
+      
+      if ( seriesDashedSet.contains(series) ) {
+        xyir.setSeriesPaint( seriesIdx, seriesColorMap.get(series).darker() );
+        
+        BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
+        if (stroke == null) {
+          stroke = (BasicStroke) xyir.getBaseStroke();
+        }
+        float width = stroke.getLineWidth();
+        int join = stroke.getLineJoin();
+        int cap = stroke.getEndCap();
+        
+        float[] dashing = new float[]{1,4};
+        
+        stroke = new BasicStroke(width, cap, join, 10f, dashing, 0f);
+        xyir.setSeriesStroke(seriesIdx, stroke);
+      }
+      
+    }
+
+    if ( !(plotTheseInBold.length == 0) ) {
+      for (String series : plotTheseInBold) {
+        int seriesIdx = data.getSeriesIndex(series);
+        
+        BasicStroke stroke = (BasicStroke) xyir.getSeriesStroke(seriesIdx);
+        if (stroke == null) {
+          stroke = (BasicStroke) xyir.getBaseStroke();
+        }
+        stroke = new BasicStroke( stroke.getLineWidth()*2 );
+        xyir.setSeriesStroke(seriesIdx, stroke);
+        xyir.setSeriesPaint(seriesIdx, new Color(0,0,0) );
+      }
     }
     
-    xyPlot.setDomainAxis( expResult.getXAxis() );
-    xyPlot.setRangeAxis( expResult.getYAxis() );
+    xyPlot.setDomainAxis( getXAxis() );
+    xyPlot.setRangeAxis( getYAxis() );
     
-    return chart;
+    this.chart = chart;
   }
   
-  public abstract void updateData(DataStore ds, FFTResult[] psd);
+  /**
+   * Function template for sending input to a backend fucntion and collecting
+   * the corresponding data
+   * @param ds DataStore object containing seed and resp files
+   */
+  public abstract void updateData(final DataStore ds);
   
   // details of how to run updateData are left up to the implementing panel
   // however, it is advised to wrap the code inside a swingworker,

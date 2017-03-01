@@ -1,15 +1,12 @@
 package asl.sensor;
 
-import java.awt.Font;
-
 import org.apache.commons.math3.complex.Complex;
-import org.jfree.chart.axis.LogarithmicAxis;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.ValueAxis;
 import org.jfree.data.xy.XYSeries;
 
 /**
  * Produces the data for a self-noise test. Calculates PSD to get cross-power.
+ * These calculations are based around the 3-component self noise calculation
+ * rather than the 9-component.
  * Based on code in the seedscan timeseries package, see
  * https://github.com/usgs/seedscan/tree/master/src/main/java/asl/timeseries
  * @author akearns, jholland 
@@ -17,55 +14,14 @@ import org.jfree.data.xy.XYSeries;
  */
 public class NoiseExperiment extends Experiment {
   
-  private NumberAxis freqAxis;
-  private String freqAxisTitle;
+
   
   /**
    * Instantiates a noise experiment -- axis titles and scales
    */
   public NoiseExperiment() {
     super();
-    xAxisTitle = "Period (s)";
-    freqAxisTitle = "Frequency (Hz)";
-    yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
-    xAxis = new LogarithmicAxis(xAxisTitle);
-    freqAxis = new LogarithmicAxis(freqAxisTitle);
-    yAxis = new NumberAxis(yAxisTitle);
-    yAxis.setAutoRange(true);
-    ( (NumberAxis) yAxis).setAutoRangeIncludesZero(false);
-    Font bold = xAxis.getLabelFont().deriveFont(Font.BOLD);
-    xAxis.setLabelFont(bold);
-    yAxis.setLabelFont(bold);
-    freqAxis.setLabelFont(bold);
-  }
-  
-  @Override
-  public ValueAxis getXAxis() {
-    return getXAxis(false);
-  }
-  
-  @Override
-  public String getXTitle() {
-    return getXTitle(false);
-  }
-  
-  public ValueAxis getXAxis(boolean freqSpace) {
-    if (freqSpace) {
-      return freqAxis;
-    }
-    return xAxis;
-  }
-  
-  public String getXTitle(boolean freqSpace) {
-    if (freqSpace) {
-      return freqAxisTitle; 
-    }
-    return xAxisTitle;
-  }
-  
-  @Override
-  public String[] getBoldSeriesNames() {
-    return new String[]{"NLNM"};
+
   }
 
   /**
@@ -82,28 +38,41 @@ public class NoiseExperiment extends Experiment {
    * remaining terms for the formula for the self-noise results.
    */
   @Override
-  void backend(DataStore ds, FFTResult[] psd, boolean freqSpace) {
+  protected void backend(final DataStore ds, final boolean freqSpace) {
     
-    DataBlock[] dataIn = ds.getData();
-    InstrumentResponse[] responses = ds.getResponses();
+    int[] indices = new int[3]; // first 3 fully-loaded data sets
+    
+    // get the first (index.length) seed/resp pairs. while we expect to
+    // have the first three plots be the ones with loaded data, in general
+    // it is probably better to keep the program flexible against valid input
+    for (int i = 0; i < indices.length; ++i) {
+      // xth fully loaded function begins at 1
+      indices[i] = ds.getXthFullyLoadedIndex(i+1);
+    }
+    
+    DataBlock[] dataIn = new DataBlock[indices.length];
+    InstrumentResponse[] responses = new InstrumentResponse[indices.length];
+    
+    for (int i = 0; i < indices.length; ++i) {
+      dataIn[i] = ds.getBlock(indices[i]);
+      responses[i] = ds.getResponse(indices[i]);
+    }
     
     xySeriesData.setAutoWidth(true);
     
     // TODO: make sure (i.e., when reading in data) that series lengths' match
     // rather than throwing the exceptions here
-    Complex[][] spectra = new Complex[psd.length][];
-    Complex[][] freqRespd = new Complex[psd.length][];
+    Complex[][] spectra = new Complex[3][];
     double[] freqs = new double[1]; // initialize to prevent later errors
     
     // initialize the values above to have relevant data
-    for (int i = 0; i < dataIn.length; ++i) {
-      spectra[i] = psd[i].getFFT();
-      InstrumentResponse ir = responses[i];
-      freqs = psd[i].getFreqs();
-      freqRespd[i] = ir.applyResponseToInput( freqs );
+    for (int i = 0; i < indices.length; ++i) {
+      // note that frequency is applied during the ds
+      spectra[i] = ds.getPSD(indices[i]).getFFT();
+      freqs = ds.getPSD(indices[i]).getFreqs();
     }
     
-    addToPlot(dataIn, psd, freqSpace, xySeriesData);
+    addToPlot(ds, freqSpace, indices, xySeriesData);
     
     // spectra[i] is crosspower pii, now to get pij terms for i!=j
     FFTResult fft = 
@@ -120,7 +89,8 @@ public class NoiseExperiment extends Experiment {
     XYSeries[] noiseSeriesArr = new XYSeries[dataIn.length];
     for(int j = 0; j < dataIn.length; ++j) {
       // initialize each xySeries with proper name for the data
-      noiseSeriesArr[j] = new XYSeries( "Noise " + dataIn[j].getName() );
+      noiseSeriesArr[j] = 
+          new XYSeries( "Noise " + dataIn[j].getName() + " ["  + j + "]" );
     }
     
     for (int i = 1; i < freqs.length; ++i) {
@@ -187,7 +157,8 @@ public class NoiseExperiment extends Experiment {
       xySeriesData.addSeries(noiseSeries);
     }
     
-    xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace, this) );
+    xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace) );
+    xySeriesData.addSeries( FFTResult.getHighNoiseModel(freqSpace) );
 
   }
 

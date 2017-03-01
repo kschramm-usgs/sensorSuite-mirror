@@ -8,268 +8,74 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.imageio.ImageIO;
 import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 // TODO: move file operations to the datapanel object?
 
 /**
  * Main window of the sensor test program and the program's launcher
- * Handles GUI for getting user-specified files and showing data plots
+ * Mainly used for handling the input (inputpanel) and output (experimentpanel)
+ * GUI frames and making sure they fit togther and cooperate
  * @author akearns
  *
  */
-public class SensorSuite extends JPanel implements ActionListener {
+public class SensorSuite extends JPanel 
+                         implements ActionListener, ChangeListener {
 
   /**
    * 
    */
   private static final long serialVersionUID = 2866426897343097822L;
-
-  ExecutorService executor = Executors.newCachedThreadPool();
-  
-  private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
-  private JTextField[] seedFileNames = new JTextField[DataStore.FILE_COUNT];
-  private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
-  private JTextField[] respFileNames = new JTextField[DataStore.FILE_COUNT];
-
-  private JFileChooser fc; // loads in files based on parameter
-  private InputPanel inputPlots;
-  private JTabbedPane tabbedPane; // holds set of experiment panels
-
-  private JButton generate, savePDF, clear; // run all calculations
-  
-  // used to store current directory locations
-  private String seedDirectory = "data";
-  private String respDirectory = "responses";
-  private String saveDirectory = System.getProperty("user.home");
-
-
-  private void resetTabPlots() {
-    
-    DataStore ds = inputPlots.getData();
-    InstrumentResponse[] irs = ds.getResponses();
-    
-    FFTResult[] powerSpectra = new FFTResult[DataStore.FILE_COUNT];
-    
-    inputPlots.showRegionForGeneration();
-    
-    for (int i = 0; i < powerSpectra.length; ++i) {
-      
-      if ( !ds.bothComponentsSet(i) ) {
-        continue;
-      }
-      
-      DataBlock data = ds.getBlock(i);
-      InstrumentResponse ir = irs[i];
-      
-      powerSpectra[i] = FFTResult.crossPower(data, data, ir, ir);
-    }
-    
-    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
-    ep.updateData(ds, powerSpectra);
-    
-    savePDF.setEnabled(true);
-  }
+ 
 
   /**
-   * Creates the main window of the program when called
-   * (Three main panels: the top panel for displaying the results
-   * of sensor tests; the lower panel for displaying plots of raw data from
-   * miniSEED files; the side panel for most file-IO operations
+   * Loads the main window for the program on launch
    */
-  public SensorSuite() {
+  private static void createAndShowGUI() {
+    JFrame frame = new JFrame("Sensor Tests");
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    super();
-    
-    this.setLayout( new GridBagLayout() );
-    GridBagConstraints c = new GridBagConstraints();
-    c.fill = GridBagConstraints.BOTH;
-    c.gridx = 0; c.gridy = 0;
-    c.weightx = 1.0; c.weighty = 1.0;
-    c.gridwidth = 1;
-    c.anchor = GridBagConstraints.CENTER;
-    inputPlots = new InputPanel();
+    frame.add( new SensorSuite() );
 
-    fc = new JFileChooser();
-    
-    // each pane will correspond to a plot which gets a test from
-    // a test factory; this will return the test corresponding to the plot type
-    // which is determined based on an enum of tests
-
-    tabbedPane = new JTabbedPane();
-
-    for( ExperimentEnum exp : ExperimentEnum.values() ){
-      JPanel tab = ExperimentPanelFactory.createPanel(exp);
-      tab.setLayout( new BoxLayout(tab, BoxLayout.Y_AXIS) );
-      tabbedPane.addTab( exp.getName(), tab );
-    }
-    
-    this.add(tabbedPane, c);
-    
-    // reset for other components
-    c.weightx = 1.0;
-    c.weighty = 1.0;
-    c.fill = GridBagConstraints.BOTH;
-
-    // panel for UI elements to load data, generate full plot, etc.
-    JPanel rightPanel = new JPanel();
-    
-    rightPanel.setLayout( new GridBagLayout() );
-    GridBagConstraints rpc = new GridBagConstraints();
-    rpc.weightx = 0.0;
-    rpc.gridwidth = 1;
-    rpc.gridy = 0;
-    
-    rpc.weighty = 1.0;
-    rpc.fill = GridBagConstraints.BOTH;
-    rightPanel.add( Box.createVerticalGlue(), rpc);
-    
-    rpc.gridy += 1;
-    
-    rpc.weighty = 0.0;
-    rpc.fill = GridBagConstraints.NONE;
-
-    for (int i = 0; i < seedLoaders.length; i++){
-      seedLoaders[i] = new JButton("Load SEED file " + (i+1) );
-      seedLoaders[i].addActionListener(this);
-      seedFileNames[i] = new JTextField();
-
-      respLoaders[i] = new JButton("Load response " + (i+1) );
-      respLoaders[i].addActionListener(this);
-      respFileNames[i] = new JTextField();
-
-      seedFileNames[i].setEditable(false);
-      respFileNames[i].setEditable(false);
-
-      initFile(seedLoaders[i], seedFileNames[i], rightPanel, rpc);
-      initFile(respLoaders[i], respFileNames[i], rightPanel, rpc);
-
-      rpc.gridy += 1;
-      
-      rpc.weighty = 1.0;
-      rpc.fill = GridBagConstraints.VERTICAL;
-      rightPanel.add( Box.createVerticalGlue(), rpc);
-      rpc.gridy += 1;
-      
-      rpc.weighty = 0.0;
-      rpc.fill = GridBagConstraints.NONE;
-    }
-    
-
-    rpc.weighty = 1.0;
-    rpc.fill = GridBagConstraints.VERTICAL;
-    rightPanel.add( Box.createVerticalGlue(), rpc );
-    rpc.gridy += 1;
-    
-    rpc.weighty = 0.0;
-    rpc.fill = GridBagConstraints.HORIZONTAL;
-    rpc.ipady = 10;
-    
-    // TODO: replace duplicated effects factory-style methods?
-    
-    generate = new JButton("Generate plot");
-    generate.setEnabled(true);
-    generate.addActionListener(this);
-    rightPanel.add(generate, rpc);
-    rpc.gridy += 1;
-
-    savePDF = new JButton("Save display (PNG)");
-    savePDF.setEnabled(true); // TODO: change this back?
-    savePDF.addActionListener(this);
-    rightPanel.add(savePDF, rpc);
-    rpc.gridy += 1;
-    
-    clear = new JButton("Clear data");
-    clear.setEnabled(true);
-    clear.addActionListener(this);
-    rightPanel.add(clear, rpc);
-    
-    // add space between the plots and the file-operation panel
-    inputPlots.setBorder( new EmptyBorder(0, 0, 0, 5) );
-    
-    JPanel data = new JPanel();
-    data.setLayout( new GridBagLayout() );
-    
-    GridBagConstraints dgbc = new GridBagConstraints();
-    dgbc.weightx = 1.0; dgbc.weighty = 1.0;
-    dgbc.gridheight = 1;
-    dgbc.gridy = 0; dgbc.gridx = 0;
-    dgbc.fill = GridBagConstraints.BOTH;
-    
-    data.add(inputPlots, dgbc);
-    
-    dgbc.weightx = 0.0;
-    dgbc.gridx += 1;
-    
-    data.add(rightPanel, dgbc);
-    data.setBorder( new EmptyBorder(5, 5, 5, 5) );
-    
-    c.gridy += 1;
-    this.add(data, c);
-    data.setAlignmentX(SwingConstants.CENTER);
-
+    frame.pack();
+    frame.setVisible(true);
   }
-
   /**
-   * Instantiate a button used to load in a file
-   * @param button The button that, when clicked, loads a file
-   * @param text Filename (defaults to NO FILE LOADED when created)
-   * @param parent The (side) panel that holds the button
+   * Create space with the given dimensions as a buffer between plots
+   * when writing the plots to an image file
+   * @param width The width of the spacer
+   * @param height The height of the spacer
+   * @return A blank BufferedImage that can be concatenated with other plots
    */
-  private static void initFile(
-      JButton button, JTextField text, JPanel parent, GridBagConstraints gbc){
+  public static BufferedImage getSpace(int width, int height) {
+    BufferedImage space = new BufferedImage(
+        width, 
+        height, 
+        BufferedImage.TYPE_INT_RGB);
+    Graphics2D tmp = space.createGraphics();
+    JPanel margin = new JPanel();
+    margin.add( Box.createRigidArea( new Dimension(width,height) ) );
+    margin.printAll(tmp);
+    tmp.dispose();
 
-    text.setText("NO FILE LOADED");
-    text.setAlignmentX(SwingConstants.CENTER);
-    text.setHorizontalAlignment(JTextField.CENTER);
-
-    JScrollPane jsp = new JScrollPane();
-
-    jsp.setVerticalScrollBarPolicy(
-        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-    jsp.setHorizontalScrollBarPolicy(
-        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-    
-    jsp.setViewportView(text);
-
-    gbc.weighty = 0.0;
-    gbc.fill = GridBagConstraints.NONE;
-    parent.add(button, gbc);
-    gbc.gridy += 1;
-    gbc.fill = GridBagConstraints.HORIZONTAL;
-    parent.add(jsp, gbc);
-    gbc.gridy += 1;
-    
-    gbc.fill = GridBagConstraints.NONE;
+    return space;
   }
-
   /**
    * Starts the program -- instantiate the top-level GUI
    * @param args (Any parameters fed in on command line are currently ignored)
@@ -287,120 +93,115 @@ public class SensorSuite extends JPanel implements ActionListener {
 
   }
 
+  private JFileChooser fc; // loads in files based on parameter
+  
+  private InputPanel inputPlots;
+
+
+  private JTabbedPane tabbedPane; // holds set of experiment panels
+
+  private JButton generate, savePDF; // run all calculations
+
+  // used to store current directory locations
+  private String saveDirectory = System.getProperty("user.home");
+
 
   /**
-   * Loads the main window for the program on launch
+   * Creates the main window of the program when called
+   * (Three main panels: the top panel for displaying the results
+   * of sensor tests; the lower panel for displaying plots of raw data from
+   * miniSEED files; the side panel for most file-IO operations
    */
-  private static void createAndShowGUI() {
-    JFrame frame = new JFrame("Sensor Tests");
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+  public SensorSuite() {
 
-    frame.add( new SensorSuite() );
+    super();
+    
+    // set up experiment panes in a tabbed pane
+    tabbedPane = new JTabbedPane();
+    
+    for ( ExperimentEnum exp : ExperimentEnum.values() ) {
+      JPanel tab = ExperimentPanelFactory.createPanel(exp);
+      tabbedPane.addTab( exp.getName(), tab);
+    }
+    
+    Dimension d = tabbedPane.getPreferredSize();
+    d.setSize( d.getWidth() * 1.5, d.getHeight() );
+    tabbedPane.setPreferredSize(d);
+    
+    tabbedPane.addChangeListener(this);
+    
+    inputPlots = new InputPanel();
+    inputPlots.addChangeListener(this);
+    
+    // experiments on left, input on the right; split to allow resizing
+    JSplitPane mainSplit = 
+        new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
+        // boolean allows redrawing immediately on resize
+    mainSplit.setLeftComponent(tabbedPane);
+    mainSplit.setRightComponent(inputPlots);
+    // set the left-pane to resize more when window is horizontally stretched
+    mainSplit.setResizeWeight(.5);
+    mainSplit.setOneTouchExpandable(true);
+    
+    // we want to make sure the split pane fills the window
+    this.setLayout( new GridBagLayout() );
+    GridBagConstraints c = new GridBagConstraints();
+    c.gridx = 0; c.gridy = 0;
+    c.weightx = 1; c.weighty = 1;
+    c.gridwidth = 2;
+    c.fill = GridBagConstraints.BOTH;
+    
+    this.add(mainSplit, c);
+    
+    c.fill = GridBagConstraints.BOTH;
+    c.gridx = 0; c.gridy = 1;
+    c.weightx = 1.0; c.weighty = 0.0;
+    c.gridwidth = 1;
+    
+    // now add the buttons
+    savePDF = new JButton("Save input and output plots (PNG)");
+    savePDF.setEnabled(true); // TODO: change this back?
+    savePDF.addActionListener(this);
+    this.add(savePDF, c);
+    c.gridx += 1;
 
-    frame.pack();
-    frame.setVisible(true);
+    generate = new JButton("Generate test result");
+    generate.setEnabled(false);
+    generate.addActionListener(this);
+    d = generate.getPreferredSize();
+    d.setSize( d.getWidth(), d.getHeight() * 2 );
+    generate.setPreferredSize(d);
+    this.add(generate, c);
+    
+    fc = new JFileChooser();
+
   }
 
   /**
-   * Handles actions when a side-panel button is clicked (file-IO)
+   * Handles actions when a side-panel button is clicked; loading SEED and RESP
+   * files and writing the combined set of plots to a file. Because SEED files
+   * can be large and take a long time to read in, that operation runs on a
+   * separate thread.
    */
   @Override
   public void actionPerformed(ActionEvent e) {
 
-    if ( e.getSource() == clear ) {
-      inputPlots.clearAllData();
-      for (JTextField fn : seedFileNames) {
-        fn.setText("NO FILE LOADED");
-      }
-      for (JTextField fn : respFileNames) {
-        fn.setText("NO FILE LOADED");
-      }
-      return;
-    }
-    
-    for(int i = 0; i < seedLoaders.length; ++i) {
-      final int idx = i; // used to play nice with swingworker
-      JButton seedButton = seedLoaders[i];
-      JButton respButton = respLoaders[i];
-      if ( e.getSource() == seedButton ) {
-        fc.setCurrentDirectory( new File(seedDirectory) );
-        fc.resetChoosableFileFilters();
-        fc.setDialogTitle("Load SEED file...");
-        int returnVal = fc.showOpenDialog(seedButton);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fc.getSelectedFile();
-          seedDirectory = file.getParent();
-          
-          seedFileNames[i].setText("LOADING: " + file.getName());
-          final String filePath = file.getAbsolutePath();
-          String filterName = "";
-          try {
-            Set<String> nameSet = TimeSeriesUtils.getMplexNameSet(filePath);
-            
-            if (nameSet.size() > 1) {
-              // more than one series in the file? prompt user for it
-              String[] names = nameSet.toArray(new String[0]);
-              Arrays.sort(names);
-              JDialog dialog = new JDialog();
-              filterName = (String) JOptionPane.showInputDialog(
-                  dialog,
-                  "Select the subseries to load:",
-                  "Multiplexed File Selection",
-                  JOptionPane.PLAIN_MESSAGE,
-                  null, names,
-                  names[0]);     
-            } else {
-              filterName = new ArrayList<String>(nameSet).get(0);
-            }
-            
-          } catch (FileNotFoundException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-            return;
-          }
-
-          final File immutableFile = file;
-          final String immutableFilter = filterName;
-          
-          // create swingworker to load large files in the background
-          SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>(){
-            @Override
-            public Integer doInBackground() {
-              generate.setEnabled(false);
-              inputPlots.setData(idx, filePath, immutableFilter);
-              return 0;
-            }
-            
-            public void done() {
-              seedFileNames[idx].setText( 
-                  immutableFile.getName() + ": " + immutableFilter);
-              generate.setEnabled(true);
-            }
-          };
-          // need a new thread so the UI won't lock with big programs
-          
-          new Thread(worker).run();
-          return;
-        }
-      } else if ( e.getSource() == respButton ) {
-        // don't need a new thread because resp loading is pretty prompt
-        fc.setCurrentDirectory( new File(respDirectory) );
-        fc.resetChoosableFileFilters();
-        fc.setDialogTitle("Load response file...");
-        int returnVal = fc.showOpenDialog(seedButton);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-          File file = fc.getSelectedFile();
-          respDirectory = file.getParent();
-          inputPlots.setResponse( i, file.getAbsolutePath() );
-          respFileNames[i].setText( file.getName() );
-        }
-        return;
-      }
-      
-    } // end for loop 
 
     if ( e.getSource() == generate ) {
-      this.resetTabPlots();
+      SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
+        
+        @Override
+        public Integer doInBackground() {
+          try{
+            resetTabPlots();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+          return 0;
+        }
+        
+      };
+      worker.execute();
       return;
     } else if ( e.getSource() == savePDF ) {
 
@@ -469,18 +270,28 @@ public class SensorSuite extends JPanel implements ActionListener {
 
   }
 
-  public static BufferedImage getSpace(int width, int height) {
-    BufferedImage space = new BufferedImage(
-        width, 
-        height, 
-        BufferedImage.TYPE_INT_RGB);
-    Graphics2D tmp = space.createGraphics();
-    JPanel margin = new JPanel();
-    margin.add( Box.createRigidArea( new Dimension(width,height) ) );
-    margin.printAll(tmp);
-    tmp.dispose();
+  private void resetTabPlots() {
+    
+    // pass the inputted data to the panels that handle them
+    DataStore ds = inputPlots.getData();
+    // update the input plots to show the active region being calculated
+    inputPlots.showRegionForGeneration();
+    
+    // now, update the data
+    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+    ep.updateData(ds);
+    
+    savePDF.setEnabled(true);
+  }
 
-    return space;
+  @Override
+  public void stateChanged(ChangeEvent e) {
+    if ( e.getSource() == inputPlots || e.getSource() == tabbedPane ) {
+      ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+      DataStore ds = inputPlots.getData();
+      boolean canGenerate = ep.haveEnoughData(ds);
+      generate.setEnabled(canGenerate);
+    }
   }
 
 

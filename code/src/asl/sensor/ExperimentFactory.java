@@ -11,7 +11,7 @@ public class ExperimentFactory {
    * Instantiates an Experiment from which the ExperimentPanel generates data
    * based on the type of Experiment given by the enum
    * @param exp Type of experiment (see the enum for details on kinds)
-   * @return An implementation of the Experiment interface
+   * @return A concrete implementation of the abstract Experiment class
    */
   public static Experiment createExperiment(
       ExperimentEnum exp){
