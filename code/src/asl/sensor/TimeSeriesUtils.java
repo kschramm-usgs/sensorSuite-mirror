@@ -71,12 +71,21 @@ public class TimeSeriesUtils {
     int upf = (int)(src/gcd);
     int dnf = (int)(tgt/gcd);
     
+    System.out.println(upf+","+dnf);
+    
+    double higherFreq = (1. / src) * upf * ONE_HZ_INTERVAL; // TODO: check this
+    double lowerFreq = (1. / tgt) * ONE_HZ_INTERVAL / 2; 
+      // nyquist rate of downsampled data
+    
+    System.out.println(1./src*upf*ONE_HZ_INTERVAL);
+    System.out.println(lowerFreq);
+    
     // one valid sample rate for data is 2.5Hz
     // with 1Hz that comes out as a ratio of 5/2, which won't
     // downsample neatly in some cases so we would first upsample,
     // filter out any noise terms, then downsample
     List<Number> upped = upsample(data,upf);
-    List<Number> lpfed = lowPassFilter(upped, 1./src*upf, 1./tgt);
+    List<Number> lpfed = lowPassFilter(upped, higherFreq, lowerFreq);
     List<Number> down = downsample(lpfed,dnf);
 
     return down;
@@ -455,38 +464,23 @@ public class TimeSeriesUtils {
   public static List<Number> 
   lowPassFilter(List<Number> timeseries, double sps, double corner)
   {
-    // apache fft requires input to be power of two
-    int pow = 2;
-    while( pow < timeseries.size() ){
-      pow *= 2;
-    }
-
-    double[] timeseriesFilter = new double[pow];
-
-    // TODO: fix these to use frequency values instead of interval values
     
-    double fl = 0; // allow all low-frequency data through
-    double fh = corner; // nyquist rate half of target frequency
-    // note that this 1/2F where F is 1Hz frequency
-    // we want the inverse of the target frequency
-
-    for (int ind = 0; ind < timeseries.size(); ind++)
-    {
-      if( !(timeseries.get(ind) instanceof Double) ) {
-        timeseriesFilter[ind] = timeseries.get(ind).doubleValue();
-      }
-    }
-
-    timeseriesFilter = FFTResult.bandFilter(timeseriesFilter, sps, fl, fh);
+    double fl = 0.;
+    double fh = corner;
     
+    return FFTResult.bandFilter(timeseries, sps, fl, fh);
+    
+    /*
     List<Number> timeseriesOut = new ArrayList<Number>();
     
     for (int i = 0; i < timeseries.size(); ++i) {
-      double point = timeseriesFilter[i];
+      double point = timeseriesFilter.get(i);
+      // System.out.println(point);
       timeseriesOut.add(point);
     }
     
     return timeseriesOut;
+    */
   }
 
   /** 

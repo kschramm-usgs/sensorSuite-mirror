@@ -622,6 +622,7 @@ implements ActionListener, ChangeListener {
 
     showRegionForGeneration();
     zooms.matchIntervals();
+    zooms.trimToCommonTime();
     return zooms;
   }
 
@@ -899,6 +900,7 @@ implements ActionListener, ChangeListener {
           xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
 
           zooms = new DataStore(ds);
+          zooms.matchIntervals();
           zooms.trimToCommonTime();
 
           return 0;
@@ -933,8 +935,6 @@ implements ActionListener, ChangeListener {
 
           clearButton[idx].setEnabled(true);
 
-          zooms = new DataStore(ds);
-          zooms.trimToCommonTime();
           for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
             if ( !zooms.blockIsSet(i) ) {
               continue;

@@ -127,6 +127,7 @@ public abstract class Experiment {
       }
       
       if ( data.getInterval() != interval ) {
+        System.out.println( interval+","+data.getInterval() );
         ds.matchIntervals();
       }
     }
