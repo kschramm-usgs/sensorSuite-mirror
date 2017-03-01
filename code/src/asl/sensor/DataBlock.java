@@ -100,11 +100,7 @@ public class DataBlock {
    * @param interval The new interval (time between samples in microseconds)
    */
   public void resample(long newInterval) {
-    System.out.println(name + " SAMPLE RATE CHANGE");
-    System.out.println("Interval target: " + newInterval + ", was " + interval);
-    System.out.println("OLD SIZE: " + data.size());
     data = TimeSeriesUtils.decimate(data, interval, newInterval);
-    System.out.println("NEW SIZE: " + data.size());
     interval = newInterval;
   }
 

@@ -71,14 +71,9 @@ public class TimeSeriesUtils {
     int upf = (int)(src/gcd);
     int dnf = (int)(tgt/gcd);
     
-    System.out.println(upf+","+dnf);
-    
     double higherFreq = (1. / src) * upf * ONE_HZ_INTERVAL; // TODO: check this
     double lowerFreq = (1. / tgt) * ONE_HZ_INTERVAL / 2; 
       // nyquist rate of downsampled data
-    
-    System.out.println(1./src*upf*ONE_HZ_INTERVAL);
-    System.out.println(lowerFreq);
     
     // one valid sample rate for data is 2.5Hz
     // with 1Hz that comes out as a ratio of 5/2, which won't
@@ -544,9 +539,13 @@ public class TimeSeriesUtils {
    */
   public static List<Number> upsample(List<Number> data, int factor){
 
-    List<Number> upsamp = Arrays.asList(new Number[data.size()*factor]);
+    List<Number> upsamp = new ArrayList<Number>();
 
-    for(int i=0; i<data.size(); i++){
+    for(int i = 0; i < data.size() * factor; ++i) {
+      upsamp.add( new Double(0.) );
+    }
+    
+    for(int i = 0; i < data.size(); ++i){
       upsamp.set( i*factor, data.get(i) ); // index, element
     }
 

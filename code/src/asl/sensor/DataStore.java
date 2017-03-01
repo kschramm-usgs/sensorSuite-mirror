@@ -368,6 +368,14 @@ public class DataStore {
     return thisResponseIsSet;
   }
   
+  public void setData(int idx, DataBlock db) {
+    thisBlockIsSet[idx] = true;
+    dataBlockArray[idx] = db;
+    thisPSDIsCalculated[idx] = false;
+    powerSpectra[idx] = null;
+    outToPlots[idx] = db.toXYSeries();
+  }
+  
   /**
    * Takes a loaded miniSEED data series and converts it to a plottable format
    * @param idx The plot (range 0 to FILE_COUNT) to be given new data
@@ -477,6 +485,8 @@ public class DataStore {
         getBlock(i).resample(interval);
       }
     }
+    
+    trimToCommonTime();
     
   }
   
