@@ -247,38 +247,17 @@ public class SensorSuite extends JPanel
    * @throws IOException
    */
   public void plotsToPNG(File file) throws IOException {
-    // using 0s to set image height and width to default values (match window)
-    int inHeight = inputPlots.getImageHeight();
-    int width = 640;
-    BufferedImage inPlot = inputPlots.getAsImage(width, inHeight);
-    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
 
-    BufferedImage outPlot = ep.getAsImage( width, 480);
-
-    // int width = Math.max( inPlot.getWidth(), outPlot.getWidth() );
-    // 5px tall buffer used to separate result plot from inputs
-    // BufferedImage space = getSpace(width, 0);
-    int height = inPlot.getHeight() + outPlot.getHeight();
-
-    // System.out.println(space.getHeight());
-
-    BufferedImage toFile = new BufferedImage(width, height, 
-        BufferedImage.TYPE_INT_ARGB);
-
-    Graphics2D combined = toFile.createGraphics();
-    combined.drawImage(outPlot, null, 0, 0);
-    combined.drawImage( inPlot, null, 0, 
-        outPlot.getHeight() );
-    combined.dispose();
-
-    // for now, it's a png. TODO: change this module write to PDF?
-
-    ImageIO.write(toFile,"png",file);
+    // just write the bufferedimage to file
+    ImageIO.write( getCompiledImage(), "png", file );
 
   }
   
-  public void plotsToPDF(File file) throws IOException {
-    
+  /**
+   * Produces a buffered image of all active charts
+   * @return BufferedImage that can be written to file
+   */
+  public BufferedImage getCompiledImage() {
     // TODO: split this section into its own method (redundant with PNG save)
     int inHeight = inputPlots.getImageHeight() * 2;
     int width = 1280;
@@ -294,14 +273,26 @@ public class SensorSuite extends JPanel
 
     // System.out.println(space.getHeight());
 
-    BufferedImage toFile = new BufferedImage(width, height, 
+    BufferedImage returnedImage = new BufferedImage(width, height, 
         BufferedImage.TYPE_INT_ARGB);
 
-    Graphics2D combined = toFile.createGraphics();
+    Graphics2D combined = returnedImage.createGraphics();
     combined.drawImage(outPlot, null, 0, 0);
     combined.drawImage( inPlot, null, 0, 
         outPlot.getHeight() );
     combined.dispose();
+    
+    return returnedImage;
+  }
+  
+  /**
+   * Output the currently displayed plots as a PDF file.
+   * @param file Filename to write to
+   * @throws IOException If the file cannot be written
+   */
+  public void plotsToPDF(File file) throws IOException {
+    
+    BufferedImage toFile = getCompiledImage();
     
     // START OF UNIQUE CODE FOR PDF CREATION HERE
     PDDocument pdf = new PDDocument();
@@ -323,6 +314,9 @@ public class SensorSuite extends JPanel
     pdf.close();
   }
 
+  /**
+   * Resets plot data and gets the inputted data to send to experiments
+   */
   private void resetTabPlots() {
     
     // pass the inputted data to the panels that handle them
@@ -337,6 +331,10 @@ public class SensorSuite extends JPanel
     savePDF.setEnabled(true);
   }
 
+  /**
+   * Checks when input panel gets new data or active experiment changes
+   * to determine whether or not the experiment can be run yet
+   */
   @Override
   public void stateChanged(ChangeEvent e) {
     if ( e.getSource() == inputPlots || e.getSource() == tabbedPane ) {
