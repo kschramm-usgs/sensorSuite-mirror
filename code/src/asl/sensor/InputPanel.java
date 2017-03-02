@@ -357,10 +357,16 @@ implements ActionListener, ChangeListener {
         Set<String> respFilenames = new HashSet<String>();
         ClassLoader cl = InputPanel.class.getClassLoader();
         
+        // there's no elegant way to extract responses other than to
+        // load in their names from a list and then grab them as available
+        // correspondingly, this means adding response files to this program
+        // requires us to add their names to this file
+        // There may be other possibilities but they are more complex and
+        // tend not to work the same way between IDE and launching a jar
+        
         InputStream respRead = cl.getResourceAsStream("responses.txt");
         BufferedReader respBuff = 
             new BufferedReader( new InputStreamReader(respRead) );
-        
 
         try {
           String name;
@@ -386,7 +392,7 @@ implements ActionListener, ChangeListener {
         Object result = JOptionPane.showInputDialog(
             dialog,
             "Select a response to load:",
-            "RESP File Selection (provided or custom)",
+            "RESP File Selection",
             JOptionPane.PLAIN_MESSAGE,
             null, names.toArray(),
             names.get( names.size() - 1 ) );

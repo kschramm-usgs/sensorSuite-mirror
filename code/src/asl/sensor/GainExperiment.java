@@ -194,10 +194,11 @@ public class GainExperiment extends Experiment {
     
     int center = getPeakIndex(idx);
     double[] freqs = fftResults.get(idx).getFreqs();
+    int max = freqs.length - 1;
     double peakFreq = freqs[center];
     
-    double lowFreq = peakFreq / Math.sqrt(2);
-    double highFreq = peakFreq * Math.sqrt(2);
+    double lowFreq = Math.max( peakFreq / Math.sqrt(2), freqs[0] );
+    double highFreq = Math.min( peakFreq * Math.sqrt(2), freqs[max] );
     
     return new double[]{lowFreq, highFreq};
   }

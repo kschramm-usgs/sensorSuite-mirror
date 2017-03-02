@@ -26,6 +26,13 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+
 // TODO: move file operations to the datapanel object?
 
 /**
@@ -159,7 +166,7 @@ public class SensorSuite extends JPanel
     c.gridwidth = 1;
     
     // now add the buttons
-    savePDF = new JButton("Save input and output plots (PNG)");
+    savePDF = new JButton("Save input and output plots (PDF)");
     savePDF.setEnabled(true); // TODO: change this back?
     savePDF.addActionListener(this);
     this.add(savePDF, c);
@@ -205,15 +212,15 @@ public class SensorSuite extends JPanel
       return;
     } else if ( e.getSource() == savePDF ) {
 
-      String ext = ".png";
+      String ext = ".pdf";
       fc.setCurrentDirectory( new File(saveDirectory) );
       fc.addChoosableFileFilter(
-          new FileNameExtensionFilter("PNG image (.png)",ext) );
+          new FileNameExtensionFilter("PDF file (.pdf)",ext) );
       fc.setFileFilter(fc.getChoosableFileFilters()[1]);
       fc.setDialogTitle("Save plot to PNG...");
       String tStamp = 
           new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format( new Date() );
-      fc.setSelectedFile( new File(tStamp+"_ALL.png") );
+      fc.setSelectedFile( new File(tStamp+"_ALL"+ext) );
       int returnVal = fc.showSaveDialog(savePDF);
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         File selFile = fc.getSelectedFile();
@@ -222,7 +229,7 @@ public class SensorSuite extends JPanel
           selFile = new File( selFile.toString() + ext);
         }
         try {
-          plotsToPNG(selFile);
+          plotsToPDF(selFile);
         } catch (IOException e1) {
           e1.printStackTrace();
         }
@@ -268,6 +275,52 @@ public class SensorSuite extends JPanel
 
     ImageIO.write(toFile,"png",file);
 
+  }
+  
+  public void plotsToPDF(File file) throws IOException {
+    
+    // TODO: split this section into its own method (redundant with PNG save)
+    int inHeight = inputPlots.getImageHeight() * 2;
+    int width = 1280;
+    BufferedImage inPlot = inputPlots.getAsImage(width, inHeight);
+    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+
+    BufferedImage outPlot = ep.getAsImage(width, 960);
+
+    // int width = Math.max( inPlot.getWidth(), outPlot.getWidth() );
+    // 5px tall buffer used to separate result plot from inputs
+    // BufferedImage space = getSpace(width, 0);
+    int height = inPlot.getHeight() + outPlot.getHeight();
+
+    // System.out.println(space.getHeight());
+
+    BufferedImage toFile = new BufferedImage(width, height, 
+        BufferedImage.TYPE_INT_ARGB);
+
+    Graphics2D combined = toFile.createGraphics();
+    combined.drawImage(outPlot, null, 0, 0);
+    combined.drawImage( inPlot, null, 0, 
+        outPlot.getHeight() );
+    combined.dispose();
+    
+    // START OF UNIQUE CODE FOR PDF CREATION HERE
+    PDDocument pdf = new PDDocument();
+    PDRectangle rec = 
+        new PDRectangle( (float) toFile.getWidth(), 
+                         (float) toFile.getHeight() );
+    PDPage page = new PDPage(rec);
+    pdf.addPage(page);
+    PDImageXObject  pdImageXObject = 
+        LosslessFactory.createFromImage(pdf, toFile);
+    PDPageContentStream contentStream = 
+        new PDPageContentStream(pdf, page, 
+                                PDPageContentStream.AppendMode.OVERWRITE, 
+                                true, false);
+    contentStream.drawImage(pdImageXObject, 0, 0, 
+        toFile.getWidth(), toFile.getHeight());
+    contentStream.close();
+    pdf.save( file );
+    pdf.close();
   }
 
   private void resetTabPlots() {
