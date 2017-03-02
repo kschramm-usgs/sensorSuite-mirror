@@ -16,14 +16,20 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
@@ -348,12 +354,29 @@ implements ActionListener, ChangeListener {
       
       if ( e.getSource() == resp ) {
         // don't need a new thread because resp loading is pretty prompt
-        Map<String, String> respFileMap = new HashMap<String, String>();
+        Set<String> respFilenames = new HashSet<String>();
+        ClassLoader cl = InputPanel.class.getClassLoader();
         
-        // TODO: populate map with compiled data from responses
+        InputStream respRead = cl.getResourceAsStream("responses.txt");
+        BufferedReader respBuff = 
+            new BufferedReader( new InputStreamReader(respRead) );
+        
+
+        try {
+          String name;
+          name = respBuff.readLine();
+          while (name != null) {
+            respFilenames.add(name);
+            name = respBuff.readLine();
+          }
+          respBuff.close();
+        } catch (IOException e2) {
+          // TODO Auto-generated catch block
+          e2.printStackTrace();
+        }
         
         List<String> names = 
-            new ArrayList<String>( respFileMap.keySet() );
+            new ArrayList<String>(respFilenames);
         
         String custom = "Load custom response...";
         
@@ -370,10 +393,13 @@ implements ActionListener, ChangeListener {
         
         String resultStr = (String) result;
         
-        if ( respFileMap.containsKey(resultStr) ) {
+        if (resultStr == null) {
+          return;
+        }
+        
+        if ( respFilenames.contains(resultStr) ) {
           // TODO: load response mappings (need responses first)
-          String fname = respFileMap.get(resultStr);
-          ClassLoader cl = InputPanel.class.getClassLoader();
+          final String fname = resultStr;
           InputStream is = cl.getResourceAsStream(fname);
           BufferedReader fr = new BufferedReader( new InputStreamReader(is) );
           try {
