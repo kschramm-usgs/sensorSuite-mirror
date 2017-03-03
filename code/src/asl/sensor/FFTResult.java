@@ -288,7 +288,7 @@ public class FFTResult {
     XYSeries xys = new XYSeries("NHNM");
     try {
       ClassLoader cl = FFTResult.class.getClassLoader();
-      InputStream is = cl.getResourceAsStream("NLNM.txt");
+      InputStream is = cl.getResourceAsStream("NHNM.txt");
       
       BufferedReader fr = new BufferedReader( new InputStreamReader(is) );
       String str = fr.readLine();

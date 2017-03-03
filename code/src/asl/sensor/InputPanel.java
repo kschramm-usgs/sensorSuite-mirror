@@ -191,23 +191,24 @@ implements ActionListener, ChangeListener {
     d.setSize( d.getWidth() / 1.5, d.getHeight() / 1.5 );
     chartPanels[i].setPreferredSize(d);
     
-    gbc.fill = GridBagConstraints.NONE;
+    gbc.fill = GridBagConstraints.BOTH;
     gbc.gridx = 1;
     gbc.gridwidth = 1; gbc.gridheight = 1;
     gbc.weightx = 0; gbc.weighty = 0.25;
     chartSubpanel.add(seedLoaders[i], gbc);
     
     gbc.fill = GridBagConstraints.BOTH;
-    gbc.weighty += 1;
+    gbc.weighty = 1;
     gbc.gridy += 1;
-    JScrollPane jsp = new JScrollPane(seedFileNames[i]);
+    JScrollPane jsp = new JScrollPane();
+    jsp.setViewportView(seedFileNames[i]);
     jsp.setVerticalScrollBarPolicy(
         ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
     jsp.setHorizontalScrollBarPolicy(
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
     chartSubpanel.add(jsp, gbc);
     
-    gbc.fill = GridBagConstraints.NONE;
+    gbc.fill = GridBagConstraints.BOTH;
     gbc.weighty = 0.25;
     gbc.gridy += 1;
     chartSubpanel.add(respLoaders[i], gbc);
@@ -216,7 +217,8 @@ implements ActionListener, ChangeListener {
     gbc.fill = GridBagConstraints.BOTH;
     gbc.weighty = 1;
     gbc.gridy += 1;
-    jsp = new JScrollPane(respFileNames[i]);
+    jsp = new JScrollPane();
+    jsp.setViewportView(respFileNames[i]);
     jsp.setVerticalScrollBarPolicy(
         ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
     jsp.setHorizontalScrollBarPolicy(
@@ -263,8 +265,15 @@ implements ActionListener, ChangeListener {
     inputScrollPane.setHorizontalScrollBarPolicy(
         ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     
-    Container cont = new Container();
-    cont.setLayout( new BoxLayout(cont, BoxLayout.Y_AXIS) );
+    // 
+    VScrollPanel cont = new VScrollPanel();
+    cont.setLayout( new GridBagLayout() );
+    GridBagConstraints contConstraints = new GridBagConstraints();
+    contConstraints.weightx = 1.0;
+    contConstraints.weighty = 1.0;
+    contConstraints.gridy = 0;
+    contConstraints.anchor = GridBagConstraints.CENTER;
+    contConstraints.fill = GridBagConstraints.BOTH;
     Dimension minDim = new Dimension(0, 0);
     
     for (int i = 0; i < FILE_COUNT; ++i) {
@@ -276,7 +285,8 @@ implements ActionListener, ChangeListener {
       d2.setSize( d2.getWidth(), d.getHeight() );
       
       chartSubpanels[i].setSize( d2 );
-      cont.add( chartSubpanels[i] );
+      cont.add(chartSubpanels[i], contConstraints);
+      contConstraints.gridy += 1;
       // gbc.gridy += 1;
       
     }
@@ -1065,8 +1075,14 @@ implements ActionListener, ChangeListener {
 
   public void showDataNeeded(ExperimentEnum em) {
     
-    Container cont = new Container();
-    cont.setLayout( new BoxLayout(cont, BoxLayout.Y_AXIS) );
+    VScrollPanel cont = new VScrollPanel();
+    cont.setLayout( new GridBagLayout() );
+    GridBagConstraints contConstraints = new GridBagConstraints();
+    contConstraints.weightx = 1.0;
+    contConstraints.weighty = 1.0;
+    contConstraints.gridy = 0;
+    contConstraints.anchor = GridBagConstraints.CENTER;
+    contConstraints.fill = GridBagConstraints.BOTH;
     
     activeFiles = Math.max( em.blocksNeeded(), em.fullDataNeeded() );
     
@@ -1078,15 +1094,9 @@ implements ActionListener, ChangeListener {
         resetPlotZoom(i);
       }
       
-      Dimension d = cont.getPreferredSize();
-      Dimension d2 = chartSubpanels[i].getPreferredSize();
-      
-      d2.setSize( d2.getWidth(), d.getHeight() );
-      
-      chartSubpanels[i].setSize( d2 );
-      cont.add( chartSubpanels[i] );
+      cont.add(chartSubpanels[i], contConstraints);
+      contConstraints.gridy += 1;
       // gbc.gridy += 1;
-      
     }
     
     leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
@@ -1097,6 +1107,8 @@ implements ActionListener, ChangeListener {
     zoomOut.setEnabled(false);
     
     inputScrollPane.getViewport().setView(cont);
+    inputScrollPane.setPreferredSize( cont.getPreferredSize() );
   }
   
 }
+

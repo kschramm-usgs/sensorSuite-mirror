@@ -256,7 +256,7 @@ implements ChangeListener {
     
     Set<String> preventDuplicates = new HashSet<String>();
     
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+    for (int i = 0; i < 2; ++i) {
       if ( ds.bothComponentsSet(i) ) {
         String name = ds.getBlock(i).getName();
         while ( preventDuplicates.contains(name) ) {

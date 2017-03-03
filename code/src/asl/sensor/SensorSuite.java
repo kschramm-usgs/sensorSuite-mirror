@@ -323,13 +323,15 @@ public class SensorSuite extends JPanel
    */
   private void resetTabPlots() {
     
+    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+    
     // pass the inputted data to the panels that handle them
     DataStore ds = inputPlots.getData();
     // update the input plots to show the active region being calculated
     inputPlots.showRegionForGeneration();
     
     // now, update the data
-    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+
     ep.updateData(ds);
     
     savePDF.setEnabled(true);
@@ -341,13 +343,17 @@ public class SensorSuite extends JPanel
    */
   @Override
   public void stateChanged(ChangeEvent e) {
-    if ( e.getSource() == inputPlots || e.getSource() == tabbedPane ) {
+    if ( e.getSource() == inputPlots ){
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
       DataStore ds = inputPlots.getData();
-      // TODO: refactor this based around first X inputs
       boolean canGenerate = ep.haveEnoughData(ds);
+      generate.setEnabled(canGenerate);
+    } else if ( e.getSource() == tabbedPane ) {
+      ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
       ExperimentEnum em = ep.expType;
       inputPlots.showDataNeeded(em);
+      DataStore ds = inputPlots.getData();
+      boolean canGenerate = ep.haveEnoughData(ds);
       generate.setEnabled(canGenerate);
     }
   }
