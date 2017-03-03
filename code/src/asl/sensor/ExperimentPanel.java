@@ -56,7 +56,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   
   protected JFileChooser fc; // save image when image save button clicked
   
-  protected ExperimentEnum expType; 
+  protected final ExperimentEnum expType; 
           // used to define experiment of each plot object
   
   protected Experiment expResult;
@@ -233,6 +233,24 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
    * @return True if there is enough data to run this experiment
    */
   public boolean haveEnoughData(DataStore ds) {
+    int fullNeeded = expType.fullDataNeeded();
+    int blocksNeeded = expType.blocksNeeded();
+    
+    for (int i = 0; i < fullNeeded; ++i) {
+      if ( !ds.bothComponentsSet(i) ) {
+        return false;
+      }
+    }
+    
+    if (blocksNeeded > fullNeeded) {
+      for (int i = fullNeeded; i < blocksNeeded; ++i) {
+        if ( !ds.blockIsSet(i) ) {
+          return false;
+        }
+      }
+    }
+
+    
     if ( ds.numberFullySet() < expType.fullDataNeeded() ) {
       return false;
     }

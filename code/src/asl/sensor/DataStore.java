@@ -66,6 +66,10 @@ public class DataStore {
   }
   
   public DataStore(DataStore ds) {
+    this(ds, FILE_COUNT);
+  }
+  
+  public DataStore(DataStore ds, int upperBound) {
     dataBlockArray = new DataBlock[FILE_COUNT];
     responses = new InstrumentResponse[FILE_COUNT];
     powerSpectra = new FFTResult[FILE_COUNT];
@@ -75,7 +79,7 @@ public class DataStore {
     outToPlots = new XYSeries[FILE_COUNT];
     boolean[] setBlocks = ds.dataIsSet();
     boolean[] setResps = ds.responsesAreSet();
-    for (int i = 0; i < FILE_COUNT; ++i) {
+    for (int i = 0; i < upperBound; ++i) {
       if (setBlocks[i]) {
         dataBlockArray[i] = new DataBlock( ds.getBlock(i) );
         thisBlockIsSet[i] = true;
@@ -103,9 +107,9 @@ public class DataStore {
    * @param start Start time trim to
    * @param end End time to trim to
    */
-  public DataStore(DataStore ds, long start, long end) {
+  public DataStore(DataStore ds, long start, long end, int upperBound) {
     this(ds);
-    for (int i = 0; i < FILE_COUNT; ++i) {
+    for (int i = 0; i < upperBound; ++i) {
       if (thisPSDIsCalculated[i]) {
         DataBlock db = dataBlockArray[i];
         long blockStart = db.getStartTime();
@@ -472,15 +476,19 @@ public class DataStore {
    * Get lowest-frequency data and downsample all data to it
    */
   public void matchIntervals() {
+    matchIntervals(FILE_COUNT);
+  }
+  
+  public void matchIntervals(int limit){
     long interval = 0;
     // first loop to get lowest-frequency data
-    for (int i = 0; i < FILE_COUNT; ++i) {
+    for (int i = 0; i < limit; ++i) {
       if ( thisBlockIsSet[i] && getBlock(i).getInterval() > interval ) {
         interval = getBlock(i).getInterval();
       }
     }
     // second loop to downsample
-    for (int i = 0; i < FILE_COUNT; ++i) {
+    for (int i = 0; i < limit; ++i) {
       if ( thisBlockIsSet[i] && getBlock(i).getInterval() != interval ) {
         getBlock(i).resample(interval);
       }
@@ -494,7 +502,12 @@ public class DataStore {
    * Trims this object's data blocks to hold only points in their common range
    * WARNING: assumes each plot has its data taken at the same point in time
    */
+  
   public void trimToCommonTime() {
+    trimToCommonTime(FILE_COUNT);
+  }
+  
+  public void trimToCommonTime(int limit) {
     // trims the data to only plot the overlapping time of each input set
     
     if ( numberOfBlocksSet() <= 1 ) {
@@ -505,7 +518,7 @@ public class DataStore {
     long firstEndTime = Long.MAX_VALUE;
     
     // first pass to get the limits of the time data
-    for (int i = 0; i < FILE_COUNT; ++i) {
+    for (int i = 0; i < limit; ++i) {
       DataBlock data = dataBlockArray[i];
       if (!thisBlockIsSet[i]) {
         continue;
@@ -521,7 +534,7 @@ public class DataStore {
     }
     
     // second pass to trim the data to the limits given
-    for (int i = 0; i < FILE_COUNT; ++i) {
+    for (int i = 0; i < limit; ++i) {
       if (!thisBlockIsSet[i]) {
         continue;
       }

@@ -181,6 +181,10 @@ public class SensorSuite extends JPanel
     this.add(generate, c);
     
     fc = new JFileChooser();
+    
+    ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+    ExperimentEnum em = ep.expType;
+    inputPlots.showDataNeeded(em);
 
   }
 
@@ -307,8 +311,8 @@ public class SensorSuite extends JPanel
         new PDPageContentStream(pdf, page, 
                                 PDPageContentStream.AppendMode.OVERWRITE, 
                                 true, false);
-    contentStream.drawImage(pdImageXObject, 0, 0, 
-        toFile.getWidth(), toFile.getHeight());
+    contentStream.drawImage( pdImageXObject, 0, 0, 
+        toFile.getWidth(), toFile.getHeight() );
     contentStream.close();
     pdf.save( file );
     pdf.close();
@@ -340,7 +344,10 @@ public class SensorSuite extends JPanel
     if ( e.getSource() == inputPlots || e.getSource() == tabbedPane ) {
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
       DataStore ds = inputPlots.getData();
+      // TODO: refactor this based around first X inputs
       boolean canGenerate = ep.haveEnoughData(ds);
+      ExperimentEnum em = ep.expType;
+      inputPlots.showDataNeeded(em);
       generate.setEnabled(canGenerate);
     }
   }

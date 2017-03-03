@@ -106,6 +106,9 @@ implements ActionListener, ChangeListener {
     long len = (db.getInterval()) * db.size();
     return start + (sliderValue * len) / SLIDER_MAX;
   }
+  
+  private int activeFiles = FILE_COUNT; // how much data is being displayed
+  
   private DataStore ds;
   private DataStore zooms;
   private ChartPanel[] chartPanels = new ChartPanel[FILE_COUNT];
@@ -121,6 +124,7 @@ implements ActionListener, ChangeListener {
   private JPanel allCharts; // parent of the chartpanels, used for image saving
   private JSlider leftSlider;
   private JSlider rightSlider;
+  private JScrollPane inputScrollPane;
       
   private JButton[] seedLoaders  = new JButton[FILE_COUNT];
   private JTextComponent[] seedFileNames = 
@@ -128,8 +132,10 @@ implements ActionListener, ChangeListener {
   private JButton[] respLoaders  = new JButton[FILE_COUNT];
   private JTextComponent[] respFileNames = 
       new JTextComponent[FILE_COUNT];
-  
   private JButton[] clearButton = new JButton[FILE_COUNT];
+  
+  private JPanel[] chartSubpanels = new JPanel[FILE_COUNT];
+  
   // used to store current directory locations
   private String seedDirectory = "data";
   private String respDirectory = "responses";
@@ -182,7 +188,7 @@ implements ActionListener, ChangeListener {
     chartSubpanel.add(chartPanels[i], gbc);
     
     Dimension d = chartPanels[i].getPreferredSize();
-    d.setSize( d.getWidth() / 1.5 , d.getHeight()/1.5 );
+    d.setSize( d.getWidth() / 1.5, d.getHeight() / 1.5 );
     chartPanels[i].setPreferredSize(d);
     
     gbc.fill = GridBagConstraints.NONE;
@@ -251,11 +257,11 @@ implements ActionListener, ChangeListener {
     gbc.anchor = GridBagConstraints.CENTER;
     gbc.fill = GridBagConstraints.BOTH;
     
-    JScrollPane jsp = new JScrollPane();
-    jsp.setVerticalScrollBarPolicy(
+    inputScrollPane = new JScrollPane();
+    inputScrollPane.setVerticalScrollBarPolicy(
         ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-    jsp.setHorizontalScrollBarPolicy(
-        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    inputScrollPane.setHorizontalScrollBarPolicy(
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     
     Container cont = new Container();
     cont.setLayout( new BoxLayout(cont, BoxLayout.Y_AXIS) );
@@ -263,28 +269,28 @@ implements ActionListener, ChangeListener {
     
     for (int i = 0; i < FILE_COUNT; ++i) {
       Dimension d = cont.getPreferredSize();
-      JPanel chartSubpanel = makeChartSubpanel(i);
-      Dimension d2 = chartSubpanel.getPreferredSize();
-      minDim = chartSubpanel.getMinimumSize();
+      chartSubpanels[i] = makeChartSubpanel(i);
+      Dimension d2 = chartSubpanels[i].getPreferredSize();
+      minDim = chartSubpanels[i].getMinimumSize();
       
-      d2.setSize( d.getWidth(), d2.getHeight() );
+      d2.setSize( d2.getWidth(), d.getHeight() );
       
-      chartSubpanel.setSize( d2 );
-      cont.add( makeChartSubpanel(i) );
+      chartSubpanels[i].setSize( d2 );
+      cont.add( chartSubpanels[i] );
       // gbc.gridy += 1;
       
     }
     
-    jsp.getViewport().setView(cont);
-    jsp.setVisible(true);
-    jsp.setMinimumSize(minDim);
+    inputScrollPane.getViewport().setView(cont);
+    inputScrollPane.setVisible(true);
+    inputScrollPane.setMinimumSize(minDim);
     
-    this.add(jsp, gbc);
+    this.add(inputScrollPane, gbc);
     gbc.gridy += 1;
     
     // set size so that the result pane isn't distorted on window launch
-    Dimension d = jsp.getPreferredSize();
-    d.setSize( d.getWidth() + 5, d.getHeight()* 2 );
+    Dimension d = inputScrollPane.getPreferredSize();
+    d.setSize( d.getWidth() + 5, d.getHeight() );
     this.setPreferredSize(d);
     
     leftSlider = new JSlider(0, SLIDER_MAX, 0);
@@ -709,8 +715,8 @@ implements ActionListener, ChangeListener {
     
 
     showRegionForGeneration();
-    zooms.matchIntervals();
-    zooms.trimToCommonTime();
+    zooms.matchIntervals(activeFiles);
+    zooms.trimToCommonTime(activeFiles);
     return zooms;
   }
 
@@ -800,7 +806,7 @@ implements ActionListener, ChangeListener {
     // zooms.trimToCommonTime();
     
     for (int i = 0; i < FILE_COUNT; ++i) {
-      if ( !ds.blockIsSet(i) ) {
+      if ( !zooms.blockIsSet(i) ) {
         continue;
       }
       
@@ -847,7 +853,7 @@ implements ActionListener, ChangeListener {
     if ( leftSlider.getValue() != 0 || rightSlider.getValue() != SLIDER_MAX ) {
       long start = getMarkerLocation(db, leftSlider.getValue() );
       long end = getMarkerLocation(db, rightSlider.getValue() );
-      zooms = new DataStore(ds, start, end);
+      zooms = new DataStore(ds, start, end, activeFiles);
       leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
       zoomOut.setEnabled(true);
     }
@@ -988,8 +994,8 @@ implements ActionListener, ChangeListener {
           xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
 
           zooms = new DataStore(ds);
-          zooms.matchIntervals();
-          zooms.trimToCommonTime();
+          zooms.matchIntervals(activeFiles);
+          zooms.trimToCommonTime(activeFiles);
 
           return 0;
           // setData(idx, filePath, immutableFilter);
@@ -1015,8 +1021,8 @@ implements ActionListener, ChangeListener {
             clearButton[idx].setEnabled(true);
             return;
           }
-
-          seedFileNames[idx].setText("PLOTTING: " + file.getName());
+          
+          // seedFileNames[idx].setText("PLOTTING: " + file.getName());
 
           chartPanels[idx].setChart(chart);
           chartPanels[idx].setMouseZoomable(true);
@@ -1054,6 +1060,43 @@ implements ActionListener, ChangeListener {
       worker.execute();
       return;
     }
+  }
+
+
+  public void showDataNeeded(ExperimentEnum em) {
+    
+    Container cont = new Container();
+    cont.setLayout( new BoxLayout(cont, BoxLayout.Y_AXIS) );
+    
+    activeFiles = Math.max( em.blocksNeeded(), em.fullDataNeeded() );
+    
+    zooms = new DataStore(ds, activeFiles);
+    zooms.trimToCommonTime(activeFiles);
+    
+    for (int i = 0; i < activeFiles; ++i) {
+      if ( zooms.blockIsSet(i) ){
+        resetPlotZoom(i);
+      }
+      
+      Dimension d = cont.getPreferredSize();
+      Dimension d2 = chartSubpanels[i].getPreferredSize();
+      
+      d2.setSize( d2.getWidth(), d.getHeight() );
+      
+      chartSubpanels[i].setSize( d2 );
+      cont.add( chartSubpanels[i] );
+      // gbc.gridy += 1;
+      
+    }
+    
+    leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
+    setVerticalBars();
+    
+    zoomIn.setEnabled( zooms.numberOfBlocksSet() > 0 );
+    
+    zoomOut.setEnabled(false);
+    
+    inputScrollPane.getViewport().setView(cont);
   }
   
 }
