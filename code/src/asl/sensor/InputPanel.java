@@ -2,6 +2,7 @@ package asl.sensor;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -89,6 +90,8 @@ implements ActionListener, ChangeListener {
   public static final int IMAGE_HEIGHT = 240;
   public static final int IMAGE_WIDTH = 480;
   
+  public static final int FILE_COUNT = DataStore.FILE_COUNT;
+  
   private static final int MARGIN = 10; // min space of the two sliders
   private static final int SLIDER_MAX = 10000;
   
@@ -105,7 +108,7 @@ implements ActionListener, ChangeListener {
   }
   private DataStore ds;
   private DataStore zooms;
-  private ChartPanel[] chartPanels = new ChartPanel[DataStore.FILE_COUNT];
+  private ChartPanel[] chartPanels = new ChartPanel[FILE_COUNT];
   private Color[] defaultColor = {
           ChartColor.LIGHT_RED, 
           ChartColor.LIGHT_BLUE, 
@@ -119,20 +122,114 @@ implements ActionListener, ChangeListener {
   private JSlider leftSlider;
   private JSlider rightSlider;
       
-  private JButton[] seedLoaders  = new JButton[DataStore.FILE_COUNT];
+  private JButton[] seedLoaders  = new JButton[FILE_COUNT];
   private JTextComponent[] seedFileNames = 
-      new JTextComponent[DataStore.FILE_COUNT];
-  private JButton[] respLoaders  = new JButton[DataStore.FILE_COUNT];
+      new JTextComponent[FILE_COUNT];
+  private JButton[] respLoaders  = new JButton[FILE_COUNT];
   private JTextComponent[] respFileNames = 
-      new JTextComponent[DataStore.FILE_COUNT];
+      new JTextComponent[FILE_COUNT];
   
-  private JButton[] clearButton = new JButton[DataStore.FILE_COUNT];
+  private JButton[] clearButton = new JButton[FILE_COUNT];
   // used to store current directory locations
   private String seedDirectory = "data";
   private String respDirectory = "responses";
 
   
   private String saveDirectory = System.getProperty("user.home");
+  
+  private JPanel makeChartSubpanel(int i) {
+    
+    JPanel chartSubpanel = new JPanel();
+    chartSubpanel.setLayout( new GridBagLayout() );
+    GridBagConstraints gbc = new GridBagConstraints();
+    
+    gbc.weightx = 1.0;
+    gbc.weighty = 1.0;
+    gbc.gridy = 0;
+    gbc.anchor = GridBagConstraints.CENTER;
+    
+    instantiateChart(i);
+    
+    /*
+    chartPanels[i].setMaximumSize(
+        new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
+    */
+    
+    chartPanels[i].setMouseZoomable(true);
+    
+    seedLoaders[i] = new JButton( "Load SEED file " + (i+1) );
+    seedLoaders[i].addActionListener(this);
+    
+    JTextField text = new JTextField( "NO FILE LOADED" );
+    text.setHorizontalAlignment(SwingConstants.CENTER);
+    seedFileNames[i] = text;
+    seedFileNames[i].setEditable(false);
+   
+    respLoaders[i] = new JButton( "Load RESP file " + (i+1) );
+    respLoaders[i].addActionListener(this);
+    
+    text = new JTextField( "NO FILE LOADED" );
+    text.setHorizontalAlignment(SwingConstants.CENTER);
+    respFileNames[i] = text;
+    respFileNames[i].setEditable(false);
+    
+    clearButton[i] = new JButton( "Clear data " + (i+1) );
+    
+    gbc.gridx = 0; gbc.gridy = 0;
+    gbc.gridwidth = 1; gbc.gridheight = 5;
+    gbc.weightx = 1; gbc.weighty = 1;
+    gbc.fill = GridBagConstraints.BOTH;
+    chartSubpanel.add(chartPanels[i], gbc);
+    
+    Dimension d = chartPanels[i].getPreferredSize();
+    d.setSize( d.getWidth() / 1.5 , d.getHeight()/1.5 );
+    chartPanels[i].setPreferredSize(d);
+    
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.gridx = 1;
+    gbc.gridwidth = 1; gbc.gridheight = 1;
+    gbc.weightx = 0; gbc.weighty = 0.25;
+    chartSubpanel.add(seedLoaders[i], gbc);
+    
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.weighty += 1;
+    gbc.gridy += 1;
+    JScrollPane jsp = new JScrollPane(seedFileNames[i]);
+    jsp.setVerticalScrollBarPolicy(
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+    jsp.setHorizontalScrollBarPolicy(
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+    chartSubpanel.add(jsp, gbc);
+    
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.weighty = 0.25;
+    gbc.gridy += 1;
+    chartSubpanel.add(respLoaders[i], gbc);
+
+    
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.weighty = 1;
+    gbc.gridy += 1;
+    jsp = new JScrollPane(respFileNames[i]);
+    jsp.setVerticalScrollBarPolicy(
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+    jsp.setHorizontalScrollBarPolicy(
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+    chartSubpanel.add(jsp, gbc);
+    
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.weighty = 0;
+    gbc.gridy += 1;
+    clearButton[i] = new JButton( "Clear data " + (i+1) );
+    clearButton[i].setOpaque(true);
+    clearButton[i].setBackground( Color.RED.darker() );
+    clearButton[i].addActionListener(this);
+    clearButton[i].setEnabled(false);
+    chartSubpanel.add(clearButton[i], gbc);
+    
+    return chartSubpanel;
+  }
+  
   
   /**
    * Creates a new data panel -- instantiates each chart, to be populated with
@@ -150,91 +247,71 @@ implements ActionListener, ChangeListener {
     gbc.weightx = 1.0;
     gbc.weighty = 1.0;
     gbc.gridy = 0;
+    gbc.gridwidth = 8;
     gbc.anchor = GridBagConstraints.CENTER;
+    gbc.fill = GridBagConstraints.BOTH;
     
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+    JScrollPane jsp = new JScrollPane();
+    jsp.setVerticalScrollBarPolicy(
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+    jsp.setHorizontalScrollBarPolicy(
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    
+    Container cont = new Container();
+    cont.setLayout( new BoxLayout(cont, BoxLayout.Y_AXIS) );
+    Dimension minDim = new Dimension(0, 0);
+    
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      Dimension d = cont.getPreferredSize();
+      JPanel chartSubpanel = makeChartSubpanel(i);
+      Dimension d2 = chartSubpanel.getPreferredSize();
+      minDim = chartSubpanel.getMinimumSize();
       
-      gbc.gridy = i * 5;
-      instantiateChart(i);
+      d2.setSize( d.getWidth(), d2.getHeight() );
       
-      /*
-      chartPanels[i].setMaximumSize(
-          new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
-      */
-      
-      chartPanels[i].setMouseZoomable(true);
-      
-      seedLoaders[i] = new JButton( "Load SEED file " + (i+1) );
-      
-      JTextField text = new JTextField( "NO FILE LOADED" );
-      text.setHorizontalAlignment(SwingConstants.CENTER);
-      seedFileNames[i] = text;
-      seedFileNames[i].setEditable(false);
-     
-      respLoaders[i] = new JButton( "Load RESP file " + (i+1) );
-      
-      text = new JTextField( "NO FILE LOADED" );
-      text.setHorizontalAlignment(SwingConstants.CENTER);
-      respFileNames[i] = text;
-      respFileNames[i].setEditable(false);
-      
-      clearButton[i] = new JButton( "Clear data " + (i+1) );
-      
-      gbc.gridx = 0;
-      gbc.gridwidth = 6; gbc.gridheight = 5;
-      gbc.weightx = 1; gbc.weighty = 1;
-      gbc.fill = GridBagConstraints.BOTH;
-      this.add(chartPanels[i], gbc);
-      
-      gbc.fill = GridBagConstraints.BOTH;
-      gbc.gridx = 7; gbc.gridy = i * 5;
-      gbc.gridwidth = 1; gbc.gridheight = 1;
-      gbc.weightx = 0; gbc.weighty = 0.25;
-      this.add(seedLoaders[i], gbc);
-      seedLoaders[i].addActionListener(this);
-      
-      gbc.fill = GridBagConstraints.BOTH;
-      gbc.weighty = 1;
-      gbc.gridy += 1;
-      JScrollPane jsp = new JScrollPane(seedFileNames[i]);
-      jsp.setVerticalScrollBarPolicy(
-          ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-      jsp.setHorizontalScrollBarPolicy(
-          ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-      this.add(jsp, gbc);
-      
-      gbc.fill = GridBagConstraints.BOTH;
-      gbc.weighty = 0.25;
-      gbc.gridy += 1;
-      this.add(respLoaders[i], gbc);
-      respLoaders[i].addActionListener(this);
-      
-      gbc.fill = GridBagConstraints.BOTH;
-      gbc.weighty = 1;
-      gbc.gridy += 1;
-      jsp = new JScrollPane(respFileNames[i]);
-      jsp.setVerticalScrollBarPolicy(
-          ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-      jsp.setHorizontalScrollBarPolicy(
-          ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-      this.add(jsp, gbc);
-      
-      gbc.fill = GridBagConstraints.HORIZONTAL;
-      gbc.weighty = 0;
-      gbc.gridy += 1;
-      clearButton[i] = new JButton("Clear this data");
-      clearButton[i].setOpaque(true);
-      clearButton[i].setBackground( Color.RED.darker() );
-      this.add(clearButton[i], gbc);
-      clearButton[i].addActionListener(this);
-      clearButton[i].setEnabled(false);
+      chartSubpanel.setSize( d2 );
+      cont.add( makeChartSubpanel(i) );
+      // gbc.gridy += 1;
       
     }
     
+    jsp.getViewport().setView(cont);
+    jsp.setVisible(true);
+    jsp.setMinimumSize(minDim);
+    
+    this.add(jsp, gbc);
+    gbc.gridy += 1;
+    
     // set size so that the result pane isn't distorted on window launch
-    Dimension d = chartPanels[0].getPreferredSize();
-    d.setSize( d.getWidth(), d.getHeight()* 2 );
+    Dimension d = jsp.getPreferredSize();
+    d.setSize( d.getWidth() + 5, d.getHeight()* 2 );
     this.setPreferredSize(d);
+    
+    leftSlider = new JSlider(0, SLIDER_MAX, 0);
+    leftSlider.setEnabled(false);
+    leftSlider.addChangeListener(this);
+    
+    rightSlider = new JSlider(0, SLIDER_MAX, SLIDER_MAX);
+    rightSlider.setEnabled(false);
+    rightSlider.addChangeListener(this);
+    
+    zoomIn = new JButton("Zoom in (on selection)");
+    zoomIn.addActionListener(this);
+    zoomIn.setEnabled(false);
+    
+    zoomOut = new JButton("Zoom out (show all)");
+    zoomOut.addActionListener(this);
+    zoomOut.setEnabled(false);
+    
+    save = new JButton("Save input (PNG)");
+    save.addActionListener(this);
+    save.setEnabled(false);
+    
+    clearAll = new JButton("Clear ALL data");
+    clearAll.setOpaque(true);
+    clearAll.setBackground( Color.RED.darker() );
+    clearAll.addActionListener(this);
+    clearAll.setEnabled(false);
     
     int yOfClear = gbc.gridy;
     
@@ -243,21 +320,12 @@ implements ActionListener, ChangeListener {
     gbc.gridy += 2;
     gbc.weighty = 0;
     gbc.weightx = 1;
-    gbc.gridwidth = 3;
+    gbc.gridwidth = 1;
     gbc.gridx = 0;
-    leftSlider = new JSlider(0, SLIDER_MAX, 0);
-    leftSlider.setEnabled(false);
-    leftSlider.addChangeListener(this);
+
     this.add(leftSlider, gbc);
     
-    gbc.gridwidth = 1;
     gbc.gridx += 1;
-    this.add(new JPanel(), gbc);
-    
-    gbc.gridx += 3;
-    rightSlider = new JSlider(0, SLIDER_MAX, SLIDER_MAX);
-    rightSlider.setEnabled(false);
-    rightSlider.addChangeListener(this);
     this.add(rightSlider, gbc);
     
     // now we can add the space between the last plot and the save button
@@ -267,22 +335,14 @@ implements ActionListener, ChangeListener {
     gbc.gridy += 1;
     gbc.weighty = 0; gbc.weightx = 0;
     
-    gbc.gridwidth = 3;
-    
     gbc.gridx = 0;
     gbc.anchor = GridBagConstraints.EAST;
-    zoomIn = new JButton("Zoom in (on selection)");
     this.add(zoomIn, gbc);
-    zoomIn.addActionListener(this);
-    zoomIn.setEnabled(false);
-
     
-    gbc.gridx += 3;
+    gbc.gridx += 1;
     gbc.anchor = GridBagConstraints.WEST;
-    zoomOut = new JButton("Zoom out (show all)");
     this.add(zoomOut, gbc);
-    zoomOut.addActionListener(this);
-    zoomOut.setEnabled(false);
+
     
     gbc.gridwidth = 1;
     gbc.anchor = GridBagConstraints.CENTER;
@@ -290,19 +350,15 @@ implements ActionListener, ChangeListener {
     gbc.gridy = yOfClear+1;
     gbc.gridheight = 2;
     gbc.fill = GridBagConstraints.BOTH;
-    save = new JButton("Save input (PNG)");
+
     this.add(save, gbc);
-    save.addActionListener(this);
-    save.setEnabled(false);
+
     
     gbc.gridy += 2;
     gbc.gridheight = GridBagConstraints.REMAINDER;
-    clearAll = new JButton("Clear ALL data");
+
     this.add(clearAll, gbc);
-    clearAll.setOpaque(true);
-    clearAll.setBackground( Color.RED.darker() );
-    clearAll.addActionListener(this);
-    clearAll.setEnabled(false);
+
     
     //this.add(buttons);
     
@@ -325,7 +381,7 @@ implements ActionListener, ChangeListener {
   @Override
   public void actionPerformed(ActionEvent e) {
 
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+    for (int i = 0; i < FILE_COUNT; ++i) {
       JButton clear = clearButton[i];
       JButton seed = seedLoaders[i];
       JButton resp = respLoaders[i];
@@ -491,8 +547,8 @@ implements ActionListener, ChangeListener {
       // restore original loaded datastore
       zooms = new DataStore(ds);
       zooms.trimToCommonTime();
-      for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-        if (zooms.getBlock(i) == null) {
+      for (int i = 0; i < FILE_COUNT; ++i) {
+        if ( !zooms.blockIsSet(i) ) {
           continue;
         }
         resetPlotZoom(i);
@@ -599,7 +655,7 @@ implements ActionListener, ChangeListener {
     
     toDraw.setLayout( new BoxLayout(toDraw, BoxLayout.Y_AXIS) );
 
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+    for (int i = 0; i < FILE_COUNT; ++i) {
       if ( !ds.blockIsSet(i) ) {
         continue;
       }
@@ -743,7 +799,7 @@ implements ActionListener, ChangeListener {
     
     // zooms.trimToCommonTime();
     
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+    for (int i = 0; i < FILE_COUNT; ++i) {
       if ( !ds.blockIsSet(i) ) {
         continue;
       }
@@ -796,8 +852,8 @@ implements ActionListener, ChangeListener {
       zoomOut.setEnabled(true);
     }
     
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
-      if (zooms.getBlock(i) == null) {
+    for (int i = 0; i < FILE_COUNT; ++i) {
+      if ( !zooms.blockIsSet(i) ) {
         continue;
       }
       resetPlotZoom(i);
@@ -967,7 +1023,7 @@ implements ActionListener, ChangeListener {
 
           clearButton[idx].setEnabled(true);
 
-          for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+          for (int i = 0; i < FILE_COUNT; ++i) {
             if ( !zooms.blockIsSet(i) ) {
               continue;
             }
