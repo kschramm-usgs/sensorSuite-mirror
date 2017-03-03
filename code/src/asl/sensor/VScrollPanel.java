@@ -2,25 +2,19 @@ package asl.sensor;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.JPanel;
 import javax.swing.Scrollable;
 
 public class VScrollPanel extends JPanel implements Scrollable {
 
-  List<JPanel> subpanelList;
   
-  public VScrollPanel() {
-    super();
-    subpanelList = new ArrayList<JPanel>();
-  }
-  
-  public void add(JPanel jp) {
-    super.add(jp);
-    subpanelList.add(jp);
-  }
+  /**
+   * 
+   */
+  private static final long serialVersionUID = -4358405572297138013L;
+
+  boolean scaleVerticallyNotScroll = false;
   
   @Override
   public Dimension getPreferredScrollableViewportSize() {
@@ -46,9 +40,11 @@ public class VScrollPanel extends JPanel implements Scrollable {
 
   @Override
   public boolean getScrollableTracksViewportHeight() {
-    return false;
+    return scaleVerticallyNotScroll;
   }
 
-  
+  public void setScrollableTracksViewportHeight(boolean bool) {
+    scaleVerticallyNotScroll = bool;
+  }
   
 }

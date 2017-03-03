@@ -257,15 +257,13 @@ implements ChangeListener {
     Set<String> preventDuplicates = new HashSet<String>();
     
     for (int i = 0; i < 2; ++i) {
-      if ( ds.bothComponentsSet(i) ) {
-        String name = ds.getBlock(i).getName();
-        while ( preventDuplicates.contains(name) ) {
-          name += "_";
-        }
-        preventDuplicates.add(name);
-        firstSeries.addItem(name);
-        secondSeries.addItem(name);
+      String name = ds.getBlock(i).getName();
+      while ( preventDuplicates.contains(name) ) {
+        name += "_";
       }
+      preventDuplicates.add(name);
+      firstSeries.addItem(name);
+      secondSeries.addItem(name);
     }
     
     firstSeries.setSelectedIndex(0);

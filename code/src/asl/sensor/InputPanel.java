@@ -1106,6 +1106,17 @@ implements ActionListener, ChangeListener {
     
     zoomOut.setEnabled(false);
     
+    double heightScrollPane = inputScrollPane.getSize().getHeight();
+    
+    // can we hold the data in the frame without shrinking it too far?
+    JFrame holder = new JFrame();
+    holder.add(cont);
+    holder.pack();
+    
+    double heightContainer = cont.getSize().getHeight();
+    
+    cont.setScrollableTracksViewportHeight(heightScrollPane > heightContainer);
+    
     inputScrollPane.getViewport().setView(cont);
     inputScrollPane.setPreferredSize( cont.getPreferredSize() );
   }
