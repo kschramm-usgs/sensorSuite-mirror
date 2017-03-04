@@ -1106,16 +1106,24 @@ implements ActionListener, ChangeListener {
     
     zoomOut.setEnabled(false);
     
-    double heightScrollPane = inputScrollPane.getSize().getHeight();
+
     
+    /* commented out because 4 or fewer inputs look ok without needing scroll
     // can we hold the data in the frame without shrinking it too far?
+    // we create this jframe to make sure the holding panel size is defined
     JFrame holder = new JFrame();
     holder.add(cont);
     holder.pack();
     
+    double heightScrollPane = inputScrollPane.getSize().getHeight();
     double heightContainer = cont.getSize().getHeight();
     
     cont.setScrollableTracksViewportHeight(heightScrollPane > heightContainer);
+    */
+    
+    // using this test means the panel doesn't try to scroll when it's
+    // only got a few inputs to deal with, when stuff is still pretty readable
+    cont.setScrollableTracksViewportHeight(activeFiles <= 4);
     
     inputScrollPane.getViewport().setView(cont);
     inputScrollPane.setPreferredSize( cont.getPreferredSize() );
