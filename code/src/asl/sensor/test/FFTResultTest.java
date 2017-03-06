@@ -15,7 +15,7 @@ import org.apache.commons.math3.transform.TransformType;
 import org.jfree.data.xy.XYSeries;
 import org.junit.Test;
 
-import asl.sensor.FFTResult;
+import asl.sensor.utils.FFTResult;
 
 public class FFTResultTest {
 

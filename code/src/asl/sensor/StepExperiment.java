@@ -18,6 +18,9 @@ import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
+import asl.sensor.utils.FFTResult;
+import asl.sensor.utils.TimeSeriesUtils;
+
 /**
  * Basic outline of what this does
  * Given a seed file timeseries representing the calibration function passed

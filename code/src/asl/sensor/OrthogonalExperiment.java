@@ -17,6 +17,9 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
+import asl.sensor.utils.FFTResult;
+import asl.sensor.utils.TimeSeriesUtils;
+
 public class OrthogonalExperiment extends Experiment {
 
   final static double TAU = Math.PI * 2;

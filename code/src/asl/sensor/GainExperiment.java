@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
 
+import asl.sensor.utils.FFTResult;
+
 /**
  * Gain experiment does tests to determine a relative gain value of a sensor's
  * PSD as compared to a reference sensor over the same range of frequencies.

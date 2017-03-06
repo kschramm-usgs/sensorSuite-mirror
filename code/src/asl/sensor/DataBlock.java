@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.jfree.data.xy.XYSeries;
 
+import asl.sensor.utils.TimeSeriesUtils;
+
 /**
  * Holds the time series and metadata for a miniSEED file loaded in by the user
  * as well response files for the sensor associated with that miniseed

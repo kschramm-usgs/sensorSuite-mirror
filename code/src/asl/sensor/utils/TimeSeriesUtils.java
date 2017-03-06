@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.utils;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import asl.sensor.DataBlock;
 import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;

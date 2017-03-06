@@ -5,6 +5,9 @@ import java.io.IOException;
 
 import org.jfree.data.xy.XYSeries;
 
+import asl.sensor.utils.FFTResult;
+import asl.sensor.utils.TimeSeriesUtils;
+
 // TODO (BIG, BIG IMPORTANT TODO) implement locking for file loading and
 // for PSD calculation
 // need to lock for file read-in to prevent race conditions on time boundary

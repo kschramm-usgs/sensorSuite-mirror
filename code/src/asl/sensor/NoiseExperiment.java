@@ -3,6 +3,8 @@ package asl.sensor;
 import org.apache.commons.math3.complex.Complex;
 import org.jfree.data.xy.XYSeries;
 
+import asl.sensor.utils.FFTResult;
+
 /**
  * Produces the data for a self-noise test. Calculates PSD to get cross-power.
  * These calculations are based around the 3-component self noise calculation

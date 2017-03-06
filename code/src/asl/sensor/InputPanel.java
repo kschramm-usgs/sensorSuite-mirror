@@ -66,6 +66,8 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
+import asl.sensor.utils.TimeSeriesUtils;
+
 
 /**
  * Panel used to hold the plots for the files taken in as input
@@ -412,6 +414,7 @@ implements ActionListener, ChangeListener {
         // plot all valid range of loaded-in data or else
         // disable clearAll button if there's no other data loaded in
         clearAll.setEnabled( ds.isAnythingSet() );
+        
         zooms = new DataStore(ds);
         zooms.trimToCommonTime();
         
@@ -655,7 +658,7 @@ implements ActionListener, ChangeListener {
     // width = Math.min( width, chartPanels[0].getWidth() );
     // height = Math.max( height, shownHeight );
     
-    int loaded = ds.numberOfBlocksSet();
+    int loaded = zooms.numberOfBlocksSet();
     // cheap way to make sure height is a multiple of the chart count
     height = (height*loaded)/loaded;
     
@@ -672,7 +675,7 @@ implements ActionListener, ChangeListener {
     toDraw.setLayout( new BoxLayout(toDraw, BoxLayout.Y_AXIS) );
 
     for (int i = 0; i < FILE_COUNT; ++i) {
-      if ( !ds.blockIsSet(i) ) {
+      if ( !zooms.blockIsSet(i) ) {
         continue;
       }
       ChartPanel cp = chartPanels[i];
@@ -719,7 +722,7 @@ implements ActionListener, ChangeListener {
    */
   public DataStore getData() {
     
-    if ( ds.numberOfBlocksSet() < 1 ) {
+    if ( zooms.numberOfBlocksSet() < 1 ) {
       return new DataStore();
     }
     
@@ -736,7 +739,7 @@ implements ActionListener, ChangeListener {
    * @return height of image to output
    */
   public int getImageHeight() {
-    return IMAGE_HEIGHT * ds.numberOfBlocksSet();
+    return IMAGE_HEIGHT * zooms.numberOfBlocksSet();
   }
   
   /**
@@ -852,7 +855,7 @@ implements ActionListener, ChangeListener {
    */
   public void showRegionForGeneration() {
     
-    if ( ds.numberOfBlocksSet() < 1 ) {
+    if ( zooms.numberOfBlocksSet() < 1 ) {
       return;
     }
     
@@ -868,7 +871,7 @@ implements ActionListener, ChangeListener {
       zoomOut.setEnabled(true);
     }
     
-    for (int i = 0; i < FILE_COUNT; ++i) {
+    for (int i = 0; i < activeFiles; ++i) {
       if ( !zooms.blockIsSet(i) ) {
         continue;
       }
@@ -982,7 +985,11 @@ implements ActionListener, ChangeListener {
             return 1;
           }
 
-          XYSeries ts = ds.getPlotSeries(idx);
+          zooms = new DataStore(ds);
+          zooms.matchIntervals(activeFiles);
+          zooms.trimToCommonTime(activeFiles);
+
+          XYSeries ts = zooms.getPlotSeries(idx);
           chart = ChartFactory.createXYLineChart(
               ts.getKey().toString(),
               "Time",
@@ -1001,12 +1008,9 @@ implements ActionListener, ChangeListener {
           da.setLabelFont(bold);
           da.setDateFormatOverride(sdf);
           xyp.setDomainAxis(da);
-          xyp.getRenderer().setSeriesPaint(0, defaultColor[idx]);
-
-          zooms = new DataStore(ds);
-          zooms.matchIntervals(activeFiles);
-          zooms.trimToCommonTime(activeFiles);
-
+          int colorIdx = idx % defaultColor.length;
+          xyp.getRenderer().setSeriesPaint(0, defaultColor[colorIdx]);
+          
           return 0;
           // setData(idx, filePath, immutableFilter);
           // return 0;

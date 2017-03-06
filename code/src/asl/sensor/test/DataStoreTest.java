@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import asl.sensor.DataBlock;
 import asl.sensor.InputPanel;
-import asl.sensor.TimeSeriesUtils;
+import asl.sensor.utils.TimeSeriesUtils;
 import asl.sensor.DataStore;
 
 public class DataStoreTest {

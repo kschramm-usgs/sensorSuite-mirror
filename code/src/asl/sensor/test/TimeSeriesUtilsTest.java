@@ -20,7 +20,7 @@ import java.util.Set;
 import org.junit.Test;
 
 import asl.sensor.DataBlock;
-import asl.sensor.TimeSeriesUtils;
+import asl.sensor.utils.TimeSeriesUtils;
 import edu.iris.dmc.seedcodec.B1000Types;
 import edu.iris.dmc.seedcodec.CodecException;
 import edu.iris.dmc.seedcodec.DecompressedData;

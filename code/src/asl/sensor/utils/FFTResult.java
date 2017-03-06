@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.utils;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -13,6 +13,9 @@ import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.jfree.data.xy.XYSeries;
+
+import asl.sensor.DataBlock;
+import asl.sensor.InstrumentResponse;
 
 /**
  * Holds the data returned from a power spectral density calculation
