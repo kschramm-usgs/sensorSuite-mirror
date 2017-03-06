@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.gui;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -66,6 +66,10 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
+import asl.sensor.experiment.ExperimentEnum;
+import asl.sensor.input.DataBlock;
+import asl.sensor.input.DataStore;
+import asl.sensor.input.InstrumentResponse;
 import asl.sensor.utils.TimeSeriesUtils;
 
 

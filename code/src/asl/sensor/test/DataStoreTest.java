@@ -7,10 +7,10 @@ import java.util.List;
 
 import org.junit.Test;
 
-import asl.sensor.DataBlock;
-import asl.sensor.InputPanel;
+import asl.sensor.gui.InputPanel;
+import asl.sensor.input.DataBlock;
+import asl.sensor.input.DataStore;
 import asl.sensor.utils.TimeSeriesUtils;
-import asl.sensor.DataStore;
 
 public class DataStoreTest {
 

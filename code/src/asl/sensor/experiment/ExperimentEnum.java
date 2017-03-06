@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.experiment;
 
 /**
  * Enumerated type defining each kind of test, for GUI and test factory

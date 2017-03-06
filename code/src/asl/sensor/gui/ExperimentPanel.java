@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.gui;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -33,6 +33,11 @@ import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 
+import asl.sensor.experiment.Experiment;
+import asl.sensor.experiment.ExperimentEnum;
+import asl.sensor.experiment.ExperimentFactory;
+import asl.sensor.input.DataStore;
+
 /**
  * Panel used to display the data produced from a specified sensor test.
  * This primarily exists as a chartpanel, plus a filechooser and button used
@@ -56,7 +61,7 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   
   protected JFileChooser fc; // save image when image save button clicked
   
-  protected final ExperimentEnum expType; 
+  public final ExperimentEnum expType; 
           // used to define experiment of each plot object
   
   protected Experiment expResult;

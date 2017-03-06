@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.gui;
 
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -6,6 +6,12 @@ import java.awt.Rectangle;
 import javax.swing.JPanel;
 import javax.swing.Scrollable;
 
+/**
+ * Simple class to create a composable JPanel that is scrollable only
+ * in the vertical direction, as necessary.
+ * @author akearns
+ *
+ */
 public class VScrollPanel extends JPanel implements Scrollable {
 
   

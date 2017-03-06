@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.input;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

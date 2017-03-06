@@ -1,8 +1,11 @@
-package asl.sensor;
+package asl.sensor.experiment;
 
 import org.apache.commons.math3.complex.Complex;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+
+import asl.sensor.input.DataBlock;
+import asl.sensor.input.DataStore;
 
 /**
  * This function defines template patterns for each type of sensor experiment

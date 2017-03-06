@@ -33,6 +33,12 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
+import asl.sensor.experiment.ExperimentEnum;
+import asl.sensor.gui.ExperimentPanel;
+import asl.sensor.gui.ExperimentPanelFactory;
+import asl.sensor.gui.InputPanel;
+import asl.sensor.input.DataStore;
+
 // TODO: move file operations to the datapanel object?
 
 /**

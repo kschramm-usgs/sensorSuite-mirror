@@ -1,10 +1,13 @@
-package asl.sensor;
+package asl.sensor.experiment;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
 
+import asl.sensor.input.DataBlock;
+import asl.sensor.input.DataStore;
+import asl.sensor.input.InstrumentResponse;
 import asl.sensor.utils.FFTResult;
 
 /**
@@ -155,7 +158,7 @@ public class GainExperiment extends Experiment {
     otherGainStages = new ArrayList<Double>();
     
     InstrumentResponse[] resps = ds.getResponses();
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+    for (int i = 0; i < 2; ++i) {
       if (resps[i] == null) {
         continue;
       }

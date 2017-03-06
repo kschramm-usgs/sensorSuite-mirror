@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.input;
 
 /**
  * Used to specify the type of transfer function transform for response

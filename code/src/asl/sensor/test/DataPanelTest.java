@@ -7,8 +7,8 @@ import java.util.ArrayList;
 
 import org.junit.Test;
 
-import asl.sensor.DataBlock;
-import asl.sensor.InputPanel;
+import asl.sensor.gui.InputPanel;
+import asl.sensor.input.DataBlock;
 import asl.sensor.utils.TimeSeriesUtils;
 
 public class DataPanelTest {

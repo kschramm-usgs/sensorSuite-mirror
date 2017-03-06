@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.input;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.gui;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -14,6 +14,9 @@ import org.jfree.chart.axis.LogarithmicAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.data.xy.XYSeriesCollection;
+
+import asl.sensor.experiment.ExperimentEnum;
+import asl.sensor.input.DataStore;
 
 public class NoisePanel extends ExperimentPanel {
 

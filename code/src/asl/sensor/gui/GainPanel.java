@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.gui;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -26,6 +26,10 @@ import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
+
+import asl.sensor.experiment.ExperimentEnum;
+import asl.sensor.experiment.GainExperiment;
+import asl.sensor.input.DataStore;
 
 /**
  * Panel to display the results of the gain experiment calculations.
@@ -94,7 +98,7 @@ implements ChangeListener {
     secondSeries.addActionListener(this);
     secondSeries.setEnabled(false);
     
-    for (int i = 0; i < DataStore.FILE_COUNT; ++i) {
+    for (int i = 0; i < 2; ++i) {
       String out = "FILE NOT LOADED (" + i + ")";
       firstSeries.addItem(out);
       secondSeries.addItem(out);

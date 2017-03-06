@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.experiment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +17,8 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
+import asl.sensor.input.DataBlock;
+import asl.sensor.input.DataStore;
 import asl.sensor.utils.FFTResult;
 import asl.sensor.utils.TimeSeriesUtils;
 

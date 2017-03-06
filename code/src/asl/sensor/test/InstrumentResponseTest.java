@@ -10,9 +10,9 @@ import java.util.List;
 import org.apache.commons.math3.complex.Complex;
 import org.junit.Test;
 
-import asl.sensor.InstrumentResponse;
-import asl.sensor.TransferFunction;
-import asl.sensor.Unit;
+import asl.sensor.input.InstrumentResponse;
+import asl.sensor.input.TransferFunction;
+import asl.sensor.input.Unit;
 
 public class InstrumentResponseTest {
 

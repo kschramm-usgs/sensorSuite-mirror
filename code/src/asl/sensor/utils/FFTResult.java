@@ -14,8 +14,8 @@ import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 import org.jfree.data.xy.XYSeries;
 
-import asl.sensor.DataBlock;
-import asl.sensor.InstrumentResponse;
+import asl.sensor.input.DataBlock;
+import asl.sensor.input.InstrumentResponse;
 
 /**
  * Holds the data returned from a power spectral density calculation

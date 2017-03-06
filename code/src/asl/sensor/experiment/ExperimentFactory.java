@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.experiment;
 
 /**
  * Simple factory method for specifying a type of sensor test to calculate

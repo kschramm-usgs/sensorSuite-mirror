@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.input;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,7 +37,7 @@ public class DataStore {
   /**
    * Defines the maximum number of plots to be shown
    */
-  final static int FILE_COUNT = 9;
+  public final static int FILE_COUNT = 9;
   private DataBlock[] dataBlockArray;
   private InstrumentResponse[] responses;
   private XYSeries[] outToPlots; // used to cache graph data

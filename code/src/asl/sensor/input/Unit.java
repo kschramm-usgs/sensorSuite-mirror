@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.input;
 
 /**
  * Enum for specifiying unit types, as in values parsed from a response file

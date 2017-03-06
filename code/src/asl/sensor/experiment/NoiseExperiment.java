@@ -1,8 +1,11 @@
-package asl.sensor;
+package asl.sensor.experiment;
 
 import org.apache.commons.math3.complex.Complex;
 import org.jfree.data.xy.XYSeries;
 
+import asl.sensor.input.DataBlock;
+import asl.sensor.input.DataStore;
+import asl.sensor.input.InstrumentResponse;
 import asl.sensor.utils.FFTResult;
 
 /**

@@ -1,4 +1,6 @@
-package asl.sensor;
+package asl.sensor.gui;
+
+import asl.sensor.experiment.ExperimentEnum;
 
 /**
  * Simple factory method for creating an experiment panel

@@ -1,4 +1,4 @@
-package asl.sensor;
+package asl.sensor.gui;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -12,6 +12,10 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.title.TextTitle;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
+
+import asl.sensor.experiment.ExperimentEnum;
+import asl.sensor.experiment.OrthogonalExperiment;
+import asl.sensor.input.DataStore;
 
 public class OrthogonalPanel extends ExperimentPanel {
 
