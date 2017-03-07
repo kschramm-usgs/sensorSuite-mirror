@@ -6,8 +6,8 @@
     <!-- set global properties for this build -->
     <property name="project.main"               value="asl.sensor.SensorSuite" />
     <property name="project.archive"            value="SensorTestSuite.jar" />
-    <property name="src.dir"                    location="src"/>
-    <property name="res.dir"                    location="src/asl/sensor/resources"/>
+    <property name="src.dir"                    location="src/main/java/asl/sensor"/>
+    <property name="res.dir"                    location="src/main/resources"/>
     <property name="libs.dir"                   location="lib"/>
     <property name="build.root"                 location="build"/>
     <property name="manifest.file"              value="${src.dir}/META-INF/MANIFEST.MF" />
