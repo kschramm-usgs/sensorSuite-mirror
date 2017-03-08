@@ -64,6 +64,10 @@ implements ChangeListener {
     // instantiate common components
     super(exp);
     
+    for (int i = 0; i < 2; ++i) {
+      channelType[i] = "Input data (RESP required)";
+    }
+    
     plotTheseInBold = new String[]{"NLNM"};
     
     xAxisTitle = "Period (s)";

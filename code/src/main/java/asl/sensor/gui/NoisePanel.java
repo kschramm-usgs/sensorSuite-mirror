@@ -44,6 +44,10 @@ public class NoisePanel extends ExperimentPanel {
     // create chart, chartPanel, save button & file chooser, 
     super(exp);
     
+    for (int i = 0; i < 3; ++i) {
+      channelType[i] = "Input data (RESP required)";
+    }
+    
     plotTheseInBold = new String[]{"NLNM","NHNM"};
     
     // instantiate local fields

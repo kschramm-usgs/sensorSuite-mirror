@@ -26,6 +26,12 @@ public class OrthogonalPanel extends ExperimentPanel {
 
   public OrthogonalPanel(ExperimentEnum exp) {
     super(exp);
+    
+    channelType[0] = "North reference sensor";
+    channelType[1] = "East reference sensor";
+    channelType[2] = "Assumed-north test sensor";
+    channelType[3] = "Assumed-east test sensor";
+    
     xAxisTitle = "Time (s)";
     yAxisTitle = "Amplitude difference (counts)";
     xAxis = new NumberAxis(xAxisTitle);

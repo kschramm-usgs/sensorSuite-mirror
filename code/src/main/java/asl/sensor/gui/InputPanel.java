@@ -30,6 +30,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -132,6 +133,8 @@ implements ActionListener, ChangeListener {
       new JTextComponent[FILE_COUNT];
   private JButton[] clearButton = new JButton[FILE_COUNT];
   
+  private JLabel[] channelType = new JLabel[FILE_COUNT];
+  
   private JPanel[] chartSubpanels = new JPanel[FILE_COUNT];
   
   // used to store current directory locations
@@ -159,6 +162,8 @@ implements ActionListener, ChangeListener {
         new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE) );
     */
     
+    channelType[i] = new JLabel("");
+    
     chartPanels[i].setMouseZoomable(true);
     
     seedLoaders[i] = new JButton( "Load SEED file " + (i+1) );
@@ -180,9 +185,17 @@ implements ActionListener, ChangeListener {
     clearButton[i] = new JButton( "Clear data " + (i+1) );
     
     gbc.gridx = 0; gbc.gridy = 0;
-    gbc.gridwidth = 1; gbc.gridheight = 5;
+
+    gbc.weightx = 0; gbc.weighty = 0;
+    gbc.fill = GridBagConstraints.BOTH;
+    
+    gbc.fill = GridBagConstraints.NONE;
+    chartSubpanel.add(channelType[i], gbc);
+    
     gbc.weightx = 1; gbc.weighty = 1;
     gbc.fill = GridBagConstraints.BOTH;
+    gbc.gridwidth = 1; gbc.gridheight = 5;
+    gbc.gridy += 1;
     chartSubpanel.add(chartPanels[i], gbc);
     
     Dimension d = chartPanels[i].getPreferredSize();
@@ -1127,6 +1140,16 @@ implements ActionListener, ChangeListener {
     
     inputScrollPane.getViewport().setView(cont);
     inputScrollPane.setPreferredSize( cont.getPreferredSize() );
+  }
+  
+  public void setChannelTypes(String[] channels) {
+    
+    int len = Math.min(channels.length, channelType.length);
+    
+    for (int i = 0; i < len; ++i) {
+      channelType[i].setText(channels[i]);
+      channelType[i].setHorizontalAlignment(SwingConstants.CENTER);
+    }
   }
   
 }

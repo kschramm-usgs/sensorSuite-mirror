@@ -190,6 +190,8 @@ public class SensorSuite extends JPanel
     ExperimentEnum em = ep.expType;
     inputPlots.showDataNeeded(em);
 
+    inputPlots.setChannelTypes( ep.getChannelTypes() );
+    
   }
 
   /**
@@ -353,7 +355,11 @@ public class SensorSuite extends JPanel
       boolean canGenerate = ep.haveEnoughData(ds);
       generate.setEnabled(canGenerate);
     } else if ( e.getSource() == tabbedPane ) {
+      
       ExperimentPanel ep = (ExperimentPanel) tabbedPane.getSelectedComponent();
+      
+      inputPlots.setChannelTypes( ep.getChannelTypes() );
+      
       ExperimentEnum em = ep.expType;
       inputPlots.showDataNeeded(em);
       DataStore ds = inputPlots.getData();

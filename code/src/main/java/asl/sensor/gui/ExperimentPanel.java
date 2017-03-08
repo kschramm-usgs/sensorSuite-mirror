@@ -71,6 +71,8 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   protected String xAxisTitle, yAxisTitle;
   protected ValueAxis xAxis, yAxis;
   
+  public String[] channelType;
+  
   protected String[] plotTheseInBold; // given in the implementing function
   // this is a String because bolded names are intended to be fixed
   
@@ -79,6 +81,12 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
   // these are map/set because they are based on the data read in, not fixed
   
   public ExperimentPanel(ExperimentEnum exp) {
+    
+    channelType = new String[DataStore.FILE_COUNT];
+    
+    for (int i = 0; i < channelType.length; ++i) {
+      channelType[i] = "NOT USED";
+    }
     
     seriesColorMap = new HashMap<String, Color>();
     seriesDashedSet = new HashSet<String>();
@@ -101,6 +109,10 @@ public abstract class ExperimentPanel extends JPanel implements ActionListener {
     this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
     this.add(chartPanel);
     this.add(save);
+  }
+  
+  public String[] getChannelTypes() {
+    return channelType;
   }
   
   /**

@@ -39,6 +39,9 @@ public class StepPanel extends ExperimentPanel {
   public StepPanel(ExperimentEnum exp) {
     super(exp);
     
+    channelType[0] = "Calibration input";
+    channelType[1] = "Calibration output from sensor (RESP required)";
+    
     xAxisTitle = "Time (s)";
     yAxisTitle = "Normalized counts";
     xAxis = new NumberAxis(xAxisTitle);
