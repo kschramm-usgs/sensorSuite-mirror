@@ -39,8 +39,6 @@ import asl.sensor.gui.ExperimentPanelFactory;
 import asl.sensor.gui.InputPanel;
 import asl.sensor.input.DataStore;
 
-// TODO: move file operations to the datapanel object?
-
 /**
  * Main window of the sensor test program and the program's launcher
  * Mainly used for handling the input (inputpanel) and output (experimentpanel)
