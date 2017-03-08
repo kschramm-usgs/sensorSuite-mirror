@@ -1,6 +1,7 @@
 package asl.sensor.experiment;
 
 import org.apache.commons.math3.complex.Complex;
+import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
@@ -79,7 +80,7 @@ public abstract class Experiment {
     
   }
   
-  protected XYSeriesCollection xySeriesData;
+  protected XYDataset xySeriesData;
   
   /**
    * Abstract function that
@@ -97,7 +98,7 @@ public abstract class Experiment {
    * setData function / backend will produce initialization errors (NPE).
    * @return Plottable data 
    */
-  public XYSeriesCollection getData() {
+  public XYDataset getData() {
     return xySeriesData;
   }
   
@@ -119,6 +120,8 @@ public abstract class Experiment {
     
     final DataBlock[] dataIn = ds.getData();
     
+    // most backend functions will use an xyseries collection
+    // (this can, of course, be overridden for the few that won't)
     xySeriesData = new XYSeriesCollection();
     
     // int length = dataIn[0].size();

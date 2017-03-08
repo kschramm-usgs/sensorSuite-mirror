@@ -17,6 +17,7 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import asl.sensor.input.DataBlock;
 import asl.sensor.input.DataStore;
@@ -160,8 +161,9 @@ public class StepExperiment extends Experiment{
     
     // next we'll want to find the parameters to fit the plots
     // to the inputted data
-    xySeriesData.addSeries(scs);
-    xySeriesData.addSeries(xys);
+    XYSeriesCollection xysc = (XYSeriesCollection) xySeriesData;
+    xysc.addSeries(scs);
+    xysc.addSeries(xys);
     
     // next step: curve fitting
     RealVector startVector = MatrixUtils.createRealVector(params);
@@ -212,7 +214,7 @@ public class StepExperiment extends Experiment{
       now += interval;
     }
     
-    xySeriesData.addSeries(bfs);
+    xysc.addSeries(bfs);
     
     
   }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math3.complex.Complex;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import asl.sensor.input.DataBlock;
 import asl.sensor.input.DataStore;
@@ -180,12 +181,14 @@ public class GainExperiment extends Experiment {
       blocksPlotting.add( ds.getBlock(idx) );
     }
     
-    xySeriesData.setAutoWidth(true);
+    XYSeriesCollection xysc = (XYSeriesCollection) xySeriesData;
     
-    addToPlot(ds, false, indices, xySeriesData); 
+    xysc.setAutoWidth(true);
+    
+    addToPlot(ds, false, indices, xysc); 
     // false, because we don't want to plot in frequency space
     
-    xySeriesData.addSeries( FFTResult.getLowNoiseModel(false) );
+    xysc.addSeries( FFTResult.getLowNoiseModel(false) );
     
   }
   

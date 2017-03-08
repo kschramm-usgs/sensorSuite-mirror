@@ -24,6 +24,8 @@ public class ExperimentFactory {
       return new GainExperiment();
     case STCAL:
       return new StepExperiment();
+    case AZMTH:
+      return new AzimuthExperiment();
     default:
       // this shouldn't happen unless someone added to the enum
       // and forgot to follow-through on implementation

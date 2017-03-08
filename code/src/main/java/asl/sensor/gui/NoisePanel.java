@@ -187,7 +187,7 @@ public class NoisePanel extends ExperimentPanel {
       public Integer doInBackground() {
         expResult.setData(ds, freqSpaceImmutable);
         
-        XYSeriesCollection xysc = expResult.getData();
+        XYSeriesCollection xysc = (XYSeriesCollection) expResult.getData();
         
         for (int i = 0; i < NOISE_PLOT_COUNT; ++i) {
           String name = (String) xysc.getSeriesKey(i);
@@ -207,7 +207,7 @@ public class NoisePanel extends ExperimentPanel {
         
         displayInfoMessage("Data loaded...drawing chart");
         
-        populateChart(expResult.getData());
+        populateChart( expResult.getData() );
 
         chartPanel.setChart(chart);
         chartPanel.setMouseZoomable(true);

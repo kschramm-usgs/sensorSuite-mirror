@@ -452,7 +452,7 @@ implements ChangeListener {
       public Integer doInBackground() {
 
         // plot has 3 components: source, destination, NLNM line plot
-        XYSeriesCollection xyscIn = expResult.getData();
+        XYSeriesCollection xyscIn = (XYSeriesCollection) expResult.getData();
         xysc = new XYSeriesCollection();
         xysc.addSeries( xyscIn.getSeries(idx0) );
         xysc.addSeries( xyscIn.getSeries(idx1) );
@@ -462,10 +462,11 @@ implements ChangeListener {
         if ( xysc.getSeriesKey(0).equals("NLNM") ) {
           xys = xysc.getSeries(1);
         }
+        
+        GainExperiment gn = (GainExperiment) expResult;
 
         // want to default to octave centered at highest value of fixed freq
-        freqRange = 
-            ( (GainExperiment) expResult).getOctaveCenteredAtPeak(idx0);
+        freqRange = gn.getOctaveCenteredAtPeak(idx0);
         
         // get the locations (x-axis values) of frequency range as intervals
         lowPrd = Math.min(1/freqRange[0], 1/freqRange[1]);
@@ -480,9 +481,8 @@ implements ChangeListener {
         
         
         // get statistics from frequency (convert from period)
-        gainStatistics = 
-            ( (GainExperiment) expResult ).getStatsFromFreqs(
-                idx0, idx1, freqRange[0], freqRange[1]);
+        gainStatistics = gn.getStatsFromFreqs(idx0, idx1, 
+            freqRange[0], freqRange[1]);
         
         return 0;
       }

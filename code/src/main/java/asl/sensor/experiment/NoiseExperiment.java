@@ -2,6 +2,7 @@ package asl.sensor.experiment;
 
 import org.apache.commons.math3.complex.Complex;
 import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import asl.sensor.input.DataBlock;
 import asl.sensor.input.DataStore;
@@ -63,7 +64,9 @@ public class NoiseExperiment extends Experiment {
       responses[i] = ds.getResponse(indices[i]);
     }
     
-    xySeriesData.setAutoWidth(true);
+    XYSeriesCollection xysc = (XYSeriesCollection) xySeriesData;
+    
+    xysc.setAutoWidth(true);
     
     // TODO: make sure (i.e., when reading in data) that series lengths' match
     // rather than throwing the exceptions here
@@ -77,7 +80,7 @@ public class NoiseExperiment extends Experiment {
       freqs = ds.getPSD(indices[i]).getFreqs();
     }
     
-    addToPlot(ds, freqSpace, indices, xySeriesData);
+    addToPlot(ds, freqSpace, indices, xysc);
     
     // spectra[i] is crosspower pii, now to get pij terms for i!=j
     FFTResult fft = 
@@ -159,11 +162,11 @@ public class NoiseExperiment extends Experiment {
     }
     
     for (XYSeries noiseSeries : noiseSeriesArr) {
-      xySeriesData.addSeries(noiseSeries);
+      xysc.addSeries(noiseSeries);
     }
     
-    xySeriesData.addSeries( FFTResult.getLowNoiseModel(freqSpace) );
-    xySeriesData.addSeries( FFTResult.getHighNoiseModel(freqSpace) );
+    xysc.addSeries( FFTResult.getLowNoiseModel(freqSpace) );
+    xysc.addSeries( FFTResult.getHighNoiseModel(freqSpace) );
 
   }
 

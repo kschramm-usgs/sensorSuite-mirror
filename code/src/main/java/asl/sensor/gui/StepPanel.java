@@ -2,6 +2,8 @@ package asl.sensor.gui;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 
 import javax.swing.BoxLayout;
 
@@ -57,11 +59,17 @@ public class StepPanel extends ExperimentPanel {
     
     applyAxesToChart();
     
-    this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
-    
-    this.add(chartPanel);
-    this.add(save);
-    save.setAlignmentX(CENTER_ALIGNMENT);
+    this.setLayout( new GridBagLayout() );
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.gridx = 0; gbc.gridy = 0;
+    gbc.weightx = 1.0; gbc.weighty = 1.0;
+    gbc.fill = GridBagConstraints.BOTH;
+    gbc.anchor = GridBagConstraints.CENTER;
+    this.add(chartPanel, gbc);
+    gbc.weighty = 0.0;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.gridy += 1;
+    this.add(save, gbc);
     
     plotTheseInBold = new String[]{};
     
@@ -82,13 +90,14 @@ public class StepPanel extends ExperimentPanel {
     displayInfoMessage("Running stepcal testing...");
     
     expResult.setData(ds, false);
-    XYSeriesCollection xysc = expResult.getData();
+    XYSeriesCollection xysc = (XYSeriesCollection) expResult.getData();
     
     // here's the stuff that needs to stay here, not moved to experiment class
     populateChart(xysc);
     XYPlot xyp = (XYPlot) chart.getPlot();
-    double[] rolloff = ( (StepExperiment) expResult ).getCornerAndDamping();
-    double[] fit = ( (StepExperiment) expResult ).getFitCornerAndDamping();
+    StepExperiment sp = (StepExperiment) expResult;
+    double[] rolloff = sp.getCornerAndDamping();
+    double[] fit = sp.getFitCornerAndDamping();
     double corner = rolloff[0];
     double damping = rolloff[1];
     double fitCorner = fit[0];

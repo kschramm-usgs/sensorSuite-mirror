@@ -16,6 +16,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 
 import asl.sensor.input.DataBlock;
 import asl.sensor.input.DataStore;
@@ -106,6 +107,7 @@ public class OrthogonalExperiment extends Experiment {
         RealVector curValue = 
             refX.mapMultiply(sinTheta).add( refY.mapMultiply(cosTheta) );
         
+        // we have only 1 variable, so jacobian is a matrix w/ single column
         RealMatrix jbn = MatrixUtils.createRealMatrix(len, 1);
         RealVector jbnValue = 
             refX.mapMultiply(cosTheta).add( refY.mapMultiply(-sinTheta) );
@@ -232,8 +234,11 @@ public class OrthogonalExperiment extends Experiment {
       timeAtPoint += tick;
     }
     
-    xySeriesData.addSeries(diffSrs);
-    xySeriesData.addSeries(diffRotSrs);
+    XYSeriesCollection xysc = (XYSeriesCollection) xySeriesData;
+    
+    xysc.addSeries(diffSrs);
+    xysc.addSeries(diffRotSrs);
+    
   }
 
   public double[] getSolutionParams() {
