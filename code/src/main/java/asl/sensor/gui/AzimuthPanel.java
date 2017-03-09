@@ -4,9 +4,11 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -26,6 +28,11 @@ public class AzimuthPanel extends ExperimentPanel {
     offsetSpinner = new JSpinner(spinModel);
     
     JLabel jbl = new JLabel("Offset angle (deg.):");
+    jbl.setLabelFor(offsetSpinner);
+    jbl.setHorizontalTextPosition(SwingConstants.RIGHT);
+    jbl.setHorizontalAlignment(SwingConstants.RIGHT);
+    JPanel labelPanel = new JPanel();
+    labelPanel.add(jbl);
     
     plotTheseInBold = new String[]{}; // shouldn't be used anyway
     
@@ -41,25 +48,40 @@ public class AzimuthPanel extends ExperimentPanel {
     this.setLayout( new GridBagLayout() );
     GridBagConstraints gbc = new GridBagConstraints();
     gbc.gridx = 0; gbc.gridy = 0;
-    gbc.weightx = 0; gbc.weighty = 0;
+    gbc.weightx = 1; gbc.weighty = 0;
     gbc.fill = GridBagConstraints.NONE;
-    gbc.anchor = GridBagConstraints.CENTER;
+    gbc.anchor = GridBagConstraints.EAST;
     this.add(jbl, gbc);
+    
     gbc.gridx += 1;
+    gbc.fill = GridBagConstraints.NONE;
     gbc.anchor = GridBagConstraints.WEST;
     this.add(offsetSpinner, gbc);
     
+
+    
     gbc.anchor = GridBagConstraints.CENTER;
-    gbc.gridx = 0; gbc.gridy += 1;
+    gbc.gridx = 0; gbc.gridy = 0;
     gbc.gridwidth = 2;
     gbc.weightx = 1.0; gbc.weighty = 1.0;
     gbc.fill = GridBagConstraints.BOTH;
     this.add(chartPanel, gbc);
-    gbc.weighty = 0.0;
-    gbc.fill = GridBagConstraints.NONE;
-    gbc.gridy += 1;
-    this.add(save, gbc);
     
+    gbc.weighty = 0.0;
+    gbc.gridy += 1;
+    gbc.gridwidth = 1;
+    gbc.fill = GridBagConstraints.NONE;
+    gbc.anchor = GridBagConstraints.EAST;
+    this.add(jbl, gbc);
+    
+    gbc.gridx += 1;
+    gbc.anchor = GridBagConstraints.WEST;
+    this.add(offsetSpinner, gbc);
+    
+    gbc.gridx = 0; gbc.gridy += 1;
+    gbc.gridwidth = 2;
+    gbc.anchor = GridBagConstraints.CENTER;
+    this.add(save, gbc);
   }
 
   /**
