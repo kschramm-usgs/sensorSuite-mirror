@@ -1,5 +1,6 @@
 package asl.sensor.gui;
 
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
@@ -12,6 +13,12 @@ import javax.swing.SwingConstants;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.annotations.XYTitleAnnotation;
+import org.jfree.chart.plot.Plot;
+import org.jfree.chart.plot.PolarPlot;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.title.TextTitle;
+import org.jfree.ui.RectangleAnchor;
 
 import asl.sensor.experiment.AzimuthExperiment;
 import asl.sensor.experiment.ExperimentEnum;
@@ -104,9 +111,18 @@ public class AzimuthPanel extends ExperimentPanel {
     
     expResult.setData(ds, false);
     
-    JFreeChart chart = ChartFactory.createPolarChart( expType.getName(),
+    chart = ChartFactory.createPolarChart( expType.getName(),
         expResult.getData(), true, true, false);
+    
+    double angle = az.getFitAngle();
+    String angleStr = "FIT ANGLE: " + angle;
+    angleStr += " + OFFSET (" + value + ") = " + (value + angle);
+    
+    PolarPlot plot = (PolarPlot) chart.getPlot();
+    plot.addCornerTextItem(angleStr);
+    
     chartPanel.setChart(chart);
+    
   }
 
 }
