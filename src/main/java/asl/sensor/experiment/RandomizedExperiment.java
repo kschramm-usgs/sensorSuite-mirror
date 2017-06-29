@@ -315,9 +315,9 @@ extends Experiment implements ParameterValidator {
       if (freqs[i] > 1.) {
         denom = freqs[i];
       }
-      if (freqs[i] > 20.) {
-        // for high enough freqs, make weighting (20/f^2) rather than 1/f;
-        denom *= freqs[i] / 20;
+      if (freqs[i] > 10.) {
+        // for high enough freqs, make weighting (100/f^3) rather than 1/f;
+        denom *= Math.pow(freqs[i], 2) / 100;
       }
       weights[i] = maxMagWeight / denom;
       weights[argIdx] = maxArgWeight / denom;
@@ -362,11 +362,11 @@ extends Experiment implements ParameterValidator {
     };
     
     ConvergenceChecker<LeastSquaresProblem.Evaluation> svc = 
-        new EvaluationRmsChecker(1.0E-7, 1.0E-7);
+        new EvaluationRmsChecker(1.0E-12, 1.0E-12);
     
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
-        withCostRelativeTolerance(1.0E-7).
-        withParameterRelativeTolerance(1.0E-7);
+        withCostRelativeTolerance(1.0E-12).
+        withParameterRelativeTolerance(1.0E-12);
     
     name = fitResponse.getName();
     XYSeries initMag = new XYSeries("Initial param (" + name + ") magnitude");
