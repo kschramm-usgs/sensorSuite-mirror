@@ -331,6 +331,52 @@ public class FFTResult {
    * @return Complex array of FFT values and double array of corresponding 
    * frequencies 
    */
+  public static FFTResult singleSidedFFT(DataBlock db, boolean mustFlip) {
+    
+    double[] data = new double[db.size()];
+    
+    for (int i = 0; i < db.size(); ++i) {
+      data[i] = db.getData().get(i).doubleValue();
+      
+      if (mustFlip) {
+        data[i] *= -1;
+      }
+    }
+    
+    data = TimeSeriesUtils.demean(data);
+    
+    // data = TimeSeriesUtils.normalize(data);
+    
+    Complex[] frqDomn = simpleFFT(data);
+    
+    int padding = frqDomn.length;
+    int singleSide = padding/2 + 1;
+    
+    double nyquist = db.getSampleRate() / 2;
+    double deltaFrq = nyquist / (singleSide - 1);
+    
+    Complex[] fftOut = new Complex[singleSide];
+    double[] frequencies = new double[singleSide];
+    
+    for (int i = 0; i < singleSide; ++i) {
+      fftOut[i] = frqDomn[i];
+      frequencies[i] = i * deltaFrq;
+    }
+    
+    System.out.println(frequencies[singleSide - 1]);
+    
+    return new FFTResult(fftOut, frequencies);
+    
+  }
+  
+  /**
+   * Calculates the FFT of the timeseries data in a DataBlock
+   * and returns the positive frequencies resulting from the FFT calculation
+   * @param db DataBlock to get the timeseries data from
+   * @param mustFlip True if signal from sensor is inverted (for step cal)
+   * @return Complex array of FFT values and double array of corresponding 
+   * frequencies 
+   */
   public static FFTResult 
   singleSidedFilteredFFT(DataBlock db, boolean mustFlip) {
     
@@ -359,54 +405,8 @@ public class FFTResult {
     int padding = frqDomn.length;
     int singleSide = padding/2 + 1;
     
-    double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
-    period *= db.getInterval();
-    double deltaFrq = 1. / (period * padding);
-    
-    Complex[] fftOut = new Complex[singleSide];
-    double[] frequencies = new double[singleSide];
-    
-    for (int i = 0; i < singleSide; ++i) {
-      fftOut[i] = frqDomn[i];
-      frequencies[i] = i * deltaFrq;
-    }
-    
-    return new FFTResult(fftOut, frequencies);
-    
-  }
-  
-  /**
-   * Calculates the FFT of the timeseries data in a DataBlock
-   * and returns the positive frequencies resulting from the FFT calculation
-   * @param db DataBlock to get the timeseries data from
-   * @param mustFlip True if signal from sensor is inverted (for step cal)
-   * @return Complex array of FFT values and double array of corresponding 
-   * frequencies 
-   */
-  public static FFTResult singleSidedFFT(DataBlock db, boolean mustFlip) {
-    
-    double[] data = new double[db.size()];
-    
-    for (int i = 0; i < db.size(); ++i) {
-      data[i] = db.getData().get(i).doubleValue();
-      
-      if (mustFlip) {
-        data[i] *= -1;
-      }
-    }
-    
-    data = TimeSeriesUtils.demean(data);
-    
-    // data = TimeSeriesUtils.normalize(data);
-    
-    Complex[] frqDomn = simpleFFT(data);
-    
-    int padding = frqDomn.length;
-    int singleSide = padding/2 + 1;
-    
-    double period = 1. / TimeSeriesUtils.ONE_HZ_INTERVAL;
-    period *= db.getInterval();
-    double deltaFrq = 1. / (period * padding);
+    double nyquist = db.getSampleRate() / 2;
+    double deltaFrq = nyquist / (singleSide - 1);
     
     Complex[] fftOut = new Complex[singleSide];
     double[] frequencies = new double[singleSide];
@@ -663,15 +663,6 @@ public class FFTResult {
   }
 
   /**
-   * Get the size of the complex array of FFT values, also the size of the
-   * double array of frequencies for the FFT at each index
-   * @return int representing size of thi's object's arrays
-   */
-  public int size() {
-    return transform.length;
-  }
-  
-  /**
    * Get the FFT for some sort of previously calculated data
    * @return Array of FFT results, as complex numbers
    */
@@ -689,6 +680,15 @@ public class FFTResult {
   }
   
   /**
+   * Get the frequency value at the given index
+   * @param idx Index to get the frequency value at
+   * @return Frequency value at index
+   */
+  public double getFreq(int idx) {
+    return freqs[idx];
+  }
+  
+  /**
    * Get the frequency range for the (previously calculated) FFT
    * @return Array of frequencies (doubles), matching index to each FFT point
    */
@@ -697,12 +697,12 @@ public class FFTResult {
   }
   
   /**
-   * Get the frequency value at the given index
-   * @param idx Index to get the frequency value at
-   * @return Frequency value at index
+   * Get the size of the complex array of FFT values, also the size of the
+   * double array of frequencies for the FFT at each index
+   * @return int representing size of thi's object's arrays
    */
-  public double getFreq(int idx) {
-    return freqs[idx];
+  public int size() {
+    return transform.length;
   }
   
 }

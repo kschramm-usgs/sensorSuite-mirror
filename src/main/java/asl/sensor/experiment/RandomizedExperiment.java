@@ -94,15 +94,6 @@ extends Experiment implements ParameterValidator {
     numIterations = 0;
   }
   
-  /**
-   * Used to determine whether to run the solver or not; disabling the solver
-   * is useful for determining the quality of a given calibration function
-   * @return True if the solver is to be run
-   */
-  public boolean getSolverState() {
-    return SKIP_SOLVING;
-  }
-  
   /*
    * (non-Javadoc)
    * BACKEND FUNCTION BEGINS HERE
@@ -435,7 +426,7 @@ extends Experiment implements ParameterValidator {
     XYSeries fitResidPhase = new XYSeries("Fit resp. phase sqd. error");
     
     fitResponse = fitResponse.buildResponseFromFitVector(
-        fitParams, lowFreq, numZeros, nyquist);
+        fitParams, lowFreq, numZeros);
     fitPoles = fitResponse.getPoles();
     fitZeros = fitResponse.getZeros();
     
@@ -506,7 +497,7 @@ extends Experiment implements ParameterValidator {
     // prevent terrible case where, say, only high-freq poles above nyquist rate
     if ( variables.length > 0) {
       testResp = fitResponse.buildResponseFromFitVector(
-          variables, lowFreq, numZeros, nyquist);
+          variables, lowFreq, numZeros);
     } else {
       System.out.println("NO VARIABLES TO SET. THIS IS AN ERROR.");
     }
@@ -615,7 +606,7 @@ extends Experiment implements ParameterValidator {
   public List<Complex> getInitialZeros() {
     return getZeroSubList(initialZeros);
   }
-
+  
   /**
    * Get the residual value of the initial response parameters
    * @return the residual of the initial poles from fed-in response
@@ -623,7 +614,7 @@ extends Experiment implements ParameterValidator {
   public double getInitResidual() {
     return initialResidual;
   }
-  
+
   /**
    * Get the number of times the algorithm iterated to produce the optimum
    * response fit, from the underlying least squares solver
@@ -632,7 +623,7 @@ extends Experiment implements ParameterValidator {
   public int getIterations() {
     return numIterations;
   }
-
+  
   /**
    * Trim down the poles to those within the range of those being fit
    * @param polesToTrim Either fit or input poles, sorted by frequency
@@ -641,10 +632,12 @@ extends Experiment implements ParameterValidator {
   private List<Complex> getPoleSubList(List<Complex> polesToTrim) {
     List<Complex> subList = new ArrayList<Complex>();  
     
+    double peak = .8 * nyquist;
+    
     for (int i = 0; i < polesToTrim.size(); ++i) {
       double freq = initialPoles.get(i).abs() / NumericUtils.TAU;
       
-      if ( ( lowFreq && freq > 1. ) || ( !lowFreq && freq > nyquist ) ) {
+      if ( ( lowFreq && freq > 1. ) || ( !lowFreq && freq > peak ) ) {
         break;
       }
       if (!lowFreq && freq < 1.) {
@@ -655,6 +648,15 @@ extends Experiment implements ParameterValidator {
     }
     
     return subList;
+  }
+
+  /**
+   * Used to determine whether to run the solver or not; disabling the solver
+   * is useful for determining the quality of a given calibration function
+   * @return True if the solver is to be run
+   */
+  public boolean getSolverState() {
+    return SKIP_SOLVING;
   }
   
   /**
@@ -669,10 +671,12 @@ extends Experiment implements ParameterValidator {
   private List<Complex> getZeroSubList(List<Complex> zerosToTrim) {
     List<Complex> subList = new ArrayList<Complex>();
     
+    double peak = .8 * nyquist;
+    
     for (int i = 0; i < zerosToTrim.size(); ++i) {
       double freq = initialZeros.get(i).abs() / NumericUtils.TAU;
       
-      if ( ( lowFreq && freq > 1. ) || ( !lowFreq && freq > nyquist ) ) {
+      if ( ( lowFreq && freq > 1. ) || ( !lowFreq && freq > peak ) ) {
         break;
       }
       if (!lowFreq && freq < 1. || freq == 0.) {
@@ -695,7 +699,6 @@ extends Experiment implements ParameterValidator {
    * approximation given a set of points to set as response. 
    * Mainly a wrapper for the evaluateResponse function.
    * @param variables Values to set the response's poles to
-   * @param numZeros How much of input vector is zeros of response
    * @return RealVector with evaluation at current response value and 
    * RealMatrix with forward difference of that response (Jacobian)
    */

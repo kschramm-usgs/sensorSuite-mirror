@@ -3,6 +3,7 @@ package asl.sensor.input;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 
 import asl.sensor.utils.TimeSeriesUtils;
@@ -22,6 +23,7 @@ public class DataBlock {
   private long interval;
   private String name;
   private long startTime;
+  private List<Pair<Long, Long>> gapBoundaries;
   
   /**
    * Creates a copy of a given DataBlock, which has the same parameters
@@ -32,6 +34,7 @@ public class DataBlock {
     setData( new ArrayList<Number>( in.getData() ) );
     name = in.getName();
     setStartTime(in.getStartTime());
+    gapBoundaries = in.getGapBoundaries();
   }
   
   /**
@@ -55,6 +58,8 @@ public class DataBlock {
       setStartTime(start);
     }
     
+    gapBoundaries = in.getGapBoundaries();
+    
   }
   
   /**
@@ -70,6 +75,7 @@ public class DataBlock {
     setInterval(intervalIn);
     name = nameIn;
     setStartTime(timeIn);
+    gapBoundaries = new ArrayList<Pair<Long,Long>>();
   }
   
 
@@ -89,6 +95,10 @@ public class DataBlock {
    */
   public long getEndTime() {
     return startTime + ( interval * data.size() );
+  }
+  
+  public List<Pair<Long,Long>> getGapBoundaries() {
+    return gapBoundaries;
   }
   
   /**
@@ -211,6 +221,10 @@ public class DataBlock {
     data = dataIn;
   }
 
+  public void setGapLocations(List<Pair<Long, Long>> gapList) {
+    gapBoundaries = new ArrayList<Pair<Long, Long>>(gapList);
+  }
+  
   /**
    * Used to set the interval of the data (to be used, for example, when the
    * time series has had decimation applied)
@@ -238,7 +252,7 @@ public class DataBlock {
   public int size() {
     return data.size();
   }
-  
+
   /**
    * Converts this object's time series data into a form plottable by a chart.
    * The format is a pair of data: the time of a sample and that sample's value.
@@ -266,7 +280,7 @@ public class DataBlock {
     
     return out;
   }
-
+ 
   /**
    * Trim data to a given range (start time, end time)
    * @param start Start time to trim to in microseconds from epoch
