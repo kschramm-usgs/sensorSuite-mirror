@@ -62,8 +62,10 @@ public class RandomizedPanel extends ExperimentPanel {
    * @return List of strings, each one representing a new page's worth of data
    */
   public static String[] getAdditionalReportPages(RandomizedExperiment rnd) {
+    
+    // TODO: refactor this now that period values are included in
+    // the inset portion of the report text instead of merely in the extra data
     StringBuilder sb = new StringBuilder();
-    DecimalFormat df = new DecimalFormat("#.#####");
     
     StringBuilder csvPoles = new StringBuilder();
     StringBuilder csvZeros = new StringBuilder();
@@ -85,221 +87,146 @@ public class RandomizedPanel extends ExperimentPanel {
     List<Complex> fitZ = rnd.getFitZeros();
     List<Complex> initZ = rnd.getInitialZeros();
     
-    StringBuilder initText = new StringBuilder("Initial:\n");
-    StringBuilder fitText = new StringBuilder("Best fit:\n");
-    
-    sb.append("Pole and zero values, given as period (s):\n \n");
-    sb.append("Poles:\n");
-    
-    for (int i = 0; i < fitP.size(); ++i) {
-      
-      double fitDenom = fitP.get(i).abs();
-      double initDenom = initP.get(i).abs();
-      
-      // prevent division by 0;
-      double fitPrd = 0.;
-      if (fitDenom != 0) {
-        fitPrd = NumericUtils.TAU / fitDenom;
-      }
-      double initPrd = 0.;
-      if (initDenom != 0) {
-        initPrd = NumericUtils.TAU / initDenom;
-      }
-
-      fitText.append( df.format(fitPrd) );
-      initText.append( df.format(initPrd) );
-      fitText.append("\n");
-      initText.append("\n");
-      
-      if ( fitP.get(i).getImaginary() != 0. ) {
-        // complex conjugate pole is at same period value, don't report
-        ++i;
-      }
-    }
-    
-    sb.append(initText);
-    
     boolean solverNotRun = rnd.getSolverState();
     
-    if (!solverNotRun) {
-      sb.append(fitText);
-      
-      // get statistics for differences between initial and solved parameters
-      csvPoles = new StringBuilder("POLE VARIABLES, AS CSV:\n");
-      csvPoles.append(csvTitle);
-      csvPoles.append("\n");
-      
-      for (int i = 0; i < fitP.size(); ++i) {
-        double realPartFit = fitP.get(i).getReal();
-        double imagPartFit = fitP.get(i).getImaginary();
-        
-        double realPartInit = initP.get(i).getReal();
-        double imagPartInit = initP.get(i).getImaginary();
-        
-        // make sure sign of the imaginary parts are the same
-        if ( Math.signum(imagPartFit) != Math.signum(imagPartInit) ) {
-          imagPartFit *= -1;
-        }
-        
-        double realDiff = realPartInit - realPartFit;
-        double imagDiff = imagPartInit - imagPartFit;
-        
-        double realAvg = (realPartInit + realPartFit) / 2.;
-        double imagAvg = (imagPartInit + imagPartFit) / 2.;
-        
-        double realPct = realDiff * 100 / realPartFit;
-        if ( realPartFit == 0. ) {
-          realPct = 0.;
-        }
-        double imagPct = imagDiff * 100 / imagPartFit;
-        if ( imagPartFit == 0. ) {
-          imagPct = 0.;
-        }
-        
-        // INIT, FIT, DIFF, AVG, PCT
-        
-        double[] realRow = new double[]
-            {realPartInit, realPartFit, realDiff, realAvg, realPct};
-        
-        double[] imagRow = new double[]
-            {imagPartInit, imagPartFit, imagDiff, imagAvg, imagPct};
-        
-        for (double colNumber : realRow) {
-          String column = csvFormat.format(colNumber);
-          StringBuilder paddedColumn = new StringBuilder(column);
-          while ( paddedColumn.length() < COL_WIDTH ) {
-            paddedColumn.append(" "); // add a space
-          }
-          csvPoles.append( paddedColumn );
-        }
-        csvPoles.append("\n");
-        
-        for (double colNumber : imagRow) {
-          String column = csvFormat.format(colNumber);
-          StringBuilder paddedColumn = new StringBuilder(column);
-          while ( paddedColumn.length() < COL_WIDTH ) {
-            paddedColumn.append(" "); // add a space
-          }
-          csvPoles.append( paddedColumn );
-        }
-        csvPoles.append("\n");
-        
-        if (imagPartFit != 0.) {
-          ++i; // skip complex conjugate
-        }
-      }
-      
+    if (solverNotRun) {
+      return new String[]{};
     }
-        
-    initText = new StringBuilder();
-    fitText = new StringBuilder();
     
-    if ( fitZ.size() > 0 ) {
-      sb.append(" \nZeros:\n");
-      initText.append("Initial:\n");
-      fitText.append("Best fit:\n");
+    // get statistics for differences between initial and solved parameters
+    csvPoles = new StringBuilder("POLE VARIABLES, AS CSV:\n");
+    csvPoles.append(csvTitle);
+    csvPoles.append("\n");
+
+    for (int i = 0; i < fitP.size(); ++i) {
+      double realPartFit = fitP.get(i).getReal();
+      double imagPartFit = fitP.get(i).getImaginary();
+
+      double realPartInit = initP.get(i).getReal();
+      double imagPartInit = initP.get(i).getImaginary();
+
+      // make sure sign of the imaginary parts are the same
+      if ( Math.signum(imagPartFit) != Math.signum(imagPartInit) ) {
+        imagPartFit *= -1;
+      }
+
+      double realDiff = realPartInit - realPartFit;
+      double imagDiff = imagPartInit - imagPartFit;
+
+      double realAvg = (realPartInit + realPartFit) / 2.;
+      double imagAvg = (imagPartInit + imagPartFit) / 2.;
+
+      double realPct = realDiff * 100 / realPartFit;
+      if ( realPartFit == 0. ) {
+        realPct = 0.;
+      }
+      double imagPct = imagDiff * 100 / imagPartFit;
+      if ( imagPartFit == 0. ) {
+        imagPct = 0.;
+      }
+
+      // INIT, FIT, DIFF, AVG, PCT
+
+      double[] realRow = new double[]
+          {realPartInit, realPartFit, realDiff, realAvg, realPct};
+
+      double[] imagRow = new double[]
+          {imagPartInit, imagPartFit, imagDiff, imagAvg, imagPct};
+
+      for (double colNumber : realRow) {
+        String column = csvFormat.format(colNumber);
+        StringBuilder paddedColumn = new StringBuilder(column);
+        while ( paddedColumn.length() < COL_WIDTH ) {
+          paddedColumn.append(" "); // add a space
+        }
+        csvPoles.append( paddedColumn );
+      }
+      csvPoles.append("\n");
+
+      for (double colNumber : imagRow) {
+        String column = csvFormat.format(colNumber);
+        StringBuilder paddedColumn = new StringBuilder(column);
+        while ( paddedColumn.length() < COL_WIDTH ) {
+          paddedColumn.append(" "); // add a space
+        }
+        csvPoles.append( paddedColumn );
+      }
+      csvPoles.append("\n");
+
+      if (imagPartFit != 0.) {
+        ++i; // skip complex conjugate
+      }
     }
+
+    // get statistics for differences between initial and solved parameters
+    if ( fitZ.size() > 0 ) {
+      csvZeros = new StringBuilder("ZERO VARIABLES, AS CSV:\n");
+      csvZeros.append(csvTitle);
+      csvZeros.append("\n");
+    }
+
 
     for (int i = 0; i < fitZ.size(); ++i) {
-      double fitDenom = fitZ.get(i).abs();
-      double initDenom = initZ.get(i).abs();
-      
-      // prevent division by 0;
-      double fitPrd = 0.;
-      if (fitDenom != 0) {
-        fitPrd = NumericUtils.TAU / fitDenom;
-      }
-      double initPrd = 0.;
-      if (initDenom != 0) {
-        initPrd = NumericUtils.TAU / initDenom;
-      }
-      
-      fitText.append( df.format(fitPrd) );
-      initText.append( df.format(initPrd) );
-      fitText.append("\n");
-      initText.append("\n");
-      
-      if ( fitZ.get(i).getImaginary() != 0. ) {
-        // complex conjugate pole is at same period value, don't report
-        ++i;
-      }
-    }
-    
-    // add the values of the zeros to the metadata page
-    sb.append(initText);
-    if (!solverNotRun) {
-      sb.append(fitText);
-      
-      // get statistics for differences between initial and solved parameters
-      if ( fitZ.size() > 0 ) {
-        csvZeros = new StringBuilder("ZERO VARIABLES, AS CSV:\n");
-        csvZeros.append(csvTitle);
-        csvZeros.append("\n");
+      double realPartFit = fitZ.get(i).getReal();
+      double imagPartFit = fitZ.get(i).getImaginary();
+
+      double realPartInit = initZ.get(i).getReal();
+      double imagPartInit = initZ.get(i).getImaginary();
+
+      // make sure sign of the imaginary parts are the same
+      if ( Math.signum(imagPartFit) != Math.signum(imagPartInit) ) {
+        imagPartFit *= -1;
       }
 
-      
-      for (int i = 0; i < fitZ.size(); ++i) {
-        double realPartFit = fitZ.get(i).getReal();
-        double imagPartFit = fitZ.get(i).getImaginary();
-        
-        double realPartInit = initZ.get(i).getReal();
-        double imagPartInit = initZ.get(i).getImaginary();
-        
-        // make sure sign of the imaginary parts are the same
-        if ( Math.signum(imagPartFit) != Math.signum(imagPartInit) ) {
-          imagPartFit *= -1;
+      double realDiff = realPartInit - realPartFit;
+      double imagDiff = imagPartInit - imagPartFit;
+
+      double realAvg = (realPartInit + realPartFit) / 2.;
+      double imagAvg = (imagPartInit + imagPartFit) / 2.;
+
+      double realPct = realDiff * 100 / realPartFit;
+      if ( realPartFit == 0. ) {
+        realPct = 0.;
+      }
+      double imagPct = imagDiff * 100 / imagPartFit;
+      if ( imagPartFit == 0. ) {
+        imagPct = 0.;
+      }
+
+      double[] realRow = new double[]
+          {realPartInit, realPartFit, realDiff, realAvg, realPct};
+
+      double[] imagRow = new double[]
+          {imagPartInit, imagPartFit, imagDiff, imagAvg, imagPct};
+
+      for (double colNumber : realRow) {
+        String column = csvFormat.format(colNumber);
+        StringBuilder paddedColumn = new StringBuilder(column);
+        while ( paddedColumn.length() < COL_WIDTH ) {
+          paddedColumn.append(" "); // add a space
         }
-        
-        double realDiff = realPartInit - realPartFit;
-        double imagDiff = imagPartInit - imagPartFit;
-        
-        double realAvg = (realPartInit + realPartFit) / 2.;
-        double imagAvg = (imagPartInit + imagPartFit) / 2.;
-        
-        double realPct = realDiff * 100 / realPartFit;
-        if ( realPartFit == 0. ) {
-          realPct = 0.;
+        csvZeros.append( paddedColumn );
+      }
+      csvZeros.append("\n");
+
+      for (double colNumber : imagRow) {
+        String column = csvFormat.format(colNumber);
+        StringBuilder paddedColumn = new StringBuilder(column);
+        while ( paddedColumn.length() < COL_WIDTH ) {
+          paddedColumn.append(" "); // add a space
         }
-        double imagPct = imagDiff * 100 / imagPartFit;
-        if ( imagPartFit == 0. ) {
-          imagPct = 0.;
-        }
-        
-        double[] realRow = new double[]
-            {realPartInit, realPartFit, realDiff, realAvg, realPct};
-        
-        double[] imagRow = new double[]
-            {imagPartInit, imagPartFit, imagDiff, imagAvg, imagPct};
-        
-        for (double colNumber : realRow) {
-          String column = csvFormat.format(colNumber);
-          StringBuilder paddedColumn = new StringBuilder(column);
-          while ( paddedColumn.length() < COL_WIDTH ) {
-            paddedColumn.append(" "); // add a space
-          }
-          csvZeros.append( paddedColumn );
-        }
-        csvZeros.append("\n");
-        
-        for (double colNumber : imagRow) {
-          String column = csvFormat.format(colNumber);
-          StringBuilder paddedColumn = new StringBuilder(column);
-          while ( paddedColumn.length() < COL_WIDTH ) {
-            paddedColumn.append(" "); // add a space
-          }
-          csvZeros.append( paddedColumn );
-        }
-        csvZeros.append("\n");
-        
-        if (imagPartFit != 0.) {
-          ++i; // skip complex conjugate
-        }
+        csvZeros.append( paddedColumn );
+      }
+      csvZeros.append("\n");
+
+      if (imagPartFit != 0.) {
+        ++i; // skip complex conjugate
       }
     }
-    
+
     sb.append(csvPoles);
     sb.append(csvZeros);
-    
+
     String[] out = new String[]{sb.toString()}; // just a single new page
     return out;
   }
@@ -310,6 +237,8 @@ public class RandomizedPanel extends ExperimentPanel {
    * @return String format representation of data from the experiment
    */
   public static String getInsetString(RandomizedExperiment rnd) {
+    
+    final int MAX_LINE = 4; // maximum number of entries per line
     
     DecimalFormat df = new DecimalFormat("#.#####");
     ComplexFormat cf = new ComplexFormat(df);
@@ -337,29 +266,49 @@ public class RandomizedPanel extends ExperimentPanel {
     int numInLine = 0;
     
     for (int i = 0; i < fitP.size(); ++i) {
-      sbInit.append( cf.format( initP.get(i) ) );
-      sbFit.append( cf.format( fitP.get(i) ) );
+      
+      Complex init = initP.get(i);
+      Complex fit = fitP.get(i);
+      double initPrd = NumericUtils.TAU / init.abs();
+      double fitPrd = NumericUtils.TAU / fit.abs();
+      
+      sbInit.append( cf.format(init) );
+      sbFit.append( cf.format(fit) );
       ++numInLine;
       // want to fit two to a line for paired values
       
-      if ( initP.get(i).getImaginary() != 0. ) {
+      if ( init.getImaginary() != 0. ) {
         ++i; // INCREMENT I TO GET THE CONJUGATE AND NOT DO REDUNDANT OPERATION
         sbInit.append(";  ");
         sbFit.append(";  ");
         sbInit.append( cf.format( initP.get(i) ) );
         sbFit.append( cf.format( fitP.get(i) ) );
-        sbInit.append("\n");
-        sbFit.append("\n");
+        sbInit.append(" (");
+        sbInit.append( df.format(initPrd) );
+        sbInit.append(" s)\n");
+        sbFit.append(" (");
+        sbFit.append( df.format(fitPrd) );
+        sbFit.append(" s)\n");
         numInLine = 0;
       } else if ( i + 1 < fitP.size() ) {
         // if there is still data, fit up to 4 in a line
         // but separate conjugate pairs into their own line for space
-        if ( numInLine < 4 && initP.get(i + 1).getImaginary() == 0. ) {
+        if ( numInLine < MAX_LINE && initP.get(i + 1).getImaginary() == 0. ) {
+          sbInit.append(" (");
+          sbInit.append(initPrd);
+          sbInit.append(" s)");
+          sbFit.append(" (");
+          sbFit.append(fitPrd);
+          sbFit.append(" s)");
           sbInit.append(";   ");
           sbFit.append(";   ");
         } else {
-          sbInit.append("\n");
-          sbFit.append("\n");
+          sbInit.append(" (");
+          sbInit.append(initPrd);
+          sbInit.append(" s)\n");
+          sbFit.append(" (");
+          sbFit.append(fitPrd);
+          sbFit.append(" s)\n");
           numInLine = 0;
         }
       }
@@ -377,9 +326,14 @@ public class RandomizedPanel extends ExperimentPanel {
     }
     
     for (int i = 0; i < fitZ.size(); ++i) {
-
-      sbInitZ.append( cf.format( initZ.get(i) ) );
-      sbFitZ.append( cf.format( fitZ.get(i) ) );
+      
+      Complex init = initZ.get(i);
+      Complex fit = fitZ.get(i);
+      double initPrd = NumericUtils.TAU / init.abs();
+      double fitPrd = NumericUtils.TAU / fit.abs();
+      
+      sbInitZ.append( cf.format(init) );
+      sbFitZ.append( cf.format(fit) );
       
       // want to fit two to a line for paired values
       if ( initZ.get(i).getImaginary() != 0. ) {
@@ -387,14 +341,22 @@ public class RandomizedPanel extends ExperimentPanel {
         sbInitZ.append("; ");
         sbFitZ.append("; ");
         sbInitZ.append( cf.format( initZ.get(i) ) );
-        sbInitZ.append("\n");
         sbFitZ.append( cf.format( fitZ.get(i) ) );
-        sbFitZ.append("\n");
+        sbInitZ.append(" (");
+        sbInitZ.append( df.format(initPrd) );
+        sbInitZ.append(" s)\n");
+        sbFitZ.append(" (");
+        sbFitZ.append( df.format(fitPrd) );
+        sbFitZ.append(" s)\n");
         
       } else { 
         if ( i + 1 < fitZ.size() ) {
-          sbInitZ.append(";   ");
-          sbFitZ.append(";   ");
+          sbInitZ.append(" (");
+          sbInitZ.append( df.format(initPrd) );
+          sbInitZ.append(" s);   ");
+          sbFitZ.append(" (");
+          sbFitZ.append( df.format(fitPrd) );
+          sbFitZ.append(" s);   ");
         }
       }
     }
