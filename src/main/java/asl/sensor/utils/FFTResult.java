@@ -150,25 +150,62 @@ public class FFTResult {
    * Calculates and performs an in-place cosine taper on an incoming data set.
    * Used for windowing for performing FFT.
    * @param dataSet The dataset to have the taper applied to.
+   * @param taperW Width of taper to be used
    * @return Value corresponding to power loss from application of taper.
    */
   public static double cosineTaper(List<Number> dataSet, double taperW) {
     
     double ramp = taperW * dataSet.size();
     double taper;
-    double Wss = 0.0; // represents power loss
+    double wss = 0.0; // represents power loss
     
     for (int i = 0; i < ramp; i++) {
       taper = 0.5 * (1.0 - Math.cos( (double) i * Math.PI / ramp) );
       dataSet.set(i, dataSet.get(i).doubleValue() * taper);
       int idx = dataSet.size()-i-1;
       dataSet.set(idx, dataSet.get(idx).doubleValue() * taper );
-      Wss += 2.0 * taper * taper;
+      wss += 2.0 * taper * taper;
     }
     
-    Wss += ( dataSet.size() - (2*ramp) );
+    wss += ( dataSet.size() - (2 * ramp) );
     
-    return Wss;
+    return wss;
+  }
+  
+  public static double[][] getCosTaperVector(int len, double taperW) {
+    
+    double[] taperVec = new double[len];
+    for (int i = 0; i < taperVec.length; ++i) {
+      taperVec[i] = 1.;
+    }
+    
+    double ramp = taperW * len;
+    double taper;
+    
+    for (int i = 0; i < ramp; i++) {
+      taper = 0.5 * (1.0 - Math.cos( (double) i * Math.PI / ramp) );
+      taperVec[i] *= taper;
+      int idx = taperVec.length-i-1;
+      taperVec[idx] *= taper;
+    }
+    
+    return new double[][]{taperVec};
+    
+  }
+  
+  public static double[][] getTaperSeries(int winLen, int numTapers) {
+    double[][] taperMat = new double[winLen][numTapers];
+    
+    double denom = winLen + 1;
+    double scale = Math.sqrt(2 / denom);
+    
+    for (int i = 0; i < winLen; ++i) {
+      for (int j = 0; j < numTapers; ++j) {
+        taperMat[i][j] = scale * Math.sin(Math.PI * (i + 1) * (j + 1) / denom);
+      }
+    }
+    
+    return taperMat;
   }
   
   /**
@@ -454,7 +491,6 @@ public class FFTResult {
     return timeSeries;
   }
   
-  
   /**
    * Helper function to calculate power spectral density / crosspower.
    * Takes in two time series data and produces the windowed FFT over each.
@@ -475,18 +511,15 @@ public class FFTResult {
     List<Number> list1 = data1.getData();
     
     // divide into windows of 1/4, moving up 1/16 of the data at a time
-    // TODO: re-alter comment (changed in attempt to get better low-freq
-    // random cal results to half the data, at 1/8 windows)
-    
     int range = list1.size()/4;
     int slider = range/4;
-   
-    return spectralCalc(data1, data2, range, slider);
+    
+    return spectralCalc(data1, data2, range, slider, TaperType.COS);
     
   }
   
   public static FFTResult spectralCalc(DataBlock data1, DataBlock data2, 
-      int range, int slider) {
+      int range, int slider, TaperType taper) {
     
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
@@ -509,6 +542,7 @@ public class FFTResult {
       padding *= 2;
     }
     
+    final int TAPER_COUNT = 12;
     double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;
     period *= data1.getInterval();
     
@@ -516,7 +550,7 @@ public class FFTResult {
     double deltaFreq = 1. / (padding * period);
     
     Complex[] powSpectDens = new Complex[singleSide];
-    double wss = 0;
+    double wss = 1.;
     
     int segsProcessed = 0;
     int rangeStart = 0;
@@ -541,7 +575,7 @@ public class FFTResult {
       List<Number> data1Range = 
           new ArrayList<Number>(
               list1.subList(rangeStart, upperBound) );
-      List<Number> data2Range = null;
+      List<Number> data2Range = new ArrayList<Number>();
       
       if (!sameData) {
         data2Range = 
@@ -557,16 +591,51 @@ public class FFTResult {
       // demean and detrend work in-place on the list
       TimeSeriesUtils.detrend(data1Range);
       TimeSeriesUtils.demeanInPlace(data1Range);
-      wss = cosineTaper(data1Range, TAPER_WIDTH);
+      switch (taper) {
+      case COS:
+        wss = cosineTaper(data1Range, TAPER_WIDTH);
+        break;
+      case MULT:
+      default:
+        double[][] taperMat = getTaperSeries(data1Range.size(), TAPER_COUNT);
+        for (int i = 0; i < data1Range.size(); ++i) {
+          double point = data1Range.get(i).doubleValue();
+          double sum = 0.;
+          for (int j = 0; j < taperMat[0].length; ++j) {
+            sum += point * taperMat[i][j];
+          }
+          // need to re-assign point here; primitives not assigned by reference
+          // point = data1Range.get(i).doubleValue();
+          data1Range.set(i, sum / TAPER_COUNT);
+        }
+        break;
+      }
       // presumably we only need the last value of wss
       
       if (!sameData) {
         TimeSeriesUtils.demeanInPlace(data2Range);
         TimeSeriesUtils.detrend(data2Range);
-        wss = cosineTaper(data2Range, TAPER_WIDTH);
+        switch (taper) {
+        case COS:
+          wss = cosineTaper(data2Range, TAPER_WIDTH);
+          break;
+        case MULT:
+        default:
+          double[][] taperMat = getTaperSeries(data2Range.size(), TAPER_COUNT);
+          for (int i = 0; i < data2Range.size(); ++i) {
+            double point = data2Range.get(i).doubleValue();
+            double sum = 0.;
+            for (int j = 0; j < taperMat[0].length; ++j) {
+              sum += point * taperMat[i][j];
+            }
+            // need to re-assign point here; not evaluated by reference
+            // point = data2Range.get(i).doubleValue();
+            data2Range.set(i, sum / TAPER_COUNT);
+          }
+          break;
+        }
         toFFT2 = new double[padding];
       }
-      
 
       for (int i = 0; i < data1Range.size(); ++i) {
         // no point in using arraycopy -- must make sure each Number's a double
@@ -589,8 +658,6 @@ public class FFTResult {
         System.arraycopy(frqDomn2, 0, fftResult2, 0, fftResult2.length);
       }
       
-
-      
       for (int i = 0; i < singleSide; ++i) {
         
         Complex val1 = fftResult1[i];
@@ -612,7 +679,6 @@ public class FFTResult {
     }
     
     // normalization time!
-    
     double psdNormalization = 2.0 * period / padding;
     double windowCorrection = wss / (double) range;
     // it only uses the last value of wss, but that was how the original
@@ -718,6 +784,11 @@ public class FFTResult {
    */
   public int size() {
     return transform.length;
+  }
+
+  public enum TaperType {
+    COS, // cosine taper
+    MULT; // multi-taper function
   }
   
 }
