@@ -249,7 +249,7 @@ public class FFTResultTest {
       Pair<Long, Map<Long, Number>> dataMap = 
           TimeSeriesUtils.getTimeSeriesMap(sensOutName, metaName);
       DataBlock sensor = TimeSeriesUtils.mapToTimeSeries(dataMap, metaName);
-      long interval = dataMap.getFirst();
+      // long interval = dataMap.getFirst();
       Map<Long, Number> timeSeriesMap = dataMap.getSecond();
       List<Long> times = new ArrayList<Long>( timeSeriesMap.keySet() );
       Collections.sort(times);
@@ -355,12 +355,12 @@ public class FFTResultTest {
   // @Test
   public void testMultitaper() {
     final int TAPERS = 12;
-    double[][] taper = FFTResult.getTaperSeries(2000, TAPERS);
+    double[][] taper = FFTResult.getMultitaperSeries(2000, TAPERS);
     XYSeriesCollection xysc = new XYSeriesCollection();
-    for (int j = 0; j < taper[0].length; ++j) {
+    for (int j = 0; j < taper.length; ++j) {
       XYSeries xys = new XYSeries("Taper " + j);
-      for (int i = 0; i < taper.length; ++i) {
-        xys.add(i, taper[i][j]);
+      for (int i = 0; i < taper[j].length; ++i) {
+        xys.add(i, taper[j][i]);
       }
       xysc.addSeries(xys);
     }
@@ -373,7 +373,6 @@ public class FFTResultTest {
     try {
       ImageIO.write( bi, "png", file );
     } catch (IOException e) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
       fail();
     }

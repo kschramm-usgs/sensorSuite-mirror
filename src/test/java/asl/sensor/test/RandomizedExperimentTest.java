@@ -38,7 +38,6 @@ import asl.sensor.input.InstrumentResponse;
 import asl.sensor.utils.FFTResult;
 import asl.sensor.utils.ReportingUtils;
 import asl.sensor.utils.TimeSeriesUtils;
-import asl.sensor.utils.FFTResult.TaperType;
 
 public class RandomizedExperimentTest {
 
@@ -410,12 +409,10 @@ public class RandomizedExperimentTest {
         windowSize *= 2;
       }
       windowSize *= 2;
-      int change = windowSize;
-      TaperType taper = TaperType.MULT;
       FFTResult fft1 = 
-          FFTResult.spectralCalc(cal, out, windowSize, change, taper);
+          FFTResult.spectralCalcMultitaper(cal, out);
       FFTResult fft2 =
-          FFTResult.spectralCalc(out, out, windowSize, change, taper);
+          FFTResult.spectralCalcMultitaper(out, out);
       Complex[] calSpec = fft1.getFFT();
       Complex[] outSpec = fft2.getFFT();
       double[] freqs = fft1.getFreqs();
