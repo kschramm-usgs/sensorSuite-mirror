@@ -204,13 +204,14 @@ public class FFTResult {
   public static double[][] getMultitaperSeries(int winLen, int numTapers) {
     double[][] taperMat = new double[numTapers][winLen];
     
-    double denom = winLen + 1;
+    double denom = winLen;
     double scale = Math.sqrt(2 / denom);
     
     // TODO: may need to check correct loop indices for efficiency
     for (int j = 0; j < numTapers; ++j) {
       for (int i = 0; i < winLen; ++i) {
-        taperMat[j][i] = scale * Math.sin(Math.PI * (i + 1) * (j + 1) / denom);
+        // TODO: figure out why the limits of this are off
+        taperMat[j][i] = scale * Math.sin(Math.PI * i * (j + 1) / denom);
       }
     }
     
@@ -522,10 +523,21 @@ public class FFTResult {
     boolean sameData = data1.getName().equals( data2.getName() );
     
     List<Number> list1 = data1.getData();
-    List<Number> list2 = null;
+    List<Number> list2 = list1;
     if (!sameData) {
       list2 = data2.getData();
     }
+    
+    long interval = data1.getInterval();
+    
+    return spectralCalc(list1, list2, interval);
+    
+  }
+    
+  public static FFTResult 
+  spectralCalc(List<Number> list1, List<Number> list2, long interval) {
+    
+    boolean sameData = list1.equals(list2);
     
     // divide into windows of 1/4, moving up 1/16 of the data at a time
     
@@ -538,7 +550,7 @@ public class FFTResult {
     
     // shouldn't need to worry about a cast here
     double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;
-    period *= data1.getInterval();
+    period *= interval;
     
     int padding = 2;
     while (padding < range) {
@@ -559,7 +571,7 @@ public class FFTResult {
       powSpectDens[i] = Complex.ZERO;
     }
     
-    while ( rangeEnd <= data1.size() ) {
+    while ( rangeEnd <= list1.size() ) {
       
       Complex[] fftResult1 = new Complex[singleSide]; // first half of FFT reslt
       Complex[] fftResult2 = null;
@@ -619,8 +631,6 @@ public class FFTResult {
         frqDomn2 = fft.transform(toFFT2, TransformType.FORWARD);
         System.arraycopy(frqDomn2, 0, fftResult2, 0, fftResult2.length);
       }
-      
-
       
       for (int i = 0; i < singleSide; ++i) {
         
@@ -709,14 +719,22 @@ public class FFTResult {
       list2 = data2.getData();
     }
     
+    return spectralCalcMultitaper( list1, list2, data1.getInterval() );
+  }
+    
+  public static FFTResult 
+  spectralCalcMultitaper(List<Number> list1, List<Number> list2, long ivl) {
+    
+    boolean sameData = list1.equals(list2);
+    
     int padding = 2;
-    while ( padding < ( data1.size() * 2 ) ) {
+    while ( padding < ( list1.size() ) ) {
       padding *= 2;
     }
     
     final int TAPER_COUNT = 12;
     double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;
-    period *= data1.getInterval();
+    period *= ivl;
     
     int singleSide = padding / 2 + 1;
     double deltaFreq = 1. / (padding * period);
@@ -755,6 +773,7 @@ public class FFTResult {
 
     double[][] taperMat = 
         getMultitaperSeries(data1Range.size(), TAPER_COUNT);
+    // System.out.println("SIZES: " + padding + ", " + data1Range.size());
     
     // demean and detrend work in-place on the list
     TimeSeriesUtils.detrend(data1Range);
@@ -768,7 +787,7 @@ public class FFTResult {
       for (int i = 0; i < data1Range.size(); ++i) {
         taperSum += Math.abs(taperCurve[i]);
         double point = data1Range.get(i).doubleValue();
-        toFFT[i] = point * taperMat[j][i];
+        toFFT[i] = point * taperCurve[i];
       }
       frqDomn = fft.transform(toFFT, TransformType.FORWARD);
       for (int i = 0; i < fftResult1.length; ++i) {
