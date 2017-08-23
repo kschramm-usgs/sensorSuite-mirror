@@ -86,17 +86,17 @@ public class NoiseNineTest {
     // sdf.setLenient(false);
 
     Calendar cCal = Calendar.getInstance( sdf.getTimeZone() );
-    cCal.setTimeInMillis( ds.getBlock(0).getStartTime() / 1000 );
+    cCal.setTimeInMillis( ds.getBlock(0).getStartTime() );
     cCal.set(Calendar.HOUR_OF_DAY, 12);
     cCal.set(Calendar.MINUTE, 0);
     cCal.set(Calendar.SECOND, 0);
     System.out.println( "start: " + sdf.format( cCal.getTime() ) );
-    long start = cCal.getTime().getTime() * 1000L;
+    long start = cCal.getTime().getTime();
     cCal.set(Calendar.HOUR_OF_DAY, 13);
     cCal.set(Calendar.MINUTE, 00);
     cCal.set(Calendar.SECOND, 0);
     System.out.println( "end: " + sdf.format( cCal.getTime() ) );
-    long end = cCal.getTime().getTime() * 1000L;
+    long end = cCal.getTime().getTime();
     
     ds.trim(start, end, DataStore.FILE_COUNT);
     // ds.matchIntervals();
@@ -122,13 +122,25 @@ public class NoiseNineTest {
     xAxis.setLabelFont(bold);
     String yAxisTitle = "Power (rel. 1 (m/s^2)^2/Hz)";
     String[] orientations = new String[]{" (North)", " (East)", " (Vertical)"};
-
+    
     for (int i = 0; i < xysc.size(); ++i) {
+      
+      // make sure each series is populated with data from correct orientation
+      // i.e., BH1s for north, BH2s for south, etc.
+      String check = freqName + components[i];
+      XYSeriesCollection coll = xysc.get(i);
+      // has 3 components, so do 3 checks
+      // nlnm, nhnm should be 4th and 5th entries in data
+      for (int j = 0; j < 3; ++j) {
+        String key = (String) coll.getSeriesKey(j);
+        assertTrue(key.contains(check));
+      }
+      
       jfcl[i] = ChartFactory.createXYLineChart(
           ExperimentEnum.RANDM.getName() + orientations[i],
           xAxisTitle,
           yAxisTitle,
-          xysc.get(i),
+          coll,
           PlotOrientation.VERTICAL,
           true,
           false,
@@ -202,14 +214,14 @@ public class NoiseNineTest {
     // sdf.setLenient(false);
 
     Calendar cCal = Calendar.getInstance( sdf.getTimeZone() );
-    cCal.setTimeInMillis( ds.getBlock(0).getStartTime() / 1000 );
+    cCal.setTimeInMillis( ds.getBlock(0).getStartTime() );
     cCal.set(Calendar.HOUR, 7);
     System.out.println( "start: " + sdf.format( cCal.getTime() ) );
-    long start = cCal.getTime().getTime() * 1000L;
+    long start = cCal.getTime().getTime();
     cCal.set(Calendar.HOUR, 8);
     cCal.set(Calendar.MINUTE, 00);
     System.out.println( "end: " + sdf.format( cCal.getTime() ) );
-    long end = cCal.getTime().getTime() * 1000L;
+    long end = cCal.getTime().getTime();
 
     ds.trim(start, end);
     // ds.matchIntervals();

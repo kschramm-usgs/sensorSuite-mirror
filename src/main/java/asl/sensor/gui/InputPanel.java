@@ -798,8 +798,8 @@ implements ActionListener, ChangeListener {
           ds.untrim(activePlots);
           
           XYSeries ts = ds.getBlock(idx).toXYSeries();
-          System.out.println("XY SERIES NAME");
-          System.out.println(ts.getKey());
+          //System.out.println("XY SERIES NAME");
+          //System.out.println(ts.getKey());
           double sRate = ds.getBlock(idx).getSampleRate();
           String rateString = " (" + sRate + " Hz)";
           chart = ChartFactory.createXYLineChart(
@@ -810,7 +810,7 @@ implements ActionListener, ChangeListener {
               PlotOrientation.VERTICAL,
               false, false, false);
           
-          System.out.println("Got chart");
+          // System.out.println("Got chart");
 
           XYPlot xyp = (XYPlot) chart.getPlot();
           
@@ -1023,7 +1023,7 @@ implements ActionListener, ChangeListener {
    * @param idx Index of appropriate chart/panel
    */
   private void resetPlotZoom(int idx) {
-    System.out.println("reset plot zoom");
+    // System.out.println("reset plot zoom");
     XYPlot xyp = chartPanels[idx].getChart().getXYPlot();
     XYSeriesCollection xys = new XYSeriesCollection();
     xys.addSeries( ds.getBlock(idx).toXYSeries() );
@@ -1076,8 +1076,8 @@ implements ActionListener, ChangeListener {
     int leftValue = leftSlider.getValue();
     int rightValue = rightSlider.getValue();
     DataBlock db = ds.getXthLoadedBlock(1);
-    long startMarkerLocation = getMarkerLocation(db, leftValue) / 1000;
-    long endMarkerLocation = getMarkerLocation(db, rightValue) / 1000;
+    long startMarkerLocation = getMarkerLocation(db, leftValue);
+    long endMarkerLocation = getMarkerLocation(db, rightValue);
     
     startDate.removeChangeListener(this);
     endDate.removeChangeListener(this);
@@ -1094,7 +1094,6 @@ implements ActionListener, ChangeListener {
       XYPlot xyp = chartPanels[i].getChart().getXYPlot();
       xyp.clearDomainMarkers();
       
-      // divide by 1000 here to get time value in ms
       Marker startMarker = new ValueMarker(startMarkerLocation);
       startMarker.setStroke( new BasicStroke( (float) 1.5 ) );
       Marker endMarker = new ValueMarker(endMarkerLocation);
@@ -1111,9 +1110,8 @@ implements ActionListener, ChangeListener {
       double max = xysc.getDomainUpperBound(false);
       
       for (Pair<Long, Long> gapLoc : gaps) {
-        long divisor = TimeSeriesUtils.ONE_HZ_INTERVAL / 1000;
-        Double gapStart = gapLoc.getFirst().doubleValue() / divisor;
-        Double gapEnd = gapLoc.getSecond().doubleValue() / divisor;
+        Double gapStart = gapLoc.getFirst().doubleValue();
+        Double gapEnd = gapLoc.getSecond().doubleValue();
         if (gapEnd > min || gapStart < max) {
           double start = Math.max(gapStart, min);
           double end = Math.min(gapEnd, max);
@@ -1216,8 +1214,8 @@ implements ActionListener, ChangeListener {
     DataBlock db = ds.getXthLoadedBlock(1);
 
     if ( leftSlider.getValue() != 0 || rightSlider.getValue() != SLIDER_MAX ) {
-      long start = getMarkerLocation(db, leftSlider.getValue() );
-      long end = getMarkerLocation(db, rightSlider.getValue() );
+      long start = getMarkerLocation( db, leftSlider.getValue() );
+      long end = getMarkerLocation( db, rightSlider.getValue() );
       ds.trim(start, end, activePlots);
       leftSlider.setValue(0); rightSlider.setValue(SLIDER_MAX);
       zoomOut.setEnabled(true);
@@ -1253,12 +1251,13 @@ implements ActionListener, ChangeListener {
       long time = startDate.getTime();
       DataBlock db = ds.getXthLoadedBlock(1);
 
-      long startTime = db.getStartTime() / 1000;
+      long startTime = db.getStartTime();
       // startValue is current value of left-side slider in ms
 
       // assume current locations of sliders is valid
       int marginValue = rightSliderValue - MARGIN;
-      long marginTime = getMarkerLocation(db, marginValue) / 1000;
+      long marginTime = 
+          getMarkerLocation(db, marginValue);
 
       // fix boundary cases
       if (time < startTime) {
@@ -1268,7 +1267,7 @@ implements ActionListener, ChangeListener {
       }
      
       startDate.setValues(time);
-      int newLeftSliderValue = getSliderValue(db, time * 1000);
+      int newLeftSliderValue = getSliderValue(db, time);
       leftSlider.removeChangeListener(this);
       leftSlider.setValue(newLeftSliderValue); // already validated
       leftSlider.addChangeListener(this);
@@ -1285,10 +1284,10 @@ implements ActionListener, ChangeListener {
       long time = endDate.getTime();
       DataBlock db = ds.getXthLoadedBlock(1);
 
-      long endTime = db.getEndTime() / 1000;
+      long endTime = db.getEndTime();
 
       int marginValue = leftSliderValue + MARGIN;
-      long marginTime = getMarkerLocation(db, marginValue) / 1000;
+      long marginTime = getMarkerLocation(db, marginValue);
 
       // fix boundary cases
       if (time > endTime) {
@@ -1298,7 +1297,7 @@ implements ActionListener, ChangeListener {
       }
      
       endDate.setValues(time);
-      int newRightSliderValue = getSliderValue(db, time * 1000);
+      int newRightSliderValue = getSliderValue(db, time);
       rightSlider.removeChangeListener(this);
       rightSlider.setValue(newRightSliderValue); // already validated
       rightSlider.addChangeListener(this);
