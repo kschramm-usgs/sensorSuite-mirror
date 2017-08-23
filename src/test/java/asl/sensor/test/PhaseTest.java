@@ -1,6 +1,6 @@
 package asl.sensor.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -212,8 +212,8 @@ public DataStore setUpTest4() throws IOException {
       fail();
     }
     
-    double[] calArr = new double[cal.size()];
-    double[] outArr = new double[cal.size()];
+    double[] calArr = cal.getData();
+    double[] outArr = out.getData();
     
     StringBuilder sbCalData = new StringBuilder();
     StringBuilder sbOutData = new StringBuilder();
@@ -221,8 +221,6 @@ public DataStore setUpTest4() throws IOException {
     long nowTime = start;
     
     for (int i = 0; i < calArr.length; ++i) {
-      calArr[i] = cal.getData().get(i).doubleValue();
-      outArr[i] = out.getData().get(i).doubleValue();
       sbCalData.append(calArr[i]);
       sbCalData.append(", ");
       sbCalData.append(nowTime);
