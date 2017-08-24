@@ -64,6 +64,7 @@ public class DataBlock {
     targetInterval = in.getInterval();
     
     startTime = in.getInitialStartTime();
+    System.out.println(startTime);
     trimmedStart = Math.max(startTime, start);
     endTime = in.getInitialEndTime();
     trimmedEnd = Math.min(endTime, end);

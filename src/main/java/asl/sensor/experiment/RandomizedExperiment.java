@@ -306,10 +306,7 @@ extends Experiment implements ParameterValidator {
       } else {
         xAxis = 1. / freqs[i];
       }
-<<<<<<< HEAD
       //System.out.println( xAxis + "," + observedResult[i] );
-=======
->>>>>>> upstream/gui
       calcMag.add(xAxis, observedResult[i]);
       calcArg.add(xAxis, observedResult[argIdx]);
     }
