@@ -98,14 +98,6 @@ extends Experiment implements ParameterValidator {
     freqSpace = true;
   }
   
-  /**
-   * Set whether or not to plot in units of frequency (Hz) or period (s)
-   * @param setFreq true if plots should be in frequency units (Hz)
-   */
-  public void useFreqUnits(boolean setFreq) {
-    freqSpace = setFreq;
-  }
-  
   /*
    * (non-Javadoc)
    * BACKEND FUNCTION BEGINS HERE
@@ -357,6 +349,7 @@ extends Experiment implements ParameterValidator {
         } else if (freqs[i] > 1.) {
           denom = freqs[i];
         }
+        
       } else {
         if (freqs[i] < .01) {
           denom = freqs[i];
@@ -366,8 +359,13 @@ extends Experiment implements ParameterValidator {
         
       }
 
-      weights[i] = maxMagWeight / denom;
       weights[argIdx] = maxArgWeight / denom;
+      // ad-hoc conditional to increase weighting on the tail of the amp curve
+      if (freqs[i] < 0.3) {
+        denom = 1E-2;
+      }
+      weights[i] = maxMagWeight / denom;
+
     }
     
     DiagonalMatrix weightMat = new DiagonalMatrix(weights);
@@ -694,7 +692,7 @@ extends Experiment implements ParameterValidator {
   public double getInitResidual() {
     return initialResidual;
   }
-
+  
   /**
    * Get the number of times the algorithm iterated to produce the optimum
    * response fit, from the underlying least squares solver
@@ -703,7 +701,7 @@ extends Experiment implements ParameterValidator {
   public int getIterations() {
     return numIterations;
   }
-  
+
   /**
    * Trim down the poles to those within the range of those being fit
    * @param polesToTrim Either fit or input poles, sorted by frequency
@@ -729,7 +727,7 @@ extends Experiment implements ParameterValidator {
     
     return subList;
   }
-
+  
   /**
    * Used to determine whether to run the solver or not; disabling the solver
    * is useful for determining the quality of a given calibration function
@@ -738,7 +736,7 @@ extends Experiment implements ParameterValidator {
   public boolean getSolverState() {
     return SKIP_SOLVING;
   }
-  
+
   /**
    * Get the values used to weight the residual calculation function.
    * The first value is the magnitude weighting, the second is phase.
@@ -864,6 +862,14 @@ extends Experiment implements ParameterValidator {
    */
   public void setLowFreq(boolean lowFreq) {
     this.lowFreq = lowFreq;
+  }
+  
+  /**
+   * Set whether or not to plot in units of frequency (Hz) or period (s)
+   * @param setFreq true if plots should be in frequency units (Hz)
+   */
+  public void useFreqUnits(boolean setFreq) {
+    freqSpace = setFreq;
   }
  
   /**

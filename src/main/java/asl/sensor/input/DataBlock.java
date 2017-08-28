@@ -18,6 +18,29 @@ import asl.sensor.utils.TimeSeriesUtils;
  * Holds the time series and metadata for a miniSEED file loaded in by the user.
  * Includes methods for resampling data (backed by the TimeSeriesUtils decimate
  * function) and for trimming to specific time regions. 
+ * 
+ * Data is stored as a series of contiguous data blocks, stored in a map 
+ * according to their start time (given in milliseconds from epoch). The data
+ * can be set to be windowed to a given region of the valid data, from which
+ * the timeseries data can be extracted. The timeseries data is then returned
+ * as a list of samples (as double values) over that time range.
+ * 
+ * The contiguous blocks taken from a given miniSEED file should have the same 
+ * length and start times as given by reading in the same file into a program
+ * such as ObsPy. Sample rate is stored as the length of milliseconds between
+ * samples (as a long) but is also displayable as the 
+ * 
+ * Data names are given as a single string using SNCL (sensor, name, channel,
+ * location) metadata, and are generally used within this program as keys
+ * for data since experiments generally expect data to be taken over the
+ * same time range. Thus two sensors' data fed into an experiment will be
+ * considered equal if their names are the same.
+ * 
+ * While it is possible to get data from an instance of this object that
+ * includes a gapped range, it is not recommended as the behavior of the time
+ * series has not been fully tested. In general most experiments are
+ * best performed over time ranges that are fully inside a given contiguous
+ * block.
  * @author akearns
  *
  */
@@ -77,28 +100,15 @@ public class DataBlock {
     rebuildList = false;
   }
   
-  public 
-  DataBlock(Map<Long, double[]> dataIn, long intervalIn, String nameIn) {
-    interval = intervalIn;
-    targetInterval = intervalIn;
-    
-    List<Long> times = new ArrayList<Long>( dataIn.keySet() );
-    Collections.sort(times);
-    startTime = times.get(0);
-    trimmedStart = startTime;
-    // TODO: this is wrong
-    long lastListStart = times.get( times.size() - 1 );
-    int pointsToEnd = dataIn.get(lastListStart).length;
-    endTime = lastListStart + (pointsToEnd * intervalIn);
-    trimmedEnd = endTime;
-    
-    name = nameIn;
-    dataMap = dataIn;
-    
-    mergeContiguousTimes();
-    rebuildList = true;
-  }
-  
+  /**
+   * Create a new DataBlock using a single contiguous block of data; the
+   * resulting datamap will have a single entry at the specified start time
+   * which points to the passed-in array of data.
+   * @param dataIn Timeseries data to be loaded into this datablock
+   * @param intervalIn Sampling interval of data
+   * @param nameIn SNCL metadata of data source
+   * @param start Time (in ms from epoch) that the data begins on
+   */
   public 
   DataBlock(double[] dataIn, long intervalIn, String nameIn, long start) {
     interval = intervalIn;
@@ -113,113 +123,47 @@ public class DataBlock {
     
     name = nameIn;
     cachedTimeSeries = dataIn;
-    /*
-    for (int i = 0; i < dataIn.size(); ++i) {
-      cachedTimeSeries[i] = dataIn.get(i).doubleValue();
-    }
-    */
     rebuildList = false;
   }
   
-  public Map<Long, double[]> getDataMap() {
-    return dataMap;
-  }
-  
-  public void setDataMap(Map<Long, double[]> dataMap) {
-    this.dataMap = dataMap;
+  /**
+   * Create a new datablock by feeding in specific parameters
+   * @param dataIn Map of contiguous data blocks (which may require merging)
+   * @param intervalIn Sampling interval of data in ms
+   * @param nameIn SNCL metadata of data source
+   */
+  public 
+  DataBlock(Map<Long, double[]> dataIn, long intervalIn, String nameIn) {
+    interval = intervalIn;
+    targetInterval = intervalIn;
+    
+    List<Long> times = new ArrayList<Long>( dataIn.keySet() );
+    Collections.sort(times);
+    startTime = times.get(0);
+    trimmedStart = startTime;
+    long lastListStart = times.get( times.size() - 1 );
+    int pointsToEnd = dataIn.get(lastListStart).length;
+    endTime = lastListStart + (pointsToEnd * intervalIn);
+    trimmedEnd = endTime;
+    
+    name = nameIn;
+    dataMap = dataIn;
+    
     mergeContiguousTimes();
     rebuildList = true;
   }
   
-  public void setData(double[] data, long interval, long start) {
-    this.interval = interval;
-    targetInterval = interval;
-    startTime = start;
-    trimmedStart = start;
-    dataMap = new HashMap<Long, double[]>();
-    /*
-    List<Number> dataList = new ArrayList<Number>();
-    for (int i = 0; i < data.length; ++i) {
-      dataList.add(data[i]);
-    }
-    */
-    dataMap.put(startTime, data);
-    // System.out.println(data.length - 1);
-    endTime = startTime + (interval * data.length);
-    trimmedEnd = endTime;
-    cachedTimeSeries = data;
-    rebuildList = false;
-  }
-  
-  public void setData(double[] data) {
-    setData(data, targetInterval, trimmedStart);
-    // interval = targetInterval;
-  }
-  
-  public List<Pair<Long, Long>> getGapBoundaries() {
-    
-    List<Pair<Long, Long>> gapList = new ArrayList<Pair<Long, Long>>();
-    
-    List<Long> times = new ArrayList<Long>( dataMap.keySet() );
-    Collections.sort(times);
-
-    for (int i = 0; i < times.size(); ++i) {
-      long timeNow = times.get(i);
-      long blockEnd = dataMap.get(timeNow).length * interval + timeNow;
-      boolean hasNext = (i + 1) < times.size();
-      
-      if (blockEnd < trimmedStart) {
-        if (hasNext && times.get(i + 1) > trimmedStart) {
-          long gapEnd = Math.min( times.get(i+1), trimmedEnd );
-          gapList.add( new Pair<Long, Long>(trimmedStart, gapEnd) );
-        } else if (!hasNext) {
-          gapList.add( new Pair<Long, Long>(trimmedStart, trimmedEnd) );
-        }
-        continue;
-      }
-      if (timeNow > trimmedEnd) {
-        /*
-        if (gapList.size() == 0) {
-          gapList.add( new Pair<Long, Long>(trimmedStart, trimmedEnd) );
-          return gapList;
-        }
-        */
-        break;
-      }
-      
-      if ( (i + 1) < times.size() ) {
-        long timeNext = times.get(i + 1);
-        // is there a discrepancy, and is it big enough for us to care?
-        if (timeNext - blockEnd > interval * 2) {
-           gapList.add( new Pair<Long, Long>(blockEnd, timeNext) );
-        }
-      }
-    }
-    
-    return gapList;
-  }
-  
   /**
-   * Identifies whether or not input of signal starts positive. Used
-   * in step calibration solver to figure out if the data's signs are inverted.
-   * @return True if initial step response is negative
+   * If necessary, construct an array representing the data in the given window
+   * from specified start and end times and return it. The given array is
+   * cached until either it, the underlying data map, the time range of the
+   * window, or desired output sample rate (requiring decimation) change.
+   * If the current time window includes gaps, these will be populated by zeros.
+   * It is not recommended to trim data to a region including these gaps because
+   * they can produce undesired behavior in the results of experiments. If the
+   * data time range needs to be reduce it will also perform decimation. 
+   * @return Array representing the data found within a given time range
    */
-  public boolean needsSignFlip() {
-    double[] temp = getData();
-    double max = Math.abs( temp[0] );
-    int idx = 0;
-    for (int i = 1; i < temp.length / 4; ++i) {
-      double candidate = Math.abs( temp[i] );
-      if ( candidate > max ) {
-        max = candidate;
-        idx = i;
-      }
-    }
-    
-    return temp[idx] < 0;
-    
-  }
-  
   public double[] getData() {
     
     if (!rebuildList) {
@@ -321,9 +265,18 @@ public class DataBlock {
     
   }
   
-  public int size() {
-    long timeDiff = trimmedEnd - trimmedStart;
-    return (int) (timeDiff / targetInterval);
+  /**
+   * Return a copy of the underlying data structure of this object. It is not
+   * returned directly because modification of the underlying object would
+   * invalidate any cached timeseries array.
+   * To modify the datamap inside this object, call this function and then
+   * make a call to the corresponding setter to replace it. @see #setDataMap 
+   * The data structure is a map of contiguous block start times to the 
+   * timeseries data of that block (as an array)
+   * @return copy of this datablock's underlying contiguous block map
+   */
+  public Map<Long, double[]> getDataMap() {
+    return new HashMap<Long, double[]>(dataMap);
   }
   
   /**
@@ -334,18 +287,91 @@ public class DataBlock {
   public long getEndTime() {
     return trimmedEnd;
   }
+    
+  /**
+   * Output the boundaries between contiguous blocks inside the currently 
+   * selected data window. Used to display the input panel's orange regions.
+   * This is given as a list of paired start and end times specified in ms 
+   * from epoch.
+   * @return List of time ranges specifying lengths of time with no samples
+   */
+  public List<Pair<Long, Long>> getGapBoundaries() {
+    
+    List<Pair<Long, Long>> gapList = new ArrayList<Pair<Long, Long>>();
+    
+    List<Long> times = new ArrayList<Long>( dataMap.keySet() );
+    Collections.sort(times);
+    // contiguous blocks must have been merged for this to work correctly!
+    for (int i = 0; i < times.size(); ++i) {
+      long timeNow = times.get(i);
+      long blockEnd = dataMap.get(timeNow).length * interval + timeNow;
+      boolean hasNext = (i + 1) < times.size();
+      
+      if (blockEnd < trimmedStart) {
+        // does data (re-)start before our trimmed region does?
+        // if not, data begins with a gap
+        if (hasNext && times.get(i + 1) > trimmedStart) {
+          // does the next data point start before our region of interest ends?
+          long gapEnd = Math.min( times.get(i+1), trimmedEnd );
+          gapList.add( new Pair<Long, Long>(trimmedStart, gapEnd) );
+        } else if (!hasNext) {
+          gapList.add( new Pair<Long, Long>(trimmedStart, trimmedEnd) );
+        }
+        continue;
+      }
+      if (timeNow > trimmedEnd) {
+        break;
+      }
+      // check if a gap exists completely inside our selection window
+      if ( (i + 1) < times.size() ) {
+        long timeNext = times.get(i + 1);
+        // is there a discrepancy, and is it big enough to be a gap?
+        if (timeNext - blockEnd > (3 * interval) / 2) {
+          long gapEnd = Math.min( timeNext, trimmedEnd );
+          gapList.add( new Pair<Long, Long>(blockEnd, gapEnd) );
+        }
+      }
+    }
+    
+    return gapList;
+  }
   
   /**
-   * Get the interval of the data. The timestamp for a given data point in the
-   * block can be calculated by startTime + (index * interval).
+   * Gives the end timestamp of the miniSEED data. This is a long compatible
+   * with the Java System Library's Date and Calendar objects and expressed
+   * as milliseconds from the UTC epoch
+   * @return Time after the last sample of the latest contiguous block in ms
+   */
+  public long getInitialEndTime() {
+    return endTime;
+  }
+  
+  /**
+   * Get the sampling interval of the internal representation of the data.
+   * Mainly useful in terms of determining when data needs to be downsampled.
+   * @return Interval between samples in ms
+   */
+  public long getInitialInterval() {
+    return interval;
+  }
+  
+  /**
+   * Gives the start timestamp of the miniSEED data. This is a long compatible
+   * with the Java System Library's Date and Calendar objects and expressed
+   * as milliseconds from the UTC epoch
+   * @return When the miniSEED data logging started in milliseconds 
+   */
+  public long getInitialStartTime() {
+    return startTime;
+  }
+  
+  /**
+   * Get the interval of the output data. The timestamp for a given data point 
+   * in the block can be calculated by startTime + (index * interval).
    * @return The time between two samples of data in milliseconds
    */
   public long getInterval() {
     return targetInterval;
-  }
-  
-  public long getInitialInterval() {
-    return interval;
   }
   
   /**
@@ -365,43 +391,6 @@ public class DataBlock {
   public double getSampleRate() {
     return (double) TimeSeriesUtils.ONE_HZ_INTERVAL / (double) interval;
   }
-
-  /**
-   * Gives the start timestamp of the miniSEED data. This is a long compatible
-   * with the Java System Library's Date and Calendar objects and expressed
-   * as milliseconds from the UTC epoch
-   * @return When the miniSEED data logging started in milliseconds 
-   */
-  public long getStartTime() {
-    return trimmedStart;
-  }
-
-  public long getInitialStartTime() {
-    return startTime;
-  }
-  
-  public long getInitialEndTime() {
-    return endTime;
-  }
-
-  /**
-   * Adjust the target interval of the produced data. This will be used when
-   * generating a new series of data from the time series map this object holds.
-   * @param newInterval The new interval (time between samples in milliseconds)
-   */
-  public void resample(long newInterval) {
-    targetInterval = newInterval;
-    rebuildList = rebuildList || (targetInterval != interval);
-  }
-  
-  /**
-   * Used to set the interval of the data (to be used, for example, when the
-   * time series has had decimation applied)
-   * @param interval The time between two samples of data in milliseconds
-   */
-  public void setInterval(long interval) {
-    this.interval = interval;
-  }
   
   /**
    * Get start time of data series as a Java calendar object
@@ -412,10 +401,229 @@ public class DataBlock {
     cCal.setTimeInMillis(startTime);
     return cCal;
   }
+  
+  /**
+   * Gives the start timestamp of the trim window. This is a long compatible
+   * with the Java System Library's Date and Calendar objects and expressed
+   * as milliseconds from the UTC epoch
+   * @return When the miniSEED data logging started in milliseconds 
+   */
+  public long getStartTime() {
+    return trimmedStart;
+  }
+  
+  /**
+   * Find contiguous blocks of data and merge into a single series. If there are
+   * duplicated data points, ignore them.
+   */
+  private void mergeContiguousTimes() {
+    
+    // for blocks that start and end at the same point
+    List<Long> startTimes = new ArrayList<Long>( dataMap.keySet() );
+    Collections.sort(startTimes);
+    
+    Map<Long, double[]> mergedMap = new HashMap<Long, double[]>();
+    
+    int startingPoint = 0;
+    int cursor;
+    while ( startingPoint < startTimes.size() ) {
+      List<double[]> toMerge = new ArrayList<double[]>();
+      long currentTime = startTimes.get(startingPoint);
 
+      double[] currentSeries = dataMap.get(currentTime);
+      toMerge.add(currentSeries);
+      long timeAtSublistEnd = 
+          currentTime + ( currentSeries.length * interval );
+      
+      cursor = startingPoint + 1;
+      
+      if ( cursor >= startTimes.size() ) {
+        mergedMap.put(currentTime, currentSeries);
+        dataMap = mergedMap;
+        return;
+      }
+      
+      long nextTime = startTimes.get(cursor);
+      
+      long difference = nextTime - timeAtSublistEnd;
+      while ( difference < (interval / 4) ) {
+        
+        if (difference < 0) {
+          // duplicated data check
+          long diff = timeAtSublistEnd - nextTime; // take the difference
+          long mod = diff % interval; // round up if greater than 75% interval
+          
+          // division truncates; if the result would be, say, 1.9 as a decimal,
+          // then we should round up to 2 instead of start at 1 since this is
+          // common enough with timing differences between gaps
+          // whereas if this conditional was triggered beacuse the next block
+          // occurs at, say, 90% of the interval, then the difference is only
+          // 0.1 from the expected start and we copy everything anyway
+          int fstUndupIdx = (int) (diff / interval);
+          if (mod > 3 * interval / 4) {
+            ++fstUndupIdx;
+          }
+          
+          double[] next = dataMap.get(nextTime);
+          double[] truncated = 
+              Arrays.copyOfRange(next, fstUndupIdx, next.length);
+          toMerge.add(truncated);
+          timeAtSublistEnd = timeAtSublistEnd + (truncated.length * interval);
+          ++cursor;
+        } else {
+          // data not duplicated, so copy it all
+          double[] nextGroup = dataMap.get(nextTime);
+          toMerge.add(nextGroup);
+          // currentSeries = TimeSeriesUtils.addAll(currentSeries, nextGroup);
+          timeAtSublistEnd = nextTime + (nextGroup.length * interval);
+          ++cursor;
+        }
+        
+        if ( cursor >= startTimes.size() ) {
+          double[] contiguousSeries = TimeSeriesUtils.concatAll(toMerge);
+          mergedMap.put(currentTime, contiguousSeries);
+          dataMap = mergedMap;
+          return;
+        }
+        
+        nextTime = startTimes.get(cursor);
+        difference = nextTime - timeAtSublistEnd;
+        
+      }
+      
+      // end of the contiguous block. merge data and iterate
+      double[] contiguousSeries = TimeSeriesUtils.concatAll(toMerge);
+      mergedMap.put(currentTime, contiguousSeries);
+      startingPoint = cursor;
+      
+    }
+    
+    dataMap = mergedMap;
+    
+  }
+  
+  /**
+   * Identifies whether or not input of signal starts positive. Used
+   * in step calibration solver to figure out if the data's signs are inverted.
+   * @return True if initial step response is negative
+   */
+  public boolean needsSignFlip() {
+    double[] temp = getData();
+    double max = Math.abs( temp[0] );
+    int idx = 0;
+    for (int i = 1; i < temp.length / 4; ++i) {
+      double candidate = Math.abs( temp[i] );
+      if ( candidate > max ) {
+        max = candidate;
+        idx = i;
+      }
+    }
+    
+    return temp[idx] < 0;
+    
+  }
+
+  /**
+   * Adjust the target interval of the produced data. This will be used when
+   * generating a new series of data from the time series map this object holds.
+   * The specified interval will be ignored if it represents a higher sample
+   * rate than the current sample; only decimation is performed, not upsampling.
+   * @param newInterval The new interval (time between samples in milliseconds)
+   */
+  public void resample(long newInterval) {
+    targetInterval = Math.max(interval, newInterval);
+    rebuildList = rebuildList || (targetInterval != interval);
+  }
+
+  /**
+   * Change the current timeseries data with new data using the same start
+   * time and sampling interval of the original data. This can be useful if,
+   * for example, the data needs to be modified by rotation, which maintains 
+   * the start time and sampling interval (and data length) while producing a 
+   * new timeseries. This will replace the current timeseries map with a map
+   * with a single entry from the current (trimmed) start time to the
+   * inputted array.
+   * @param data New timeseries, a contiguous block represented by an array.
+   */
+  public void setData(double[] data) {
+    setData(data, trimmedStart);
+    // interval = targetInterval;
+  }
+  
+  /**
+   * Set data as a new list. Because the array, unlike a map, does not specify
+   * a start time, this function takes in a new start time parameter used to
+   * identify the beginning time of the replacement data. The array given as
+   * input replaces the old map with a single-entry map starting at the given
+   * start time.
+   * @param data New timeseries, a contiguous block represented by an array.
+   * @param start Start time of given data (ms from epoch)
+   */
+  public void setData(double[] data, long start) {
+    setData(data, start, interval);
+  }
+
+  /**
+   * Set data as a new list. Because the array, unlike a map, does not specify
+   * a start time, this function takes in a new start time parameter used to
+   * identify the beginning time of the replacement data. The array given as
+   * input replaces the old map with a single-entry map starting at the given
+   * start time. Because the other interval modification calls only change the
+   * sampling rate of the output time series, not the internal data
+   * representation, this function also allows for specifying a new sampling
+   * rate for the replacement data.
+   * @param data New timeseries, a contiguous block represented by an array.
+   * @param start Start time of given data (ms from epoch)
+   * @param interval Sampling interval of new timeseries, given in ms
+   */
+  public void setData(double[] data, long start, long interval) {
+    targetInterval = interval;
+    startTime = start;
+    trimmedStart = start;
+    dataMap = new HashMap<Long, double[]>();
+    dataMap.put(startTime, data);
+    // System.out.println(data.length - 1);
+    endTime = startTime + (interval * data.length);
+    trimmedEnd = endTime;
+    cachedTimeSeries = data;
+    rebuildList = false;
+  }
+  
+  /**
+   * Replace the current datamap object with a different one.
+   * @param dataMap New datamap to put in this object, a map of start times
+   * to contiguous blocks of data.
+   */
+  public void setDataMap(Map<Long, double[]> dataMap) {
+    this.dataMap = dataMap;
+    mergeContiguousTimes();
+    rebuildList = true;
+  }
+  
+  /**
+   * Used to set the initial sampling interval of the data. To change the output
+   * sampling rate of the data, use the resample method instead @see #resample
+   * @param interval The time between two samples of data in milliseconds
+   */
+  public void setInterval(long interval) {
+    this.interval = interval;
+  }
+
+  /**
+   * Return the length of datapoints to be contained in the continuous data
+   * the program will return given by the currently-specified time window
+   * @return length of the data region to be returned, including filled-in gaps
+   */
+  public int size() {
+    long timeDiff = trimmedEnd - trimmedStart;
+    return (int) (timeDiff / targetInterval);
+  }
+ 
   /**
    * Converts this object's time series data into a form plottable by a chart.
    * The format is a pair of data: the time of a sample and that sample's value.
+   * The data is truncated (without smoothing) to prevent the plot from slowing
+   * down the performance of the program as much as possible.
    * @return JFreeChart XYSeries representation of the data
    */
   public XYSeries toXYSeries() {
@@ -439,11 +647,20 @@ public class DataBlock {
     
     return out;
   }
- 
+  
   /**
-   * Trim data to a given range (start time, end time)
-   * @param start Start time to trim to in milliseconds from epoch
-   * @param end End time to trim to in milliseconds from epoch
+   * Adjust the window of data to collect samples from when getting the data
+   * @param start Start time to trim window to in milliseconds from epoch
+   * @param end End time to trim window to in milliseconds from epoch
+   */
+  public void trim(Calendar start, Calendar end) {
+    trim( start.getTimeInMillis(), end.getTimeInMillis() );
+  }
+  
+  /**
+   * Adjust the window of data to collect samples from when getting the data
+   * @param start Start time to trim window to in milliseconds from epoch
+   * @param end End time to trim window to in milliseconds from epoch
    */
   public void trim(long start, long end) {
     
@@ -457,67 +674,10 @@ public class DataBlock {
         (startTime != trimmedStart) || (endTime != trimmedEnd);
     
   }
-  
-  public void trim(Calendar start, Calendar end) {
-    trim( start.getTimeInMillis(), end.getTimeInMillis() );
-  }
-  
-  
-  private void mergeContiguousTimes() {
-    
-    // for blocks that start and end at the same point
-    List<Long> startTimes = new ArrayList<Long>( dataMap.keySet() );
-    Collections.sort(startTimes);
-    
-    Map<Long, double[]> mergedMap = new HashMap<Long, double[]>();
-    
-    int startingPoint = 0;
-    int cursor;
-    while ( startingPoint < startTimes.size() ) {
-      List<double[]> toMerge = new ArrayList<double[]>();
-      long currentTime = startTimes.get(startingPoint);
 
-      double[] currentSeries = dataMap.get(currentTime);
-      toMerge.add(currentSeries);
-      long timeAtSublistEnd = 
-          currentTime + ( currentSeries.length * interval );
-      
-      cursor = startingPoint + 1;
-      
-      if ( cursor >= startTimes.size() ) {
-        double[] contiguousSeries = TimeSeriesUtils.concatAll(toMerge);
-        mergedMap.put(currentTime, contiguousSeries);
-        startingPoint = cursor;
-        dataMap = mergedMap;
-        return;
-      }
-      
-      long nextTime = startTimes.get(cursor);
-      long difference = Math.abs(nextTime - timeAtSublistEnd);
-      
-      while ( difference < (interval / 4) ) {
-        double[] nextGroup = dataMap.get(nextTime);
-        toMerge.add(nextGroup);
-        // currentSeries = TimeSeriesUtils.addAll(currentSeries, nextGroup);
-        timeAtSublistEnd = nextTime + ( nextGroup.length * interval );
-        ++cursor;
-        if ( cursor >= startTimes.size() ) {
-          break;
-        }
-        nextTime = startTimes.get(cursor);
-        difference = Math.abs(nextTime - timeAtSublistEnd);
-      }
-      
-      double[] contiguousSeries = TimeSeriesUtils.concatAll(toMerge);
-      mergedMap.put(currentTime, contiguousSeries);
-      startingPoint = cursor;
-      
-    }
-    
-    dataMap = mergedMap;
-    
-  }
-
+  /**
+   * Reset data window to entire region specified by underlying datamap.
+   */
   public void untrim() {
     boolean regen = (trimmedStart != startTime) || (trimmedEnd != endTime);
     trimmedStart = startTime;
