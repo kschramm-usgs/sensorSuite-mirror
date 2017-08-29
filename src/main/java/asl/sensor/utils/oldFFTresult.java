@@ -46,8 +46,6 @@ public class FFTResult {
    */
   public static double[] 
   bandFilter(double[] toFilt, double sps, double low, double high) {
-      System.out.println("In bandfilter");
-      //System.out.print(sps,low,high);
     
     return bandFilterWithCuts(toFilt, sps, low, high, 0., sps);
     /*
@@ -88,7 +86,7 @@ public class FFTResult {
   public static List<Number> 
   bandFilter(List<Number> toFilt, double sps, double low, double high) {
     
-	System.out.println("In bandfilter list");
+    
     double[] toFFT = new double[toFilt.size()];
     
     for (int i = 0; i < toFFT.length; ++i) {
@@ -111,6 +109,8 @@ public class FFTResult {
    * produces linear dropoff for points between the corner frequencies and
    * hard stop limits.
    * @param toFilt series of data to do a band-pass filter on
+   * @param sps sample rate of the current data (samples / sec)
+   * @param low low corner frequency of band-pass filter
    * @param sps sample rate of the current data (samples / sec)
    * @param low low corner frequency of band-pass filter
    * @param high high corner frequency of band-pass filter
@@ -175,6 +175,7 @@ public class FFTResult {
     return wss;
   }
   
+<<<<<<< HEAD
   public static double[][] getCosTaperVector(int len, double taperW) {
 	System.out.println("In getCosTaperVector");
     double[] taperVec = new double[len];
@@ -221,6 +222,8 @@ public class FFTResult {
     return taperMat;
   }
   
+=======
+>>>>>>> 9be404e5eb0f3630625ab62f7bc35c9b414eb12a
   /**
    * Root funtion for calculating crosspower. Gets spectral calculation of data
    * from inputted data series by calling the spectralCalc function, and then
@@ -320,60 +323,6 @@ public class FFTResult {
       e.printStackTrace();
     } catch (IOException e) {
       e.printStackTrace();
-    }
-    return xys;
-  }
-  
-  /**
-   * Collects the data points in the Peterson new low noise model 
-   * into a plottable format.
-   * Assumes that there is a text file in the .resources folder that contains 
-   * the NLNM data points for given input frequencies. ("NLNM.txt")
-   * @param freqSpace True if the data's x-axis should be units of Hz
-   * (otherwise it is units of seconds, the interval between samples)
-   * @return Plottable data series representing the NLNM
-   */
-  public static XYSeries getLowNoiseModel(boolean freqSpace) {
-    XYSeries xys = new XYSeries("NLNM");
-    System.out.println("In getLownoise model");
-    try {
-      
-      ClassLoader cl = FFTResult.class.getClassLoader();
-      
-      InputStream is = cl.getResourceAsStream("NLNM.txt");
-      
-      BufferedReader fr = new BufferedReader( new InputStreamReader(is) );
-      String str = fr.readLine();
-      while (str != null) {
-        String[] values = str.split("\\s+");
-        double x = Double.parseDouble(values[0]); // period, in seconds
-        if (x > 1.0E3) {
-          break;
-        }
-        double y = Double.parseDouble(values[3]);
-        if (freqSpace) {
-          xys.add(1/x, y);
-        } else {
-          xys.add(x, y);
-        }
-        
-        str = fr.readLine();
-      }
-      fr.close();
-    } catch (FileNotFoundException e) {
-      e.printStackTrace();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    return xys;
-  }
-  
-  
-  /**
-   * Produce a multitaper series using a sine function for use in spectral
-   * calculations (i.e., specified when calculating PSD values)
-   * @param winLen Length of the window (how long the data is)
-   * @param numTapers Number of tapers to apply to the data
    * @return 2D array with first dimension being the timeseries length and
    * the second dimension being the taper count
    */
@@ -381,6 +330,7 @@ public class FFTResult {
     double[][] taperMat = new double[numTapers][winLen];
     
     double denom = winLen - 1;
+    double scale = Math.sqrt(2 / denom);
     double scale = Math.sqrt(2 / denom);
     
     // TODO: may need to check correct loop index order for efficiency
@@ -399,11 +349,11 @@ public class FFTResult {
    * This does not trim the negative frequencies of the result; it returns
    * the full FFT result as an array of Complex numbers
    * @param dataIn Array of doubles representing timeseries data
-   * @return Complex array representing forward FFT values, including
+   : @return Complex array representing forward FFT values, including
    * symmetric component (second half of the function)
    */
   public static Complex[] simpleFFT(double[] dataIn) {
-	  System.out.println("In simple FFT");
+    
     int padding = 2;
     while ( padding < dataIn.length ) {
       padding *= 2;
@@ -432,10 +382,64 @@ public class FFTResult {
    * frequencies 
    */
   public static FFTResult singleSidedFFT(DataBlock db, boolean mustFlip) {
-	  System.out.println("In single-sided FFT");
+    
     double[] data = db.getData().clone();
     
     for (int i = 0; i < db.size(); ++i) {
+      if (mustFlip) {
+        data[i] *= -1;
+      }
+    }
+    
+    data = TimeSeriesUtils.demean(data);
+    
+    // data = TimeSeriesUtils.normalize(data);
+    
+    Complex[] frqDomn = simpleFFT(data);
+    
+    int padding = frqDomn.length;
+    int singleSide = padding/2 + 1;
+    
+    double nyquist = db.getSampleRate() / 2;
+    double deltaFrq = nyquist / (singleSide - 1);
+    
+    Complex[] fftOut = new Complex[singleSide];
+    double[] frequencies = new double[singleSide];
+    
+    for (int i = 0; i < singleSide; ++i) {
+      fftOut[i] = frqDomn[i];
+      frequencies[i] = i * deltaFrq;
+    }
+    
+    // System.out.println(frequencies[singleSide - 1]);
+    
+    return new FFTResult(fftOut, frequencies);
+    
+  }
+  
+  /**
+   * Calculates the FFT of the timeseries data in a DataBlock
+   * and returns the positive frequencies resulting from the FFT calculation
+   * @param db DataBlock to get the timeseries data from
+   * @param mustFlip True if signal from sensor is inverted (for step cal)
+   * @return Complex array of FFT values and double array of corresponding 
+   * frequencies 
+   */
+  public static FFTResult 
+  singleSidedFilteredFFT(DataBlock db, boolean mustFlip) {
+    
+    double[] data = db.getData().clone();
+    
+    for (int i = 0; i < db.size(); ++i) {
+      if (mustFlip) {
+        data[i] *= -1;
+      }
+    }
+    
+    long interval = db.getInterval();
+
+    double sps = TimeSeriesUtils.ONE_HZ_INTERVAL / interval;
+    
       if (mustFlip) {
         data[i] *= -1;
       }
@@ -854,60 +858,6 @@ public class FFTResult {
     
     // demean and detrend work in-place on the list
     TimeSeriesUtils.detrend(data1Range);
-    TimeSeriesUtils.demeanInPlace(data1Range);
-    // apply each taper, take FFT, and average the overall results
-    double[] data = data1Range;
-    for (int j = 0; j < taperMat.length; ++j) {
-      double[] toFFT = new double[padding];
-      double[] taperCurve = taperMat[j];
-      double taperSum = 0.;
-      for (int i = 0; i < data.length; ++i) {
-        taperSum += Math.abs(taperCurve[i]);
-        double point = data[i];
-        toFFT[i] = point * taperCurve[i];
-      }
-      Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-      for (int i = 0; i < fftResult1.length; ++i) {
-        fftResult1[i] = fftResult1[i].add( frqDomn[i].divide(taperSum) );
-      }
-    }
-    for (int i = 0; i < fftResult1.length; ++i) {
-      fftResult1[i] = fftResult1[i].divide(TAPER_COUNT);
-    }
-    
-    if (!sameData) {
-      TimeSeriesUtils.detrend(data2Range);
-      TimeSeriesUtils.demeanInPlace(data2Range);
-      data = data2Range;
-      for (int j = 0; j < taperMat.length; ++j) {
-        double[] toFFT = new double[padding];
-        double[] taperCurve = taperMat[j];
-        double taperSum = 0.;
-        for (int i = 0; i < data.length; ++i) {
-          taperSum += Math.abs(taperCurve[i]);
-          double point = data[i];
-          toFFT[i] = point * taperCurve[i];
-        }
-        Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-        for (int i = 0; i < fftResult2.length; ++i) {
-          fftResult2[i] = fftResult2[i].add( frqDomn[i].divide(taperSum) );
-        }
-      }
-      for (int i = 0; i < fftResult2.length; ++i) {
-        fftResult2[i] = fftResult2[i].divide(TAPER_COUNT);
-      }
-    }
-    
-    double[] frequencies = new double[singleSide];
-    for (int i = 0; i < singleSide; ++i) {
-      frequencies[i] = i * deltaFreq;
-      Complex val1 = fftResult1[i];
-      Complex val2 = val1;
-      if (!sameData) {
-        val2 = fftResult2[i];
-      }
-      
-      powSpectDens[i] = 
           powSpectDens[i].add( val1.multiply( val2.conjugate() ) );
     }
     
