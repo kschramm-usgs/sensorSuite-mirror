@@ -46,7 +46,7 @@ public class FFTResult {
    */
   public static double[] 
   bandFilter(double[] toFilt, double sps, double low, double high) {
-    
+    System.out.println("in bandFilter");
     return bandFilterWithCuts(toFilt, sps, low, high, 0., sps);
     /*
     Complex[] fft = simpleFFT(toFilt);
@@ -156,6 +156,7 @@ public class FFTResult {
    */
   public static double cosineTaper(double[] dataSet, double taperW) {
     
+    System.out.println("in cosineTaper");
     double ramp = taperW * dataSet.length;
     double taper;
     double wss = 0.0; // represents power loss
@@ -212,6 +213,7 @@ public class FFTResult {
   
   public static FFTResult crossPower(double[] data1, double[] data2,
       InstrumentResponse ir1, InstrumentResponse ir2, long interval) {
+    System.out.println("in FFTResult crossPower");
     FFTResult selfPSD = spectralCalc(data1, data2, interval);
     Complex[] results = selfPSD.getFFT();
     double[] freqs = selfPSD.getFreqs();
