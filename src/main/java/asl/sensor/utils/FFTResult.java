@@ -175,6 +175,7 @@ public class FFTResult {
     return wss;
   }
   
+<<<<<<< HEAD
   public static double[][] getCosTaperVector(int len, double taperW) {
 	System.out.println("In getCosTaperVector");
     double[] taperVec = new double[len];
@@ -221,6 +222,8 @@ public class FFTResult {
     return taperMat;
   }
   
+=======
+>>>>>>> 9be404e5eb0f3630625ab62f7bc35c9b414eb12a
   /**
    * Root funtion for calculating crosspower. Gets spectral calculation of data
    * from inputted data series by calling the spectralCalc function, and then
@@ -324,7 +327,6 @@ public class FFTResult {
     return xys;
   }
   
-  
   /**
    * Collects the data points in the Peterson new low noise model 
    * into a plottable format.
@@ -367,6 +369,32 @@ public class FFTResult {
       e.printStackTrace();
     }
     return xys;
+  }
+  
+  
+  /**
+   * Produce a multitaper series using a sine function for use in spectral
+   * calculations (i.e., specified when calculating PSD values)
+   * @param winLen Length of the window (how long the data is)
+   * @param numTapers Number of tapers to apply to the data
+   * @return 2D array with first dimension being the timeseries length and
+   * the second dimension being the taper count
+   */
+  public static double[][] getMultitaperSeries(int winLen, int numTapers) {
+    double[][] taperMat = new double[numTapers][winLen];
+    
+    double denom = winLen - 1;
+    double scale = Math.sqrt(2 / denom);
+    
+    // TODO: may need to check correct loop index order for efficiency
+    for (int j = 0; j < numTapers; ++j) {
+      for (int i = 0; i < winLen; ++i) {
+        // is the rightmost value of the series nonzero because of precision? 
+        taperMat[j][i] = scale * Math.sin(Math.PI * i * (j + 1) / denom);
+      }
+    }
+    
+    return taperMat;
   }
   
   /**
@@ -558,6 +586,22 @@ public class FFTResult {
     
   }
     
+  /**
+   * Helper function to calculate power spectral density / crosspower.
+   * Takes in two time series data and produces the windowed FFT over each.
+   * The first is multiplied by the complex conjugate of the second.
+   * If the two series are the same, this is the PSD of that series. If they
+   * are different, this result is the crosspower.
+   * The result is smoothed but does not have the frequency response applied,
+   * and so does not give a full result -- this is merely a helper function
+   * for the crossPower function.
+   * @param list1 First list of data to be given as input
+   * @param list2 Second list of data to be given as input, which can be
+   * the same as the first (and if so, is ignored)
+   * @param interval Interval of the data (same for both lists)
+   * @return FFTResult (FFT values and frequencies as a pair of arrays)
+   * representing the power-spectral density / crosspower of the input data.
+   */
   public static FFTResult 
   spectralCalc(double[] list1, double[] list2, long interval) {
 	  System.out.println("In spectral calc");
@@ -723,10 +767,14 @@ public class FFTResult {
   }
   
   /**
-   * Multitaper-based method for calculating PSD of data
-   * @param data1
-   * @param data2
-   * @return
+   * Calculate the PSD using a multitaper on the data. This obviates the need
+   * for windowing the input, so low-frequency data is retained better.
+   * The given result is FFT(list1) * Conjugate(FFT(list2)).
+   * @param data1 First datablock to be given as input
+   * @param data2 Second datablock to be given as input, which can be
+   * the same as the first (based on data's name; if equal, is ignored)
+   * @return FFTResult (FFT values and frequencies as a pair of arrays)
+   * representing the power-spectral density / crosspower of the input data.
    */
   public static FFTResult 
   spectralCalcMultitaper(DataBlock data1, DataBlock data2) {
@@ -742,7 +790,18 @@ public class FFTResult {
     
     return spectralCalcMultitaper( list1, list2, data1.getInterval() );
   }
-    
+  
+  /**
+   * Calculate the PSD using a multitaper on the data. This obviates the need
+   * for windowing the input, so low-frequency data is retained better.
+   * The given result is FFT(list1) * Conjugate(FFT(list2)).
+   * @param list1 First list of data to be given as input
+   * @param list2 Second list of data to be given as input, which can be
+   * the same as the first (and if so, is ignored)
+   * @param ivl Interval of the data (same for both lists)
+   * @return FFTResult (FFT values and frequencies as a pair of arrays)
+   * representing the power-spectral density / crosspower of the input data.
+   */
   public static FFTResult 
   spectralCalcMultitaper(double[] list1, double[] list2, long ivl) {
     System.out.println("In spectral calc multitaper w/o ugle logic");
@@ -800,45 +859,44 @@ public class FFTResult {
     TimeSeriesUtils.detrend(data1Range);
     TimeSeriesUtils.demeanInPlace(data1Range);
     // apply each taper, take FFT, and average the overall results
+    double[] data = data1Range;
     for (int j = 0; j < taperMat.length; ++j) {
-      Complex[] frqDomn;
       double[] toFFT = new double[padding];
       double[] taperCurve = taperMat[j];
       double taperSum = 0.;
-      for (int i = 0; i < data1Range.length; ++i) {
+      for (int i = 0; i < data.length; ++i) {
         taperSum += Math.abs(taperCurve[i]);
-        double point = data1Range[i];
+        double point = data[i];
         toFFT[i] = point * taperCurve[i];
       }
-      frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+      Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
       for (int i = 0; i < fftResult1.length; ++i) {
         fftResult1[i] = fftResult1[i].add( frqDomn[i].divide(taperSum) );
       }
     }
-
     for (int i = 0; i < fftResult1.length; ++i) {
       fftResult1[i] = fftResult1[i].divide(TAPER_COUNT);
     }
     
     if (!sameData) {
-      TimeSeriesUtils.demeanInPlace(data2Range);
       TimeSeriesUtils.detrend(data2Range);
+      TimeSeriesUtils.demeanInPlace(data2Range);
+      data = data2Range;
       for (int j = 0; j < taperMat.length; ++j) {
         double[] toFFT = new double[padding];
-        Complex[] frqDomn;
         double[] taperCurve = taperMat[j];
         double taperSum = 0.;
-        for (int i = 0; i < data2Range.length; ++i) {
+        for (int i = 0; i < data.length; ++i) {
           taperSum += Math.abs(taperCurve[i]);
-          double point = data2Range[i];
-          toFFT[i] = point * taperMat[j][i];
+          double point = data[i];
+          toFFT[i] = point * taperCurve[i];
         }
-        frqDomn = fft.transform(toFFT, TransformType.FORWARD);
-        for (int i = 0; i < fftResult1.length; ++i) {
-          fftResult2[i] = fftResult2[i].add( frqDomn[i].divide(taperSum) );;
+        Complex[] frqDomn = fft.transform(toFFT, TransformType.FORWARD);
+        for (int i = 0; i < fftResult2.length; ++i) {
+          fftResult2[i] = fftResult2[i].add( frqDomn[i].divide(taperSum) );
         }
       }
-      for (int i = 0; i < fftResult1.length; ++i) {
+      for (int i = 0; i < fftResult2.length; ++i) {
         fftResult2[i] = fftResult2[i].divide(TAPER_COUNT);
       }
     }
@@ -918,22 +976,6 @@ public class FFTResult {
    */
   public int size() {
     return transform.length;
-  }
-
-  /**
-   * Enumerated type used to specify the type of taper used in spectral methods
-   * @author akearns
-   *
-   */
-  public enum TaperType {
-    /**
-     * Cosine taper
-     */
-    COS,
-    /**
-     * Multitaper (Slepian series)
-     */
-    MULT;
   }
   
 }

@@ -1,0 +1,193 @@
+#
+###################################################################################
+#
+B050F03     Station:     AAK
+B050F16     Network:     II
+B052F03     Location:    10
+B052F04     Channel:     BHZ
+B052F22     Start date:  2017,171,00:00:00
+B052F23     End date:    2599,365,23:59:59
+#
+#                  +-----------------------------------+
+#                  |    Response (Poles and Zeros)     |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B053F03     Transfer function type:                B
+B053F04     Stage sequence number:                 1
+B053F05     Response in units lookup:              M/S - Velocity in Meters Per Second
+B053F06     Response out units lookup:             V - Volts
+B053F07     A0 normalization factor:               +1.28951E+13
+B053F08     Normalization frequency:               +5.00000E-02
+B053F09     Number of zeroes:                      6
+B053F14     Number of poles:                       11
+#              Complex zeroes:
+#              i  real          imag          real_error    imag_error
+B053F10-13     0  +0.00000E+00  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F10-13     1  +0.00000E+00  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F10-13     2  -3.45984E+00  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F10-13     3  -2.76605E+01  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F10-13     4  -7.37047E+01  -6.85162E+01  +0.00000E+00  +0.00000E+00
+B053F10-13     5  -7.37047E+01  +6.85162E+01  +0.00000E+00  +0.00000E+00
+#              Complex poles:
+#              i  real          imag          real_error    imag_error
+B053F15-18     0  -5.91568E-03  +5.86737E-03  +0.00000E+00  +0.00000E+00
+B053F15-18     1  -5.91568E-03  -5.86737E-03  +0.00000E+00  +0.00000E+00
+B053F15-18     2  -3.64739E+00  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F15-18     3  -2.32375E+01  -7.10784E+01  +0.00000E+00  +0.00000E+00
+B053F15-18     4  -2.32375E+01  +7.10784E+01  +0.00000E+00  +0.00000E+00
+B053F15-18     5  -3.46549E+01  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F15-18     6  -4.56665E+01  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F15-18     7  -1.67590E+03  -1.59951E+03  +0.00000E+00  +0.00000E+00
+B053F15-18     8  -1.67590E+03  +1.59951E+03  +0.00000E+00  +0.00000E+00
+B053F15-18     9  -2.11676E+03  +0.00000E+00  +0.00000E+00  +0.00000E+00
+B053F15-18    10  -3.40583E+01  +0.00000E+00  +0.00000E+00  +0.00000E+00
+#
+#                  +-----------------------------------+
+#                  |      Channel Sensitivity/Gain     |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B058F03     Stage sequence number:                 1
+B058F04     Sensitivity:                           +1.51950E+03
+B058F05     Frequency of sensitivity:              +5.00000E-02
+B058F06     Number of calibrations:                0
+#
+#                  +-----------------------------------+
+#                  |      Channel Sensitivity/Gain     |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B058F03     Stage sequence number:                 2
+B058F04     Sensitivity:                           +1.00000E+00
+B058F05     Frequency of sensitivity:              +5.00000E-02
+B058F06     Number of calibrations:                0
+#
+#                  +-----------------------------------+
+#                  |      Response (Coefficients)      |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B054F03     Transfer function type:                D
+B054F04     Stage sequence number:                 3
+B054F05     Response in units lookup:              V - Volts
+B054F06     Response out units lookup:             COUNTS - Digital Counts
+B054F07     Number of numerators:                  0
+B054F10     Number of denominators:                0
+#
+#                  +-----------------------------------+
+#                  |            Decimation             |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B057F03     Stage sequence number:                  3
+B057F04     Input sample rate (HZ):                 4.0000E+01
+B057F05     Decimation factor:                      00001
+B057F06     Decimation offset:                      00000
+B057F07     Estimated delay (seconds):             +0.0000E+00
+B057F08     Correction applied (seconds):          +0.0000E+00
+#
+#                  +-----------------------------------+
+#                  |      Channel Sensitivity/Gain     |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B058F03     Stage sequence number:                 3
+B058F04     Sensitivity:                           +1.65631E+06
+B058F05     Frequency of sensitivity:              +0.00000E+00
+B058F06     Number of calibrations:                0
+#
+#                  +-----------------------------------+
+#                  |      Response (Coefficients)      |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B054F03     Transfer function type:                D
+B054F04     Stage sequence number:                 4
+B054F05     Response in units lookup:              COUNTS - Digital Counts
+B054F06     Response out units lookup:             COUNTS - Digital Counts
+B054F07     Number of numerators:                  39
+B054F10     Number of denominators:                0
+#              Numerator coefficients:
+#              i  coefficient   error
+B054F08-09     0  +4.18952E-13  +0.00000E+00
+B054F08-09     1  +3.30318E-04  +0.00000E+00
+B054F08-09     2  +1.02921E-03  +0.00000E+00
+B054F08-09     3  -3.14123E-03  +0.00000E+00
+B054F08-09     4  +2.05709E-04  +0.00000E+00
+B054F08-09     5  +1.52521E-03  +0.00000E+00
+B054F08-09     6  -6.23193E-03  +0.00000E+00
+B054F08-09     7  +1.04801E-02  +0.00000E+00
+B054F08-09     8  -1.31202E-02  +0.00000E+00
+B054F08-09     9  +1.07821E-02  +0.00000E+00
+B054F08-09    10  -1.44455E-03  +0.00000E+00
+B054F08-09    11  -1.58729E-02  +0.00000E+00
+B054F08-09    12  +3.95074E-02  +0.00000E+00
+B054F08-09    13  -6.51036E-02  +0.00000E+00
+B054F08-09    14  +8.53716E-02  +0.00000E+00
+B054F08-09    15  -8.91913E-02  +0.00000E+00
+B054F08-09    16  +5.00619E-02  +0.00000E+00
+B054F08-09    17  +8.37233E-01  +0.00000E+00
+B054F08-09    18  +2.66723E-01  +0.00000E+00
+B054F08-09    19  -1.66693E-01  +0.00000E+00
+B054F08-09    20  +9.52840E-02  +0.00000E+00
+B054F08-09    21  -5.09218E-02  +0.00000E+00
+B054F08-09    22  +1.61458E-02  +0.00000E+00
+B054F08-09    23  +7.06362E-03  +0.00000E+00
+B054F08-09    24  -1.83877E-02  +0.00000E+00
+B054F08-09    25  +1.99414E-02  +0.00000E+00
+B054F08-09    26  -1.54895E-02  +0.00000E+00
+B054F08-09    27  +8.52735E-03  +0.00000E+00
+B054F08-09    28  -2.55789E-03  +0.00000E+00
+B054F08-09    29  -1.81103E-03  +0.00000E+00
+B054F08-09    30  +2.42649E-03  +0.00000E+00
+B054F08-09    31  -3.75769E-03  +0.00000E+00
+B054F08-09    32  +4.67293E-04  +0.00000E+00
+B054F08-09    33  +6.33072E-04  +0.00000E+00
+B054F08-09    34  -1.56874E-06  +0.00000E+00
+B054F08-09    35  -1.25480E-05  +0.00000E+00
+B054F08-09    36  +3.21041E-07  +0.00000E+00
+B054F08-09    37  -2.63324E-08  +0.00000E+00
+B054F08-09    38  -5.09997E-08  +0.00000E+00
+#
+#                  +-----------------------------------+
+#                  |            Decimation             |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B057F03     Stage sequence number:                  4
+B057F04     Input sample rate (HZ):                 4.0000E+01
+B057F05     Decimation factor:                      00001
+B057F06     Decimation offset:                      00000
+B057F07     Estimated delay (seconds):             +4.3045E-01
+B057F08     Correction applied (seconds):          +4.3045E-01
+#
+#                  +-----------------------------------+
+#                  |      Channel Sensitivity/Gain     |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B058F03     Stage sequence number:                 4
+B058F04     Sensitivity:                           +1.00000E+00
+B058F05     Frequency of sensitivity:              +0.00000E+00
+B058F06     Number of calibrations:                0
+#
+#                  +-----------------------------------+
+#                  |      Channel Sensitivity/Gain     |
+#                  |        II  AAK    10  BHZ         |
+#                  |     06/20/2017 to 12/31/2599      |
+#                  +-----------------------------------+
+#
+B058F03     Stage sequence number:                 0
+B058F04     Sensitivity:                           +2.51681E+09
+B058F05     Frequency of sensitivity:              +5.00000E-02
+B058F06     Number of calibrations:                0
