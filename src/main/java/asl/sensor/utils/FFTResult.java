@@ -173,52 +173,6 @@ public class FFTResult {
     return wss;
   }
   
-  public static double[][] getCosTaperVector(int len, double taperW) {
-    
-    double[] taperVec = new double[len];
-    for (int i = 0; i < taperVec.length; ++i) {
-      taperVec[i] = 1.;
-    }
-    
-    double ramp = taperW * len;
-    double taper;
-    
-    for (int i = 0; i < ramp; i++) {
-      taper = 0.5 * (1.0 - Math.cos( (double) i * Math.PI / ramp) );
-      taperVec[i] *= taper;
-      int idx = taperVec.length-i-1;
-      taperVec[idx] *= taper;
-    }
-    
-    return new double[][]{taperVec};
-    
-  }
-  
-  /**
-   * Produce a multitaper series using a sine function for use in spectral
-   * calculations (i.e., specified when calculating PSD values)
-   * @param winLen Length of the window (how long the data is)
-   * @param numTapers Number of tapers to apply to the data
-   * @return 2D array with first dimension being the timeseries length and
-   * the second dimension being the taper count
-   */
-  public static double[][] getMultitaperSeries(int winLen, int numTapers) {
-    double[][] taperMat = new double[numTapers][winLen];
-    
-    double denom = winLen - 1;
-    double scale = Math.sqrt(2 / denom);
-    
-    // TODO: may need to check correct loop indices for efficiency
-    for (int j = 0; j < numTapers; ++j) {
-      for (int i = 0; i < winLen; ++i) {
-        // TODO: figure out why the limits of this are off
-        taperMat[j][i] = scale * Math.sin(Math.PI * i * (j + 1) / denom);
-      }
-    }
-    
-    return taperMat;
-  }
-  
   /**
    * Root funtion for calculating crosspower. Gets spectral calculation of data
    * from inputted data series by calling the spectralCalc function, and then
