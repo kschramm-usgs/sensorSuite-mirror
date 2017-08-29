@@ -738,9 +738,11 @@ public class FFTResult {
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
     boolean sameData = data1.getName().equals( data2.getName() );
+    System.out.println("some data set");
     
     double[] list1 = data1.getData();
     double[] list2 = list1;
+    System.out.println("list 1 and 2 set");
     if (!sameData) {
       list2 = data2.getData();
     }
@@ -766,9 +768,11 @@ public class FFTResult {
     boolean sameData = list1.equals(list2);
     
     int padding = 2;
+    System.out.println("padding");
     while ( padding < list1.length ) {
       padding *= 2;
     }
+    System.out.println("padding value: "+padding);
     
     final int TAPER_COUNT = 12;
     double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;
