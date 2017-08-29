@@ -329,6 +329,7 @@ public class FFTResult {
    * the second dimension being the taper count
    */
   public static double[][] getMultitaperSeries(int winLen, int numTapers) {
+    System.out.println("in getMultitaperSeries");
     double[][] taperMat = new double[numTapers][winLen];
     
     double denom = winLen - 1;
@@ -354,6 +355,7 @@ public class FFTResult {
    * symmetric component (second half of the function)
    */
   public static Complex[] simpleFFT(double[] dataIn) {
+    System.out.println("in simpleFFT");
     
     int padding = 2;
     while ( padding < dataIn.length ) {
@@ -383,6 +385,7 @@ public class FFTResult {
    * frequencies 
    */
   public static FFTResult singleSidedFFT(DataBlock db, boolean mustFlip) {
+    System.out.println("in singleSidedFFT");
     
     double[] data = db.getData().clone();
     
@@ -428,6 +431,7 @@ public class FFTResult {
    */
   public static FFTResult 
   singleSidedFilteredFFT(DataBlock db, boolean mustFlip) {
+    System.out.println("in singleSidedFilteredFFT");
     
     double[] data = db.getData().clone();
     
@@ -476,6 +480,7 @@ public class FFTResult {
    * @return A list of doubles representing the original timeseries of the FFT
    */
   public static double[] singleSidedInverseFFT(Complex[] freqDomn, int trim) {
+    System.out.println("in singleSidedInverseFFT");
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
      
@@ -517,6 +522,7 @@ public class FFTResult {
    * frequencies of the PSD.
    */
   public static FFTResult spectralCalc(DataBlock data1, DataBlock data2) {
+    System.out.println("in spectralCalc");
 
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
@@ -552,6 +558,8 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalc(double[] list1, double[] list2, long interval) {
+
+    System.out.println("in spectralCalc helper function");
     
     boolean sameData = list1.equals(list2);
     
@@ -726,6 +734,7 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalcMultitaper(DataBlock data1, DataBlock data2) {
+    System.out.println("in spectralCalcMultitaper");
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
     boolean sameData = data1.getName().equals( data2.getName() );
@@ -752,6 +761,7 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalcMultitaper(double[] list1, double[] list2, long ivl) {
+    System.out.println("in spectralCalcMultitaper part dos");
     
     boolean sameData = list1.equals(list2);
     
