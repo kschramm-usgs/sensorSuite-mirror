@@ -46,6 +46,8 @@ public class FFTResult {
    */
   public static double[] 
   bandFilter(double[] toFilt, double sps, double low, double high) {
+      System.out.println("In bandfilter");
+      //System.out.print(sps,low,high);
     
     return bandFilterWithCuts(toFilt, sps, low, high, 0., sps);
     /*
@@ -86,7 +88,7 @@ public class FFTResult {
   public static List<Number> 
   bandFilter(List<Number> toFilt, double sps, double low, double high) {
     
-    
+	System.out.println("In bandfilter list");
     double[] toFFT = new double[toFilt.size()];
     
     for (int i = 0; i < toFFT.length; ++i) {
@@ -121,7 +123,7 @@ public class FFTResult {
                      double lowStop, double highStop) {
     
     // System.out.println("FILTERING OPERATION OCCURRING");
-    
+	System.out.println("In bandfilter cuts");
     Complex[] fft = simpleFFT(toFilt);
     
     int trim = fft.length/2 + 1;
@@ -155,7 +157,7 @@ public class FFTResult {
    * @return Value corresponding to power loss from application of taper.
    */
   public static double cosineTaper(double[] dataSet, double taperW) {
-    
+	System.out.println("In bandfilter cosineTaper");
     double ramp = taperW * dataSet.length;
     double taper;
     double wss = 0.0; // represents power loss
@@ -174,7 +176,7 @@ public class FFTResult {
   }
   
   public static double[][] getCosTaperVector(int len, double taperW) {
-    
+	System.out.println("In getCosTaperVector");
     double[] taperVec = new double[len];
     for (int i = 0; i < taperVec.length; ++i) {
       taperVec[i] = 1.;
@@ -204,7 +206,7 @@ public class FFTResult {
    */
   public static double[][] getMultitaperSeries(int winLen, int numTapers) {
     double[][] taperMat = new double[numTapers][winLen];
-    
+    System.out.println("In getMultitaperSeries");
     double denom = winLen - 1;
     double scale = Math.sqrt(2 / denom);
     
@@ -234,7 +236,7 @@ public class FFTResult {
    */
   public static FFTResult crossPower(DataBlock data1, DataBlock data2,
       InstrumentResponse ir1, InstrumentResponse ir2) {
-    
+	  System.out.println("In FFT result crossPower root function");
     FFTResult selfPSD = spectralCalc(data1, data2);
     Complex[] results = selfPSD.getFFT();
     double[] freqs = selfPSD.getFreqs();
@@ -258,7 +260,8 @@ public class FFTResult {
   
   public static FFTResult crossPower(double[] data1, double[] data2,
       InstrumentResponse ir1, InstrumentResponse ir2, long interval) {
-    FFTResult selfPSD = spectralCalc(data1, data2, interval);
+	  System.out.println("In FFT result crossPower");
+	  FFTResult selfPSD = spectralCalc(data1, data2, interval);
     Complex[] results = selfPSD.getFFT();
     double[] freqs = selfPSD.getFreqs();
     Complex[] out = new Complex[freqs.length];
@@ -290,6 +293,7 @@ public class FFTResult {
    */
   public static XYSeries getHighNoiseModel(boolean freqSpace) {
     XYSeries xys = new XYSeries("NHNM");
+    System.out.println("In get High noise model");
     try {
       ClassLoader cl = FFTResult.class.getClassLoader();
       InputStream is = cl.getResourceAsStream("NHNM.txt");
@@ -332,6 +336,7 @@ public class FFTResult {
    */
   public static XYSeries getLowNoiseModel(boolean freqSpace) {
     XYSeries xys = new XYSeries("NLNM");
+    System.out.println("In getLownoise model");
     try {
       
       ClassLoader cl = FFTResult.class.getClassLoader();
@@ -373,7 +378,7 @@ public class FFTResult {
    * symmetric component (second half of the function)
    */
   public static Complex[] simpleFFT(double[] dataIn) {
-    
+	  System.out.println("In simple FFT");
     int padding = 2;
     while ( padding < dataIn.length ) {
       padding *= 2;
@@ -402,7 +407,7 @@ public class FFTResult {
    * frequencies 
    */
   public static FFTResult singleSidedFFT(DataBlock db, boolean mustFlip) {
-    
+	  System.out.println("In single-sided FFT");
     double[] data = db.getData().clone();
     
     for (int i = 0; i < db.size(); ++i) {
@@ -447,7 +452,7 @@ public class FFTResult {
    */
   public static FFTResult 
   singleSidedFilteredFFT(DataBlock db, boolean mustFlip) {
-    
+	  System.out.println("In single-sided filtered FFT");
     double[] data = db.getData().clone();
     
     for (int i = 0; i < db.size(); ++i) {
@@ -497,7 +502,7 @@ public class FFTResult {
   public static double[] singleSidedInverseFFT(Complex[] freqDomn, int trim) {
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
-     
+    System.out.println("In single-sided inverse  FFT");
     int padding = (freqDomn.length - 1) * 2;
     
     Complex[] padded = new Complex[padding];
@@ -536,7 +541,7 @@ public class FFTResult {
    * frequencies of the PSD.
    */
   public static FFTResult spectralCalc(DataBlock data1, DataBlock data2) {
-
+	  System.out.println("In spectral calc root");
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
     boolean sameData = data1.getName().equals( data2.getName() );
@@ -555,7 +560,7 @@ public class FFTResult {
     
   public static FFTResult 
   spectralCalc(double[] list1, double[] list2, long interval) {
-    
+	  System.out.println("In spectral calc");
     boolean sameData = list1.equals(list2);
     
     // divide into windows of 1/4, moving up 1/16 of the data at a time
@@ -728,7 +733,7 @@ public class FFTResult {
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
     boolean sameData = data1.getName().equals( data2.getName() );
-    
+    System.out.println("In spectral calc multitaper");
     double[] list1 = data1.getData();
     double[] list2 = list1;
     if (!sameData) {
@@ -740,7 +745,7 @@ public class FFTResult {
     
   public static FFTResult 
   spectralCalcMultitaper(double[] list1, double[] list2, long ivl) {
-    
+    System.out.println("In spectral calc multitaper w/o ugle logic");
     boolean sameData = list1.equals(list2);
     
     int padding = 2;
