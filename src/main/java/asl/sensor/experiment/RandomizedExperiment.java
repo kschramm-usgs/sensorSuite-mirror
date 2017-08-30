@@ -53,10 +53,9 @@ import asl.sensor.utils.NumericUtils;
 public class RandomizedExperiment 
 extends Experiment implements ParameterValidator {
 
-  private static final double DELTA = 1E-3;
-  //private static final double DELTA = 1E-7;
-  public static final double PEAK_MULTIPLIER = 
-      NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
+  private static final double DELTA = 1E-7;
+  public static final double PEAK_MULTIPLIER = 0.8;
+      // NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
   
   // To whomever has to maintain this code after I'm gone:
   // I'm sorry, I'm so so sorry
@@ -110,13 +109,7 @@ extends Experiment implements ParameterValidator {
     normalIdx = 1;
     
     // construct response plot
-    DataBlock calib = ds.getXthLoadedBlock(1);
-    sensorOutIdx = ds.getXthFullyLoadedIndex(1);
-    
-    // if first data has response loaded erroneously, load in next data set
-    if (sensorOutIdx == 0) {
-      sensorOutIdx = ds.getXthFullyLoadedIndex(2);
-    }
+    DataBlock calib = ds.getBlock(0);
     
     /*
     if ( ds.getBlock(sensorOutIdx).getName().equals( calib.getName() ) ) {
@@ -124,8 +117,8 @@ extends Experiment implements ParameterValidator {
     }
     */
 
-    DataBlock sensorOut = ds.getBlock(sensorOutIdx);
-    fitResponse = new InstrumentResponse( ds.getResponse(sensorOutIdx) );
+    DataBlock sensorOut = ds.getBlock(1);
+    fitResponse = new InstrumentResponse( ds.getResponse(1) );
     
     // System.out.println(calib.size() + ", " + sensorOut.size());
     
@@ -143,7 +136,7 @@ extends Experiment implements ParameterValidator {
     // PSD(out) / PSD(in) is the response curve (i.e., deconvolution)
     // also, use those frequencies to get the applied response to input
     FFTResult numeratorPSD, denominatorPSD;
-    if (false) { // clear out temporarily to see if Welch works ok
+    if (false) { // clear out temporarily to see if Welch works ok (dead code)
       numeratorPSD = FFTResult.spectralCalcMultitaper(sensorOut, calib);
       denominatorPSD = FFTResult.spectralCalcMultitaper(calib, calib);
     } else {
@@ -171,7 +164,7 @@ extends Experiment implements ParameterValidator {
     } else {
       minFreq = .2; // lower bound of .2 Hz (5s period) due to noise
       // get up to .8 of nyquist rate, again due to noise
-      maxFreq = 0.8 * nyquist;
+      maxFreq = PEAK_MULTIPLIER * nyquist;
     }
     
     // now trim frequencies to in range
@@ -350,7 +343,6 @@ extends Experiment implements ParameterValidator {
         // give frequencies below 1 less weight in high-freq calibrations
         if (freqs[i] > 10.) {
           // for high enough freqs, make weighting (100/f^3) rather than 1/f;
-// f-squared
           denom = Math.pow(freqs[i], 3) / 100.;
         } else if (freqs[i] > 1.) {
           denom = freqs[i];
