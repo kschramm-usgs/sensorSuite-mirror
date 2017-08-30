@@ -53,7 +53,8 @@ import asl.sensor.utils.NumericUtils;
 public class RandomizedExperiment 
 extends Experiment implements ParameterValidator {
 
-  private static final double DELTA = 1E-7;
+  private static final double DELTA = 1E-3;
+  //private static final double DELTA = 1E-7;
   public static final double PEAK_MULTIPLIER = 
       NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
   
@@ -147,14 +148,18 @@ extends Experiment implements ParameterValidator {
       denominatorPSD = FFTResult.spectralCalcMultitaper(calib, calib);
     } else {
       numeratorPSD = FFTResult.spectralCalc(sensorOut, calib);
+      System.out.println("sensor out");
+      System.out.println(sensorOut);
       denominatorPSD = FFTResult.spectralCalc(calib, calib);
     }
     
     freqs = numeratorPSD.getFreqs(); // should be same for both results
     
     // store nyquist rate of data because freqs will be trimmed down later
+
     nyquist = sensorOut.getSampleRate() / 2.;
     nyquist += .5; // increasing to prevent issues with pole frequency rounding 
+    System.out.println("nyquist: "+nyquist);
     
     // trim frequency window in order to restrict range of response fits
     double minFreq, maxFreq;
@@ -345,7 +350,8 @@ extends Experiment implements ParameterValidator {
         // give frequencies below 1 less weight in high-freq calibrations
         if (freqs[i] > 10.) {
           // for high enough freqs, make weighting (100/f^3) rather than 1/f;
-          denom *= Math.pow(freqs[i], 2) / 100.;
+// f-squared
+          denom = Math.pow(freqs[i], 3) / 100.;
         } else if (freqs[i] > 1.) {
           denom = freqs[i];
         }
@@ -401,17 +407,19 @@ extends Experiment implements ParameterValidator {
         fireStateChange("Fitting, iteration count " + numIterations);
         Pair<RealVector, RealMatrix> pair = 
             jacobian(point);
+        //System.out.println("pair value: "+ pair);        
         return pair;
       }
       
     };
     
+    
     ConvergenceChecker<LeastSquaresProblem.Evaluation> svc = 
-        new EvaluationRmsChecker(1.0E-14, 1.0E-14);
+        new EvaluationRmsChecker(1.0E-2, 1.0E-2);
     
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
-        withCostRelativeTolerance(1.0E-14).
-        withParameterRelativeTolerance(1.0E-14);
+        withCostRelativeTolerance(1.0E-2).
+        withParameterRelativeTolerance(1.0E-2);
     
     name = fitResponse.getName();
     XYSeries initMag = new XYSeries("Initial param (" + name + ") magnitude");
@@ -476,6 +484,8 @@ extends Experiment implements ParameterValidator {
         fitParams, lowFreq, numZeros);
     fitPoles = fitResponse.getPoles();
     fitZeros = fitResponse.getZeros();
+    System.out.println("poles:"+fitPoles);
+    System.out.println("zeros:"+fitZeros);
     
     fireStateChange("Compiling data...");
     

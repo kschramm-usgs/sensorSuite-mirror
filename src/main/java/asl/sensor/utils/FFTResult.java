@@ -360,7 +360,9 @@ public class FFTResult {
     int padding = 2;
     while ( padding < dataIn.length ) {
       padding *= 2;
+    System.out.println("padding: "+padding);
     }
+
     
     double[] toFFT = new double[padding];
     
@@ -682,6 +684,7 @@ public class FFTResult {
     
     psdNormalization /= windowCorrection;
     psdNormalization /= segsProcessed; // NOTE: divisor here should be 13
+    System.out.println(segsProcessed);
     
     double[] frequencies = new double[singleSide];
     
