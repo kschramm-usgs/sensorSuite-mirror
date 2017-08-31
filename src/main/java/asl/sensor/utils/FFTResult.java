@@ -360,12 +360,14 @@ public class FFTResult {
     int padding = 2;
     while ( padding < dataIn.length ) {
       padding *= 2;
-    System.out.println("padding: "+padding);
     }
 
+    System.out.println("padding: "+padding);
     
     double[] toFFT = new double[padding];
     
+    System.out.println("length dataIn: "+dataIn.length);
+    //pad the segment with zeros
     for (int i = 0; i < dataIn.length; ++i) {
       toFFT[i] = dataIn[i];
     }
@@ -597,6 +599,7 @@ public class FFTResult {
       powSpectDens[i] = Complex.ZERO;
     }
     
+// list1 is all of the data?
     while ( rangeEnd <= list1.length ) {
       
       Complex[] fftResult1 = new Complex[singleSide]; // first half of FFT reslt
@@ -607,6 +610,7 @@ public class FFTResult {
       }
       
       // give us a new list we can modify to get the data of
+      System.out.println("rangeStart,rangeEnd: "+rangeStart+", "+rangeEnd);
       double[] data1Range = 
           Arrays.copyOfRange(list1, rangeStart, rangeEnd);
       double[] data2Range = null;
@@ -624,6 +628,7 @@ public class FFTResult {
       TimeSeriesUtils.detrend(data1Range);
       TimeSeriesUtils.demeanInPlace(data1Range);
       wss = cosineTaper(data1Range, TAPER_WIDTH);
+      System.out.println("taper width"+TAPER_WIDTH);
       // presumably we only need the last value of wss
       
       if (!sameData) {
@@ -634,6 +639,7 @@ public class FFTResult {
       }
       
       // TODO: this can clearly be refactored
+      System.out.println("padding the segment");
       for (int i = 0; i < data1Range.length; ++i) {
         // no point in using arraycopy -- must make sure each Number's a double
         toFFT1[i] = data1Range[i];
@@ -645,6 +651,7 @@ public class FFTResult {
       FastFourierTransformer fft = 
           new FastFourierTransformer(DftNormalization.STANDARD);
 
+      System.out.println("FFT");
       Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
       // use arraycopy now (as it's fast) to get the first half of the fft
       System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
@@ -663,6 +670,7 @@ public class FFTResult {
           val2 = fftResult2[i];
         }
         
+        System.out.println("performing PSD");
         powSpectDens[i] = 
             powSpectDens[i].add( 
                 val1.multiply( 

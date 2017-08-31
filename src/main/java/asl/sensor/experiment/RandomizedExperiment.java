@@ -472,8 +472,8 @@ extends Experiment implements ParameterValidator {
         fitParams, lowFreq, numZeros);
     fitPoles = fitResponse.getPoles();
     fitZeros = fitResponse.getZeros();
-    System.out.println("poles:"+fitPoles);
-    System.out.println("zeros:"+fitZeros);
+    //System.out.println("poles:"+fitPoles);
+    //System.out.println("zeros:"+fitZeros);
     
     fireStateChange("Compiling data...");
     

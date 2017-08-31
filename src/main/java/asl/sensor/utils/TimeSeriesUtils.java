@@ -187,6 +187,7 @@ public class TimeSeriesUtils {
     }
     
     mean /= dataSet.length;
+    System.out.println("mean: "+mean);
     
     for(int i = 0; i < dataSet.length; ++i) {
       // iterate over index rather than for-each cuz we must replace data

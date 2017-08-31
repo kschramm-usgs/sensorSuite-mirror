@@ -339,7 +339,7 @@ public class InstrumentResponse {
     for (int i = builtZeros.size(); i < zeros.size(); ++i) {
       builtZeros.add( zeros.get(i) );
     }
-    System.out.println("builtZeros: "+builtZeros);
+    //System.out.println("builtZeros: "+builtZeros);
     
     // now do the same thing as the zeros but for the poles
     List<Complex> builtPoles = new ArrayList<Complex>();
@@ -382,7 +382,7 @@ public class InstrumentResponse {
     for (int i = builtPoles.size(); i < poles.size(); ++i) {
       builtPoles.add( poles.get(i) );
     }
-    System.out.println("builtPoles: "+builtPoles);
+    //System.out.println("builtPoles: "+builtPoles);
     
     // NumericUtils.complexMagnitudeSorter(builtZeros);
     // NumericUtils.complexMagnitudeSorter(builtPoles);
