@@ -53,11 +53,7 @@ import asl.sensor.utils.NumericUtils;
 public class RandomizedExperiment 
 extends Experiment implements ParameterValidator {
 
-<<<<<<< HEAD
-  private static final double DELTA = 1E-12;
-=======
   private static final double DELTA = 1E-11;
->>>>>>> upstream/gui
   public static final double PEAK_MULTIPLIER = 0.8;
       // NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
       // take this times the nyquist
@@ -417,7 +413,7 @@ extends Experiment implements ParameterValidator {
     
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
         withCostRelativeTolerance(1.0E-15).
-        withParameterRelativeTolerance(1.0E-16);
+        withParameterRelativeTolerance(1.0E-10);
     
     name = fitResponse.getName();
     XYSeries initMag = new XYSeries("Initial param (" + name + ") magnitude");

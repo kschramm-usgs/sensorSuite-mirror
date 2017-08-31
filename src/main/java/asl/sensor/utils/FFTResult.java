@@ -32,7 +32,7 @@ public class FFTResult {
   /**
    * Specifies the width of the cosine taper function used in windowing
    */
-  private static final double TAPER_WIDTH = 0.10;
+  private static final double TAPER_WIDTH = 0.05;
   
   /**
    * Filter out data outside of the range between the low and high frequencies;
