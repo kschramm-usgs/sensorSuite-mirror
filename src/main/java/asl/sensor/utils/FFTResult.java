@@ -32,7 +32,7 @@ public class FFTResult {
   /**
    * Specifies the width of the cosine taper function used in windowing
    */
-  private static final double TAPER_WIDTH = 0.05;
+  private static final double TAPER_WIDTH = 0.10;
   
   /**
    * Filter out data outside of the range between the low and high frequencies;
@@ -409,6 +409,7 @@ public class FFTResult {
     int singleSide = padding/2 + 1;
     
     double nyquist = db.getSampleRate() / 2;
+    System.out.println("line 412 nyquist: "+nyquist);
     double deltaFrq = nyquist / (singleSide - 1);
     
     Complex[] fftOut = new Complex[singleSide];
@@ -461,6 +462,7 @@ public class FFTResult {
     int singleSide = padding/2 + 1;
     
     double nyquist = db.getSampleRate() / 2;
+    System.out.println("line 465 nyquist: "+nyquist);
     double deltaFrq = nyquist / (singleSide - 1);
     
     Complex[] fftOut = new Complex[singleSide];
@@ -662,6 +664,7 @@ public class FFTResult {
         System.arraycopy(frqDomn2, 0, fftResult2, 0, fftResult2.length);
       }
       
+      System.out.println("performing PSD");
       for (int i = 0; i < singleSide; ++i) {
         
         Complex val1 = fftResult1[i];
@@ -670,7 +673,6 @@ public class FFTResult {
           val2 = fftResult2[i];
         }
         
-        System.out.println("performing PSD");
         powSpectDens[i] = 
             powSpectDens[i].add( 
                 val1.multiply( 
