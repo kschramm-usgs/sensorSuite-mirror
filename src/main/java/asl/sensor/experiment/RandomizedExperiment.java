@@ -239,6 +239,7 @@ extends Experiment implements ParameterValidator {
       estResponse[i] = numer.divide(denom);
       // convert from displacement to velocity
       Complex scaleFactor = new Complex(0., NumericUtils.TAU * freqs[i]);
+      System.out.println("scale factor: "+scaleFactor);
       estResponse[i] = estResponse[i].multiply(scaleFactor);
     }
     
