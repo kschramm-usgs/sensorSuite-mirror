@@ -54,9 +54,8 @@ public class RandomizedExperiment
 extends Experiment implements ParameterValidator {
 
   private static final double DELTA = 1E-11;
-  public static final double PEAK_MULTIPLIER = 0.8;
-      // NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
-      // take this times the nyquist
+  public static final double PEAK_MULTIPLIER = // 0.8;
+      NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
   
   // To whomever has to maintain this code after I'm gone:
   // I'm sorry, I'm so so sorry
@@ -342,7 +341,7 @@ extends Experiment implements ParameterValidator {
       int argIdx = i + estResponse.length;
       double denom;
       if (!lowFreq) {
-        denom = 100.;
+        denom = freqs[i];
         // give frequencies below 1 less weight in high-freq calibrations
         if (freqs[i] > 10.) {
           // for high enough freqs, make weighting (100/f^3) rather than 1/f;
