@@ -629,9 +629,11 @@ public class DataStore {
       
       if ( start < db.getStartTime() ) {
         start = db.getStartTime();
+        System.out.println("start time: "+ start);
       }
       if ( end > db.getEndTime() ) {
         end = db.getEndTime();
+        System.out.println("end time: "+ end);
       }
     }
     

@@ -87,7 +87,6 @@ public class DataBlock {
     targetInterval = in.getInterval();
     
     startTime = in.getInitialStartTime();
-    System.out.println(startTime);
     trimmedStart = Math.max(startTime, start);
     
     endTime = in.getInitialEndTime();
@@ -140,11 +139,17 @@ public class DataBlock {
     List<Long> times = new ArrayList<Long>( dataIn.keySet() );
     Collections.sort(times);
     startTime = times.get(0);
+    System.out.println("StartTime: "+startTime); 
     trimmedStart = startTime;
+    System.out.println("StartTimeTrimmed: "+trimmedStart); 
     long lastListStart = times.get( times.size() - 1 );
     int pointsToEnd = dataIn.get(lastListStart).length;
+    System.out.println("points to end: "+pointsToEnd); 
+
     endTime = lastListStart + (pointsToEnd * intervalIn);
+    System.out.println("endTime: "+endTime); 
     trimmedEnd = endTime;
+    System.out.println("endTimeTrimmed: "+trimmedEnd); 
     
     name = nameIn;
     dataMap = dataIn;
