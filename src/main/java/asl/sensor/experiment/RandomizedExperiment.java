@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
+
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
@@ -203,10 +209,18 @@ extends Experiment implements ParameterValidator {
 
     int endIdx = startIdx + len;
     // System.out.println("INDICES: " + startIdx + "," + endIdx);
+    // XXX will want to write these values out.
+    //
     Complex[] numeratorPSDVals = 
         Arrays.copyOfRange(numeratorPSD.getFFT(), startIdx, endIdx);
     Complex[] denominatorPSDVals = 
         Arrays.copyOfRange(denominatorPSD.getFFT(), startIdx, endIdx);
+    Writer writer = null;
+    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+         new FileOutputStream("filename.txt"), "utf-8")))
+         {
+                    writer.write("something");
+         }
     
     for (int i = 0; i < len; ++i) {
       
@@ -237,7 +251,8 @@ extends Experiment implements ParameterValidator {
       estResponse[i] = numer.divide(denom);
       // convert from displacement to velocity
       Complex scaleFactor = new Complex(0., NumericUtils.TAU * freqs[i]);
-      System.out.println("scale factor: "+scaleFactor);
+      //System.out.println("scale factor: "+scaleFactor);
+      // XXX will want to write this out as well
       estResponse[i] = estResponse[i].multiply(scaleFactor);
     }
     
