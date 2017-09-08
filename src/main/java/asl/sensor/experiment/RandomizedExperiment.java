@@ -53,8 +53,8 @@ import asl.sensor.utils.NumericUtils;
 public class RandomizedExperiment 
 extends Experiment implements ParameterValidator {
 
-  private static final double DELTA = 1E-7;
-  public static final double PEAK_MULTIPLIER = 
+  private static final double DELTA = 1E-11;
+  public static final double PEAK_MULTIPLIER = // 0.8;
       NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
   
   // To whomever has to maintain this code after I'm gone:
@@ -87,7 +87,6 @@ extends Experiment implements ParameterValidator {
   
   private int normalIdx; // location of value to set to 0 in curves for scaling
   private int numZeros; // how many entries in parameter vector define zeros
-  private int sensorOutIdx; // location to load response from?
   private int numIterations; // how much the solver ran
   
   public RandomizedExperiment() {
@@ -107,15 +106,10 @@ extends Experiment implements ParameterValidator {
   protected void backend(DataStore ds) {
     
     normalIdx = 1;
+    numIterations = 0;
     
     // construct response plot
-    DataBlock calib = ds.getXthLoadedBlock(1);
-    sensorOutIdx = ds.getXthFullyLoadedIndex(1);
-    
-    // if first data has response loaded erroneously, load in next data set
-    if (sensorOutIdx == 0) {
-      sensorOutIdx = ds.getXthFullyLoadedIndex(2);
-    }
+    DataBlock calib = ds.getBlock(0);
     
     /*
     if ( ds.getBlock(sensorOutIdx).getName().equals( calib.getName() ) ) {
@@ -123,8 +117,8 @@ extends Experiment implements ParameterValidator {
     }
     */
 
-    DataBlock sensorOut = ds.getBlock(sensorOutIdx);
-    fitResponse = new InstrumentResponse( ds.getResponse(sensorOutIdx) );
+    DataBlock sensorOut = ds.getBlock(1);
+    fitResponse = new InstrumentResponse( ds.getResponse(1) );
     
     // System.out.println(calib.size() + ", " + sensorOut.size());
     
@@ -142,7 +136,7 @@ extends Experiment implements ParameterValidator {
     // PSD(out) / PSD(in) is the response curve (i.e., deconvolution)
     // also, use those frequencies to get the applied response to input
     FFTResult numeratorPSD, denominatorPSD;
-    if (false) { // clear out temporarily to see if Welch works ok
+    if (false) { // clear out temporarily to see if Welch works ok (dead code)
       numeratorPSD = FFTResult.spectralCalcMultitaper(sensorOut, calib);
       denominatorPSD = FFTResult.spectralCalcMultitaper(calib, calib);
     } else {
@@ -154,7 +148,10 @@ extends Experiment implements ParameterValidator {
     
     // store nyquist rate of data because freqs will be trimmed down later
     nyquist = sensorOut.getSampleRate() / 2.;
-    nyquist += .5; // increasing to prevent issues with pole frequency rounding 
+    
+    // slight increase to prevent issues with pole frequency rounding 
+    // commented out in hopes that any issues related to it have been excised
+    // nyquist += .5; 
     
     // trim frequency window in order to restrict range of response fits
     double minFreq, maxFreq;
@@ -166,7 +163,7 @@ extends Experiment implements ParameterValidator {
     } else {
       minFreq = .2; // lower bound of .2 Hz (5s period) due to noise
       // get up to .8 of nyquist rate, again due to noise
-      maxFreq = 0.8 * nyquist;
+      maxFreq = PEAK_MULTIPLIER * nyquist;
     }
     
     // now trim frequencies to in range
@@ -341,15 +338,11 @@ extends Experiment implements ParameterValidator {
       int argIdx = i + estResponse.length;
       double denom;
       if (!lowFreq) {
-        denom = 100.;
-        // give frequencies below 1 less weight in high-freq calibrations
-        if (freqs[i] > 10.) {
-          // for high enough freqs, make weighting (100/f^3) rather than 1/f;
-          denom *= Math.pow(freqs[i], 2) / 100.;
-        } else if (freqs[i] > 1.) {
-          denom = freqs[i];
+        if (freqs[i] < 1) {
+          denom = 1; // weight everything up to 1Hz equally
+        } else {
+          denom = freqs[i]; // set everything (else) to 1/f weighting
         }
-        
       } else {
         if (freqs[i] < .01) {
           denom = freqs[i];
@@ -360,10 +353,6 @@ extends Experiment implements ParameterValidator {
       }
 
       weights[argIdx] = maxArgWeight / denom;
-      // ad-hoc conditional to increase weighting on the tail of the amp curve
-      if (freqs[i] < 0.3) {
-        denom = 1E-2;
-      }
       weights[i] = maxMagWeight / denom;
 
     }
@@ -394,8 +383,6 @@ extends Experiment implements ParameterValidator {
     
     MultivariateJacobianFunction jacobian = new MultivariateJacobianFunction() {
       
-      int numIterations = 0;
-      
       public Pair<RealVector, RealMatrix> value(final RealVector point) {
         ++numIterations;
         fireStateChange("Fitting, iteration count " + numIterations);
@@ -406,12 +393,9 @@ extends Experiment implements ParameterValidator {
       
     };
     
-    ConvergenceChecker<LeastSquaresProblem.Evaluation> svc = 
-        new EvaluationRmsChecker(1.0E-14, 1.0E-14);
-    
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
-        withCostRelativeTolerance(1.0E-14).
-        withParameterRelativeTolerance(1.0E-14);
+        withCostRelativeTolerance(1.0E-15).
+        withParameterRelativeTolerance(1.0E-10);
     
     name = fitResponse.getName();
     XYSeries initMag = new XYSeries("Initial param (" + name + ") magnitude");
@@ -429,7 +413,6 @@ extends Experiment implements ParameterValidator {
         lazyEvaluation(false).
         maxEvaluations(Integer.MAX_VALUE).
         maxIterations(Integer.MAX_VALUE).
-        checker(svc).
         build();
     
     fireStateChange("Built least-squares problem; evaluating intial guess...");
@@ -465,10 +448,10 @@ extends Experiment implements ParameterValidator {
     
     // double[] initResidList = initEval.getResiduals().toArray();
     // double[] fitResidList = optimum.getResiduals().toArray();
-    XYSeries initResidMag = new XYSeries("Amplitude of init. residual");
-    XYSeries initResidPhase = new XYSeries("Phase of init. residual");
-    XYSeries fitResidMag = new XYSeries("Amplitude of fit residual");
-    XYSeries fitResidPhase = new XYSeries("Phase of fit residual");
+    XYSeries initResidMag = new XYSeries("Percent error of init. amplitude");
+    XYSeries initResidPhase = new XYSeries("Diff. with init phase");
+    XYSeries fitResidMag = new XYSeries("Percent error of fit amplitude");
+    XYSeries fitResidPhase = new XYSeries("Diff with fit phase");
     
     // InstrumentResponse init = ds.getResponse(sensorOutIdx);
     
@@ -851,7 +834,7 @@ extends Experiment implements ParameterValidator {
   public int[] listActiveResponseIndices() {
     // NOTE: not used by corresponding panel, overrides with active indices
     // of components in the combo-box
-    return new int[]{sensorOutIdx};
+    return new int[]{1};
   }
   
   /**
