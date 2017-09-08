@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -414,10 +416,19 @@ public class FFTResult {
     
     Complex[] fftOut = new Complex[singleSide];
     double[] frequencies = new double[singleSide];
+    System.out.println("writing file");
+    File file = new File("/home/kschramm/fftOutput.txt");
     
+    try {
+      PrintWriter GetOut = new PrintWriter(file);
     for (int i = 0; i < singleSide; ++i) {
       fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
+      GetOut.printf("%f, %f",frequencies[i],fftOut[i]);
+      }
+      } catch(IOException ex ) {
+        System.out.println(ex.toString());
+        System.out.println("Something went wrong here.");
     }
     
     // System.out.println(frequencies[singleSide - 1]);
