@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -416,21 +417,31 @@ public class FFTResult {
     
     Complex[] fftOut = new Complex[singleSide];
     double[] frequencies = new double[singleSide];
-    System.out.println("writing file");
-    File file = new File("/home/kschramm/fftOutput.txt");
-    
+    //System.out.println("writing file");
+    //File file = new File("/home/kschramm/fftOutput.txt");
     try {
-      PrintWriter GetOut = new PrintWriter(file);
+    FileOutputStream out = new FileOutputStream("/home/kschramm/fftOutput.txt");
+    
+    PrintWriter GetOut = new PrintWriter(out);
+    GetOut.println("This is a test");
+    out.close();
+    } catch (IOException e) {
+      System.out.println("JAVA SUCKS");
+    }
+
+
+
     for (int i = 0; i < singleSide; ++i) {
       fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
-      GetOut.printf("%f, %f",frequencies[i],fftOut[i]);
-      }
-      } catch(IOException ex ) {
-        System.out.println(ex.toString());
-        System.out.println("Something went wrong here.");
+      //GetOut.printf("%f, %f",frequencies[i],fftOut[i]);
+      //GetOut.close();
+     // }
+      //} catch(IOException ex ) {
+       // System.out.println(ex.toString());
+        //System.out.println("Something went wrong here.");
     }
-    
+     
     // System.out.println(frequencies[singleSide - 1]);
     
     return new FFTResult(fftOut, frequencies);

@@ -215,13 +215,18 @@ extends Experiment implements ParameterValidator {
         Arrays.copyOfRange(numeratorPSD.getFFT(), startIdx, endIdx);
     Complex[] denominatorPSDVals = 
         Arrays.copyOfRange(denominatorPSD.getFFT(), startIdx, endIdx);
-    Writer writer = null;
-    try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-         new FileOutputStream("filename.txt"), "utf-8")))
-         {
-                    writer.write("something");
-         }
-    
+    // this is from:https://stackoverflow.com/questions/2885173/how-do-i-create-a-file-and-write-to-it-in-java
+
+
+    // this is from:https://stackoverflow.com/questions/2885173/how-do-i-create-a-file-and-write-to-it-in-java
+    //
+    //Writer writer = null;
+    //try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+     //    new FileOutputStream("filename.txt"), "utf-8")))
+    //  //   {
+     //               writer.write("something");
+       //  }
+   // 
     for (int i = 0; i < len; ++i) {
       
       freqs[i] = freqList.get(i);
