@@ -341,15 +341,11 @@ extends Experiment implements ParameterValidator {
       int argIdx = i + estResponse.length;
       double denom;
       if (!lowFreq) {
-        denom = freqs[i];
-        // give frequencies below 1 less weight in high-freq calibrations
-        if (freqs[i] > 10.) {
-          // for high enough freqs, make weighting (100/f^3) rather than 1/f;
-          denom = Math.pow(freqs[i], 3) / 100.;
-        } else if (freqs[i] > 1.) {
-          denom = freqs[i];
+        if (freqs[i] < 1) {
+          denom = 1; // weight everything up to 1Hz equally
+        } else {
+          denom = freqs[i]; // set everything (else) to 1/f weighting
         }
-        
       } else {
         if (freqs[i] < .01) {
           denom = freqs[i];
@@ -360,10 +356,6 @@ extends Experiment implements ParameterValidator {
       }
 
       weights[argIdx] = maxArgWeight / denom;
-      // ad-hoc conditional to increase weighting on the tail of the amp curve
-      if (freqs[i] < 0.3) {
-        denom = 1E-2;
-      }
       weights[i] = maxMagWeight / denom;
 
     }
