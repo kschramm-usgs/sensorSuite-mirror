@@ -5,16 +5,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-<<<<<<< HEAD
 import java.io.PrintWriter;
 import java.io.File;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.io.FileOutputStream;
-
-=======
 import java.util.Set;
->>>>>>> upstream/gui
 
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
@@ -220,10 +216,9 @@ extends Experiment implements ParameterValidator {
         Arrays.copyOfRange(numeratorPSD.getFFT(), startIdx, endIdx);
     Complex[] denominatorPSDVals = 
         Arrays.copyOfRange(denominatorPSD.getFFT(), startIdx, endIdx);
-    // this is from:https://stackoverflow.com/questions/2885173/how-do-i-create-a-file-and-write-to-it-in-java
-
 
     // this is from:https://stackoverflow.com/questions/2885173/how-do-i-create-a-file-and-write-to-it-in-java
+    // this did not work.  grrrr.
     //
     //Writer writer = null;
     //try (Writer writer = new BufferedWriter(new OutputStreamWriter(
