@@ -552,7 +552,8 @@ public class AzimuthExperiment extends Experiment {
       Complex conj = crossPowerSeries[i].conjugate();
       Complex numerator = crossPowerSeries[i].multiply(conj);
       Complex denom = rotatedSeries[i].multiply(refSeries[i]);
-      coherence[i] = numerator.divide(denom).getReal();
+      //coherence[i] = numerator.divide(denom).getReal();
+      coherence[i] = numerator.divide(denom).abs();
     }
     
     double peakVal = Double.NEGATIVE_INFINITY;
@@ -610,7 +611,8 @@ public class AzimuthExperiment extends Experiment {
       Complex conj = crossPowerSeries[i].conjugate();
       Complex numerator = crossPowerSeries[i].multiply(conj);
       Complex denom = rotatedSeries[i].multiply(refSeries[i]);
-      fwdCoherence[i] = numerator.divide(denom).getReal();
+      //fwdCoherence[i] = numerator.divide(denom).getReal();
+      fwdCoherence[i] = numerator.divide(denom).abs();
       
       if (freqs[i] < highFreq && freqs[i] > lowFreq) {
         fwdMeanCoherence += fwdCoherence[i];

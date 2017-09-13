@@ -5,6 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -414,12 +417,20 @@ public class FFTResult {
     
     Complex[] fftOut = new Complex[singleSide];
     double[] frequencies = new double[singleSide];
-    
+
+
+
     for (int i = 0; i < singleSide; ++i) {
       fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
+      //GetOut.printf("%f, %f",frequencies[i],fftOut[i]);
+      //GetOut.close();
+     // }
+      //} catch(IOException ex ) {
+       // System.out.println(ex.toString());
+        //System.out.println("Something went wrong here.");
     }
-    
+     
     // System.out.println(frequencies[singleSide - 1]);
     
     return new FFTResult(fftOut, frequencies);
@@ -657,6 +668,16 @@ public class FFTResult {
       Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
       // use arraycopy now (as it's fast) to get the first half of the fft
       System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
+      System.out.println("writing file");
+      try {
+           FileOutputStream out = new FileOutputStream("/home/kschramm/fftOutput.txt");
+           System.out.println("print writer try/catch");
+           PrintWriter GetOut = new PrintWriter(out);
+           GetOut.println("This is a test");
+           GetOut.close();
+      } catch (IOException e) {
+           System.out.println("JAVA SUCKS");
+      }
       
       Complex[] frqDomn2 = null;
       if (toFFT2 != null) {
