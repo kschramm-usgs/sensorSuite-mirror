@@ -64,7 +64,7 @@ public class FFTResultTest {
     }
   }
   
-  //@Test
+  @Test
   public void ohNoMorePrintFunctions() {
     
     DecimalFormat df = new DecimalFormat(); // may need to tweak precision
@@ -174,7 +174,7 @@ public class FFTResultTest {
         Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
         fftOutput.append('[');
         for (int i = 0; i < frqDomn1.length; ++i) {
-          fftOutput.append(df.format(frqDomn1[i]));
+          fftOutput.append(cf.format(frqDomn1[i]));
           if (i + 1 < frqDomn1.length) {
             fftOutput.append(", ");
           }
@@ -413,7 +413,7 @@ public class FFTResultTest {
     
   }
   
-  //@Test
+  @Test
   public void multitaperSmootherData() {
     String name = "data/random_cal_lowfrq/BHZ.512.seed";
     try {
@@ -990,7 +990,7 @@ public class FFTResultTest {
     }
   }
   
-  //@Test
+  @Test
   public void testDemeaning() {
     // temporarily commented out while I deal with this thing refactoring
     String dataFolderName = "data/random_cal/"; 
