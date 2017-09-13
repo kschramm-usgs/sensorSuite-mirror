@@ -5,6 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +49,7 @@ public class FFTResult {
    */
   public static double[] 
   bandFilter(double[] toFilt, double sps, double low, double high) {
-    
+    System.out.println("in bandFilter");
     return bandFilterWithCuts(toFilt, sps, low, high, 0., sps);
     /*
     Complex[] fft = simpleFFT(toFilt);
@@ -156,6 +159,7 @@ public class FFTResult {
    */
   public static double cosineTaper(double[] dataSet, double taperW) {
     
+    System.out.println("in cosineTaper");
     double ramp = taperW * dataSet.length;
     double taper;
     double wss = 0.0; // represents power loss
@@ -171,52 +175,6 @@ public class FFTResult {
     wss += ( dataSet.length - (2 * ramp) );
     
     return wss;
-  }
-  
-  public static double[][] getCosTaperVector(int len, double taperW) {
-    
-    double[] taperVec = new double[len];
-    for (int i = 0; i < taperVec.length; ++i) {
-      taperVec[i] = 1.;
-    }
-    
-    double ramp = taperW * len;
-    double taper;
-    
-    for (int i = 0; i < ramp; i++) {
-      taper = 0.5 * (1.0 - Math.cos( (double) i * Math.PI / ramp) );
-      taperVec[i] *= taper;
-      int idx = taperVec.length-i-1;
-      taperVec[idx] *= taper;
-    }
-    
-    return new double[][]{taperVec};
-    
-  }
-  
-  /**
-   * Produce a multitaper series using a sine function for use in spectral
-   * calculations (i.e., specified when calculating PSD values)
-   * @param winLen Length of the window (how long the data is)
-   * @param numTapers Number of tapers to apply to the data
-   * @return 2D array with first dimension being the timeseries length and
-   * the second dimension being the taper count
-   */
-  public static double[][] getMultitaperSeries(int winLen, int numTapers) {
-    double[][] taperMat = new double[numTapers][winLen];
-    
-    double denom = winLen - 1;
-    double scale = Math.sqrt(2 / denom);
-    
-    // TODO: may need to check correct loop indices for efficiency
-    for (int j = 0; j < numTapers; ++j) {
-      for (int i = 0; i < winLen; ++i) {
-        // TODO: figure out why the limits of this are off
-        taperMat[j][i] = scale * Math.sin(Math.PI * i * (j + 1) / denom);
-      }
-    }
-    
-    return taperMat;
   }
   
   /**
@@ -258,6 +216,7 @@ public class FFTResult {
   
   public static FFTResult crossPower(double[] data1, double[] data2,
       InstrumentResponse ir1, InstrumentResponse ir2, long interval) {
+    System.out.println("in FFTResult crossPower");
     FFTResult selfPSD = spectralCalc(data1, data2, interval);
     Complex[] results = selfPSD.getFFT();
     double[] freqs = selfPSD.getFreqs();
@@ -373,6 +332,7 @@ public class FFTResult {
    * the second dimension being the taper count
    */
   public static double[][] getMultitaperSeries(int winLen, int numTapers) {
+    System.out.println("in getMultitaperSeries");
     double[][] taperMat = new double[numTapers][winLen];
     
     double denom = winLen - 1;
@@ -398,14 +358,19 @@ public class FFTResult {
    * symmetric component (second half of the function)
    */
   public static Complex[] simpleFFT(double[] dataIn) {
+    System.out.println("in simpleFFT");
     
     int padding = 2;
     while ( padding < dataIn.length ) {
       padding *= 2;
     }
+
+    System.out.println("padding: "+padding);
     
     double[] toFFT = new double[padding];
     
+    System.out.println("length dataIn: "+dataIn.length);
+    //pad the segment with zeros
     for (int i = 0; i < dataIn.length; ++i) {
       toFFT[i] = dataIn[i];
     }
@@ -427,6 +392,7 @@ public class FFTResult {
    * frequencies 
    */
   public static FFTResult singleSidedFFT(DataBlock db, boolean mustFlip) {
+    System.out.println("in singleSidedFFT");
     
     double[] data = db.getData().clone();
     
@@ -446,16 +412,25 @@ public class FFTResult {
     int singleSide = padding/2 + 1;
     
     double nyquist = db.getSampleRate() / 2;
+    System.out.println("line 412 nyquist: "+nyquist);
     double deltaFrq = nyquist / (singleSide - 1);
     
     Complex[] fftOut = new Complex[singleSide];
     double[] frequencies = new double[singleSide];
-    
+
+
+
     for (int i = 0; i < singleSide; ++i) {
       fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
+      //GetOut.printf("%f, %f",frequencies[i],fftOut[i]);
+      //GetOut.close();
+     // }
+      //} catch(IOException ex ) {
+       // System.out.println(ex.toString());
+        //System.out.println("Something went wrong here.");
     }
-    
+     
     // System.out.println(frequencies[singleSide - 1]);
     
     return new FFTResult(fftOut, frequencies);
@@ -472,6 +447,7 @@ public class FFTResult {
    */
   public static FFTResult 
   singleSidedFilteredFFT(DataBlock db, boolean mustFlip) {
+    System.out.println("in singleSidedFilteredFFT");
     
     double[] data = db.getData().clone();
     
@@ -497,6 +473,7 @@ public class FFTResult {
     int singleSide = padding/2 + 1;
     
     double nyquist = db.getSampleRate() / 2;
+    System.out.println("line 465 nyquist: "+nyquist);
     double deltaFrq = nyquist / (singleSide - 1);
     
     Complex[] fftOut = new Complex[singleSide];
@@ -520,6 +497,7 @@ public class FFTResult {
    * @return A list of doubles representing the original timeseries of the FFT
    */
   public static double[] singleSidedInverseFFT(Complex[] freqDomn, int trim) {
+    System.out.println("in singleSidedInverseFFT");
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
      
@@ -561,6 +539,7 @@ public class FFTResult {
    * frequencies of the PSD.
    */
   public static FFTResult spectralCalc(DataBlock data1, DataBlock data2) {
+    System.out.println("in spectralCalc");
 
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
@@ -596,6 +575,8 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalc(double[] list1, double[] list2, long interval) {
+
+    System.out.println("in spectralCalc helper function");
     
     boolean sameData = list1.equals(list2);
     
@@ -631,6 +612,7 @@ public class FFTResult {
       powSpectDens[i] = Complex.ZERO;
     }
     
+// list1 is all of the data?
     while ( rangeEnd <= list1.length ) {
       
       Complex[] fftResult1 = new Complex[singleSide]; // first half of FFT reslt
@@ -641,6 +623,7 @@ public class FFTResult {
       }
       
       // give us a new list we can modify to get the data of
+      System.out.println("rangeStart,rangeEnd: "+rangeStart+", "+rangeEnd);
       double[] data1Range = 
           Arrays.copyOfRange(list1, rangeStart, rangeEnd);
       double[] data2Range = null;
@@ -658,6 +641,7 @@ public class FFTResult {
       TimeSeriesUtils.detrend(data1Range);
       TimeSeriesUtils.demeanInPlace(data1Range);
       wss = cosineTaper(data1Range, TAPER_WIDTH);
+      System.out.println("taper width"+TAPER_WIDTH);
       // presumably we only need the last value of wss
       
       if (!sameData) {
@@ -668,6 +652,7 @@ public class FFTResult {
       }
       
       // TODO: this can clearly be refactored
+      System.out.println("padding the segment");
       for (int i = 0; i < data1Range.length; ++i) {
         // no point in using arraycopy -- must make sure each Number's a double
         toFFT1[i] = data1Range[i];
@@ -679,9 +664,20 @@ public class FFTResult {
       FastFourierTransformer fft = 
           new FastFourierTransformer(DftNormalization.STANDARD);
 
+      System.out.println("FFT");
       Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
       // use arraycopy now (as it's fast) to get the first half of the fft
       System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
+      System.out.println("writing file");
+      try {
+           FileOutputStream out = new FileOutputStream("/home/kschramm/fftOutput.txt");
+           System.out.println("print writer try/catch");
+           PrintWriter GetOut = new PrintWriter(out);
+           GetOut.println("This is a test");
+           GetOut.close();
+      } catch (IOException e) {
+           System.out.println("JAVA SUCKS");
+      }
       
       Complex[] frqDomn2 = null;
       if (toFFT2 != null) {
@@ -689,6 +685,7 @@ public class FFTResult {
         System.arraycopy(frqDomn2, 0, fftResult2, 0, fftResult2.length);
       }
       
+      System.out.println("performing PSD");
       for (int i = 0; i < singleSide; ++i) {
         
         Complex val1 = fftResult1[i];
@@ -718,6 +715,7 @@ public class FFTResult {
     
     psdNormalization /= windowCorrection;
     psdNormalization /= segsProcessed; // NOTE: divisor here should be 13
+    System.out.println(segsProcessed);
     
     double[] frequencies = new double[singleSide];
     
@@ -770,12 +768,15 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalcMultitaper(DataBlock data1, DataBlock data2) {
+    System.out.println("in spectralCalcMultitaper");
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
     boolean sameData = data1.getName().equals( data2.getName() );
+    System.out.println("some data set");
     
     double[] list1 = data1.getData();
     double[] list2 = list1;
+    System.out.println("list 1 and 2 set");
     if (!sameData) {
       list2 = data2.getData();
     }
@@ -796,13 +797,16 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalcMultitaper(double[] list1, double[] list2, long ivl) {
+    System.out.println("in spectralCalcMultitaper part dos");
     
     boolean sameData = list1.equals(list2);
     
     int padding = 2;
+    System.out.println("padding");
     while ( padding < list1.length ) {
       padding *= 2;
     }
+    System.out.println("padding value: "+padding);
     
     final int TAPER_COUNT = 12;
     double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;

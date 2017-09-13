@@ -369,6 +369,7 @@ public class InstrumentResponse {
       int count = zeros.get(zero);
       builtZeros.put(zero, count);
     }
+    //System.out.println("builtZeros: "+builtZeros);
     
     // now do the same thing as the zeros but for the poles
     Map<Complex, Integer> builtPoles = new HashMap<Complex, Integer>();
@@ -412,6 +413,7 @@ public class InstrumentResponse {
       int count = poles.get(pole);
       builtPoles.put(pole, count);
     }
+    //System.out.println("builtPoles: "+builtPoles);
     
     // create a copy of this instrument response and set the new values
     InstrumentResponse out = new InstrumentResponse(this);

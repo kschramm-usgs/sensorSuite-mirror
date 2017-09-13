@@ -5,6 +5,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
 import java.util.Set;
 
 import org.apache.commons.math3.complex.Complex;
@@ -143,14 +148,16 @@ extends Experiment implements ParameterValidator {
       denominatorPSD = FFTResult.spectralCalcMultitaper(calib, calib);
     } else {
       numeratorPSD = FFTResult.spectralCalc(sensorOut, calib);
+      System.out.println("sensor out");
+      System.out.println(sensorOut);
       denominatorPSD = FFTResult.spectralCalc(calib, calib);
     }
     
     freqs = numeratorPSD.getFreqs(); // should be same for both results
     
     // store nyquist rate of data because freqs will be trimmed down later
+
     nyquist = sensorOut.getSampleRate() / 2.;
-    
     // slight increase to prevent issues with pole frequency rounding 
     // commented out in hopes that any issues related to it have been excised
     // nyquist += .5; 
@@ -203,11 +210,23 @@ extends Experiment implements ParameterValidator {
 
     int endIdx = startIdx + len;
     // System.out.println("INDICES: " + startIdx + "," + endIdx);
+    // XXX will want to write these values out.
+    //
     Complex[] numeratorPSDVals = 
         Arrays.copyOfRange(numeratorPSD.getFFT(), startIdx, endIdx);
     Complex[] denominatorPSDVals = 
         Arrays.copyOfRange(denominatorPSD.getFFT(), startIdx, endIdx);
-    
+
+    // this is from:https://stackoverflow.com/questions/2885173/how-do-i-create-a-file-and-write-to-it-in-java
+    // this did not work.  grrrr.
+    //
+    //Writer writer = null;
+    //try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+     //    new FileOutputStream("filename.txt"), "utf-8")))
+    //  //   {
+     //               writer.write("something");
+       //  }
+   // 
     for (int i = 0; i < len; ++i) {
       
       freqs[i] = freqList.get(i);
@@ -237,6 +256,8 @@ extends Experiment implements ParameterValidator {
       estResponse[i] = numer.divide(denom);
       // convert from displacement to velocity
       Complex scaleFactor = new Complex(0., NumericUtils.TAU * freqs[i]);
+      //System.out.println("scale factor: "+scaleFactor);
+      // XXX will want to write this out as well
       estResponse[i] = estResponse[i].multiply(scaleFactor);
     }
     
@@ -390,6 +411,7 @@ extends Experiment implements ParameterValidator {
         fireStateChange("Fitting, iteration count " + numIterations);
         Pair<RealVector, RealMatrix> pair = 
             jacobian(point);
+        //System.out.println("pair value: "+ pair);        
         return pair;
       }
       
@@ -461,6 +483,8 @@ extends Experiment implements ParameterValidator {
         fitParams, lowFreq, numZeros);
     fitPoles = fitResponse.getPoles();
     fitZeros = fitResponse.getZeros();
+    //System.out.println("poles:"+fitPoles);
+    //System.out.println("zeros:"+fitZeros);
     
     fireStateChange("Compiling data...");
     
