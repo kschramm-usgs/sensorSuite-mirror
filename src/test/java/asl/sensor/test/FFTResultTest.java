@@ -245,10 +245,7 @@ public class FFTResultTest {
       }
       
       out = new PrintWriter(pref + "-outputPSD.txt");
-      out.write(Arrays.toString(Complex(powSpecDens)));
-      //for (int i = 0; i < powSpecDens.length; i++ ){
-      //   out.write(toString(complex(powSpectDens[i])));
-      //}
+      out.write( Arrays.toString(powSpectDens) );
       out.close();
       // do smoothing over neighboring frequencies; values taken from 
       // asl.timeseries' PSD function
