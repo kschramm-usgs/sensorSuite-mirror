@@ -434,7 +434,7 @@ public class FFTResultTest {
     
   }
   
-  //@Test
+  @Test
   public void multitaperSmootherData() {
     String name = "data/random_cal_lowfrq/BHZ.512.seed";
     try {
@@ -1011,7 +1011,7 @@ public class FFTResultTest {
     }
   }
   
-  //@Test
+  @Test
   public void testDemeaning() {
     // temporarily commented out while I deal with this thing refactoring
     String dataFolderName = "data/random_cal/"; 
