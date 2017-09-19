@@ -576,7 +576,7 @@ public class FFTResult {
   public static FFTResult 
   spectralCalc(double[] list1, double[] list2, long interval) {
 
-    System.out.println("in spectralCalc helper function");
+    System.out.println("this is where the signal preproc and fft happen" );
     
     boolean sameData = list1.equals(list2);
     
@@ -623,7 +623,7 @@ public class FFTResult {
       }
       
       // give us a new list we can modify to get the data of
-      System.out.println("rangeStart,rangeEnd: "+rangeStart+", "+rangeEnd);
+      //System.out.println("rangeStart,rangeEnd: "+rangeStart+", "+rangeEnd);
       double[] data1Range = 
           Arrays.copyOfRange(list1, rangeStart, rangeEnd);
       double[] data2Range = null;
@@ -641,7 +641,7 @@ public class FFTResult {
       TimeSeriesUtils.detrend(data1Range);
       TimeSeriesUtils.demeanInPlace(data1Range);
       wss = cosineTaper(data1Range, TAPER_WIDTH);
-      System.out.println("taper width"+TAPER_WIDTH);
+      //System.out.println("taper width"+TAPER_WIDTH);
       // presumably we only need the last value of wss
       
       if (!sameData) {
@@ -668,16 +668,6 @@ public class FFTResult {
       Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
       // use arraycopy now (as it's fast) to get the first half of the fft
       System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
-      System.out.println("writing file");
-      try {
-           FileOutputStream out = new FileOutputStream("/home/kschramm/fftOutput.txt");
-           System.out.println("print writer try/catch");
-           PrintWriter GetOut = new PrintWriter(out);
-           GetOut.println("This is a test");
-           GetOut.close();
-      } catch (IOException e) {
-           System.out.println("JAVA SUCKS");
-      }
       
       Complex[] frqDomn2 = null;
       if (toFFT2 != null) {
@@ -709,13 +699,14 @@ public class FFTResult {
     // normalization time!
     
     double psdNormalization = 2.0 * period / padding;
+    //double psdNormalization = period / padding;
     double windowCorrection = wss / (double) range;
     // it only uses the last value of wss, but that was how the original
     // code was
     
     psdNormalization /= windowCorrection;
     psdNormalization /= segsProcessed; // NOTE: divisor here should be 13
-    System.out.println(segsProcessed);
+    //System.out.println(segsProcessed);
     
     double[] frequencies = new double[singleSide];
     

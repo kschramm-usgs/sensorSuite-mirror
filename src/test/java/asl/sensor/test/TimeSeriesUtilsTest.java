@@ -48,9 +48,12 @@ import edu.sc.seis.seisFile.mseed.SeedRecord;
 
 public class TimeSeriesUtilsTest {
 
-  public String station = "TST5";
+  public String station = "XX_KAS";
   public String location = "00";
-  public String channel = "BH0";
+  public String channel = "BHZ";
+  //public String station = "TST5";
+  //public String location = "00";
+  //public String channel = "BH0";
   
   public String fileID = station+"_"+location+"_"+channel;
   
@@ -60,6 +63,7 @@ public class TimeSeriesUtilsTest {
   public void canGetFile() {
     try{
       FileInputStream fis = new FileInputStream(filename1);
+      System.out.println(filename1);
       fis.close();
     } catch (Exception e) {
       assertNull(e);

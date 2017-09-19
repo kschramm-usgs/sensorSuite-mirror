@@ -215,7 +215,7 @@ public class FFTResultTest {
         sb.append("1. RAW DATA GOING INTO PSD OF WINDOW SIZE\n");
         sb.append("2. DETRENDED DATA\n");
         sb.append("3. DATA WITH COSINE TAPER APPLIED\n");
-        sb.append("4. OUTPUT OF FFT FOR MODIFIED DATA\n");
+        sb.append("4. OUTPUT OF FFT FOR MODIFIED DATA: "+deltaFreq+"\n");
         sb.append("5. BINNED PSD DATA (SHOULD BE REAL-VALUED ONLY)\n\n");
         sb.append(initValues);
         sb.append("\n\n");
@@ -235,7 +235,7 @@ public class FFTResultTest {
       
       // normalization time!
       
-      double psdNormalization = 2.0 * period / padding;
+      double psdNormalization = period / padding;
       double windowCorrection = wss / (double) range;
       // it only uses the last value of wss, but that was how the original
       // code was
