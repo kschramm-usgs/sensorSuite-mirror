@@ -48,9 +48,12 @@ import edu.sc.seis.seisFile.mseed.SeedRecord;
 
 public class TimeSeriesUtilsTest {
 
-  public String station = "TST5";
+  public String station = "XX_KAS";
   public String location = "00";
-  public String channel = "BH0";
+  public String channel = "BHZ";
+  //public String station = "TST5";
+  //public String location = "00";
+  //public String channel = "BH0";
   
   public String fileID = station+"_"+location+"_"+channel;
   
@@ -60,9 +63,37 @@ public class TimeSeriesUtilsTest {
   public void canGetFile() {
     try{
       FileInputStream fis = new FileInputStream(filename1);
+      System.out.println(filename1);
       fis.close();
     } catch (Exception e) {
       assertNull(e);
+    }
+  }
+  
+  @Test
+  public void dumbDivisionTest() {
+    int div = 12;
+    double num = 1.44;
+    double res = num / div;
+    assertEquals(0.12, res, 1E-10);
+  }
+  
+  //@Test
+  public void testDataLocally() {
+    String fname = "./data/gitignoreme/HF_MAJO_10_EHZ.512.cut.seed";
+    try {
+      DataBlock db = TimeSeriesUtils.getFirstTimeSeries(fname);
+      Map<Long, double[]> map = db.getDataMap();
+      System.out.println(db.getName());
+      System.out.println("\tSample interval: "+db.getInterval());
+      for (long time : map.keySet()) {
+        System.out.println("START: " + time); 
+        System.out.println("\tLENGTH: " + map.get(time).length);
+      }
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+      fail();
     }
   }
   
@@ -126,25 +157,33 @@ public class TimeSeriesUtilsTest {
   }
   
   @Test
+  public final void testDemean1to9() throws Exception {
+    double[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    double[] expected = { -4d, -3d, -2d, -1d, 0d, 1d, 2d, 3d, 4d };
+    TimeSeriesUtils.demeanInPlace(x);
+    for (int i = 0; i < x.length; i++) {
+      assertEquals(x[i], expected[i], 1E-15);
+    }
+  }
+  
+  @Test
   public void detrendingCycleTest() {
     
-    Number[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 
+    double[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 
         18, 19, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 
         3, 2, 1 };
     
-    List<Number> toDetrend = Arrays.asList(x);
+    // List<Number> toDetrend = Arrays.asList(x);
     
-    Number[] answer = { -9d, -8d, -7d, -6d, -5d, -4d, -3d, -2d, -1d, 0d, 1d, 2d,
+    double[] answer = { -9d, -8d, -7d, -6d, -5d, -4d, -3d, -2d, -1d, 0d, 1d, 2d,
         3d, 4d, 5d, 6d, 7d, 8d, 9d, 10d, 9d, 8d, 7d, 6d, 5d, 4d, 3d, 2d, 1d, 0d,
         -1d, -2d, -3d, -4d, -5d, -6d, -7d, -8d, -9d };
 
     
-    TimeSeriesUtils.detrend(toDetrend);
+    x = TimeSeriesUtils.detrend(x);
     
     for (int i = 0; i < x.length; i++) {
-      assertEquals(
-          new Double(Math.round(x[i].doubleValue())), 
-          new Double(answer[i].doubleValue()));
+      assertEquals( x[i],  answer[i], 0.5);
     }
     
   }
@@ -161,6 +200,16 @@ public class TimeSeriesUtilsTest {
       assertEquals(num.doubleValue(), 0.0, 0.001);
     }
     
+  }
+  
+  @Test
+  public final void testDetrendLinear2() throws Exception {
+    double[] x = { -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
+
+    x = TimeSeriesUtils.detrend(x);
+    for (int i = 0; i < x.length; i++) {
+      assertEquals(new Double(Math.round(x[i])), new Double(0));
+    }
   }
   
   public void 
@@ -682,7 +731,7 @@ public class TimeSeriesUtilsTest {
         System.out.println(dataMap.get(time).length);
       }
       
-      long start = db.getStartTime();
+      long start = db.getStartTime() / TimeSeriesUtils.TIME_FACTOR;
       Calendar cCal = getStartCalendar(start);
       SimpleDateFormat sdf = new SimpleDateFormat("YYYY.MM.dd | HH:mm:ss.SSS");
       sdf.setTimeZone( TimeZone.getTimeZone("UTC") );

@@ -1,6 +1,7 @@
 package asl.sensor.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -10,6 +11,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,6 +25,7 @@ import java.util.TimeZone;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.math3.complex.Complex;
+import org.apache.commons.math3.complex.ComplexFormat;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
@@ -43,6 +47,269 @@ import asl.sensor.utils.TimeSeriesUtils;
 
 public class FFTResultTest {
 
+  
+  //@Test
+  public void testComplexDivision() {
+    // test is commented out because it is slow and unlikely to regress
+    // because i and j would be the most intractable possible iteration vars
+    for (int a = 1; a < 100000; ++a) {
+      for (int b = a; b < 100000; ++b) {
+        Complex numer = new Complex(a, b);
+        Complex denom = new Complex(b, -a);
+        Complex unit = numer.divide(numer); // expect 1
+        Complex imag = numer.divide(denom); // expect i
+        assertEquals(unit.getReal(), 1., 1E-15);
+        assertEquals(unit.getImaginary(), 0., 1E-15);
+        assertEquals(imag.getReal(), 0., 1E-15);
+        assertEquals(imag.getImaginary(), 1., 1E-15);
+      }
+    }
+  }
+  
+  @Test
+  public void ohNoMorePrintFunctions() {
+    
+    // DecimalFormat df = new DecimalFormat(); // may need to tweak precision
+    NumberFormat nf = NumberFormat.getInstance();
+    nf.setGroupingUsed(false);
+    ComplexFormat cf = new ComplexFormat("j", nf);
+    assertFalse( cf.getImaginaryFormat().isGroupingUsed() );
+    
+    // intended to be not-quite line-by-line replication of the PSD operations
+    // it is said that unit tests are meant to be atomic. this ain't that
+    String location = "testResultImages/psdOutputFiles/";
+    File folder = new File(location);
+    if ( !folder.exists() ) {
+      folder.mkdir();
+    }
+    PrintWriter out;
+    
+    // get data first of all
+    String inName = "data/noise_1/00_BH0.512.seed";
+    DataBlock db;
+    try {
+      db = TimeSeriesUtils.getFirstTimeSeries(inName);
+      Calendar startCal = db.getStartCalendar();
+      startCal.set(Calendar.HOUR_OF_DAY, 0);
+      startCal.set(Calendar.MINUTE, 59);
+      startCal.set(Calendar.SECOND, 59);
+      startCal.set(Calendar.MILLISECOND, 994);
+      Calendar endCal = (Calendar) startCal.clone();
+      endCal.set(Calendar.HOUR_OF_DAY, 7);
+      endCal.set(Calendar.MINUTE, 0);
+      endCal.set(Calendar.SECOND, 0);
+      endCal.set(Calendar.MILLISECOND, 25);
+      db.trim(startCal, endCal);
+      
+      double[] list1 = db.getData();
+      String name = db.getName();
+      String pref = location + name;
+      out = new PrintWriter(pref + "-rawData.txt");
+      out.write(Arrays.toString(list1));
+      out.close();
+      long interval = db.getInterval();
+      // divide into windows of 1/4, moving up 1/16 of the data at a time
+      
+      final double TAPER_WIDTH = .1;
+      int range = list1.length/4;
+      int slider = range/4;
+      
+      // period is 1/sample rate in seconds
+      // since the interval data is just that multiplied by a large number
+      // let's divide it by that large number to get our period
+      
+      // shouldn't need to worry about a cast here
+      double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;
+      period *= interval;
+      
+      int padding = 2;
+      while (padding < range) {
+        padding *= 2;
+      }
+      
+      int singleSide = padding / 2 + 1;
+      double deltaFreq = 1. / (padding * period);
+      
+      Complex[] powSpectDens = new Complex[singleSide];
+      double wss = 0;
+      
+      int segsProcessed = 0;
+      int rangeStart = 0;
+      int rangeEnd = range;
+      
+      for (int i = 0; i < powSpectDens.length; ++i) {
+        powSpectDens[i] = Complex.ZERO;
+      }
+      
+      while ( rangeEnd <= list1.length ) {
+        
+        String initValues, detrended, demeaned, tapered; 
+        StringBuilder fftOutput = new StringBuilder();
+        StringBuilder psdBins = new StringBuilder();
+        
+        Complex[] fftResult1 = new Complex[singleSide]; // first half FFT reslt
+
+        // give us a new list we can modify to get the data of
+        double[] data1Range = 
+            Arrays.copyOfRange(list1, rangeStart, rangeEnd);
+         
+        initValues = Arrays.toString(data1Range);
+        
+        // double arrays initialized with zeros, set as a power of two for FFT
+        // (i.e., effectively pre-padded on initialization)
+        double[] toFFT1 = new double[padding];
+        
+        // demean and detrend work in-place on the list
+        TimeSeriesUtils.detrend(data1Range);
+        detrended = Arrays.toString(data1Range);
+        TimeSeriesUtils.demeanInPlace(data1Range);
+        demeaned = Arrays.toString(data1Range);
+        wss = FFTResult.cosineTaper(data1Range, TAPER_WIDTH);
+        tapered = Arrays.toString(data1Range);
+        // presumably we only need the last value of wss
+        
+        
+        for (int i = 0; i < data1Range.length; ++i) { 
+          toFFT1[i] = data1Range[i];
+        }
+        
+        FastFourierTransformer fft = 
+            new FastFourierTransformer(DftNormalization.STANDARD);
+
+        Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
+        fftOutput.append('[');
+        for (int i = 0; i < frqDomn1.length; ++i) {
+          fftOutput.append(cf.format(frqDomn1[i]));
+          if (i + 1 < frqDomn1.length) {
+            fftOutput.append(", ");
+          }
+        }
+        fftOutput.append(']');
+        // use arraycopy now (as it's fast) to get the first half of the fft
+        System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
+        Complex[] psdBin = new Complex[singleSide];
+        psdBins.append('[');
+        for (int i = 0; i < singleSide; ++i) {
+          Complex val1 = fftResult1[i];
+          psdBin[i] = val1.multiply( val1.conjugate() );
+
+          psdBins.append( psdBin[i].getReal() ); // imag part should be 0
+          assertEquals(psdBin[i].getImaginary(), 0., 1E-15);
+          if (i + 1 < singleSide) {
+            psdBins.append(", ");
+          }
+          
+          powSpectDens[i] = powSpectDens[i].add(psdBin[i]);
+        }
+        psdBins.append(']');
+        ++segsProcessed;
+        rangeStart  += slider;
+        rangeEnd    += slider;
+        
+        out = 
+            new PrintWriter(pref + "-psdSteps_" + segsProcessed + ".txt");
+        StringBuilder sb = new StringBuilder();
+        // initValues, detrended, demeaned, tapered, fftOutput, psdBins;
+        sb.append("THIS IS THE DATA FOR WINDOW " + segsProcessed);
+        sb.append(" WITH THE FOLLOWING FORMAT:\n");
+        sb.append("1. RAW DATA GOING INTO PSD OF WINDOW SIZE\n");
+        sb.append("2. DETRENDED DATA\n");
+        sb.append("3. DETREND + DEMEANED DATA\n");
+        sb.append("4. DATA WITH COSINE TAPER APPLIED\n");
+        sb.append("5. OUTPUT OF FFT FOR MODIFIED DATA\n");
+        sb.append("6. BINNED PSD DATA (SHOULD BE REAL-VALUED ONLY)\n\n");
+        sb.append(initValues);
+        sb.append("\n\n");
+        sb.append(detrended);
+        sb.append("\n\n");
+        sb.append(demeaned);
+        sb.append("\n\n");
+        sb.append(tapered);
+        sb.append("\n\n");
+        sb.append(fftOutput);
+        sb.append("\n\n");
+        sb.append(psdBins);
+        sb.append("\n\n");
+        out.write(sb.toString());
+        out.close();
+      }
+      
+      // normalization time!
+      
+      double psdNormalization = period / padding;
+      double windowCorrection = wss / (double) range;
+      // it only uses the last value of wss, but that was how the original
+      // code was
+      
+      psdNormalization /= windowCorrection;
+      psdNormalization /= segsProcessed; // NOTE: divisor here should be 13
+      assertEquals(13, segsProcessed);
+      
+      double[] frequencies = new double[singleSide];
+      
+      StringBuilder psdString = new StringBuilder('[');
+      for (int i = 0; i < singleSide; ++i) {
+        powSpectDens[i] = powSpectDens[i].multiply(psdNormalization);
+        psdString.append( powSpectDens[i].getReal() );
+        if (i + 1 < singleSide) {
+          psdString.append(", ");
+        }
+        assertEquals(powSpectDens[i].getImaginary(), 0., 1E-15);
+        frequencies[i] = i * deltaFreq;
+      }
+      psdString.append(']');
+      
+      out = new PrintWriter(pref + "-outputPSD.txt");
+      out.write( psdString.toString() );
+      out.close();
+      // do smoothing over neighboring frequencies; values taken from 
+      // asl.timeseries' PSD function
+      int nSmooth = 11, nHalf = 5;
+      Complex[] psdCFSmooth = new Complex[singleSide];
+      
+      int iw = 0;
+      
+      for (iw = 0; iw < nHalf; ++iw) {
+        psdCFSmooth[iw] = powSpectDens[iw];
+      }
+      
+      // iw should be icenter of nsmooth point window
+      for (; iw < singleSide - nHalf; ++iw){
+        int k1 = iw - nHalf;
+        int k2 = iw + nHalf;
+        
+        Complex sumC = Complex.ZERO;
+        for (int k = k1; k < k2; ++k) {
+          sumC = sumC.add(powSpectDens[k]);
+        }
+        psdCFSmooth[iw] = sumC.divide((double) nSmooth);
+      }
+      
+      // copy remaining into smoothed array
+      for (; iw < singleSide; ++iw) {
+        psdCFSmooth[iw] = powSpectDens[iw];
+      }
+
+      StringBuilder smooth = new StringBuilder('[');
+      for (int i = 0; i < psdCFSmooth.length; ++i) {
+        Complex c = psdCFSmooth[i];
+        smooth.append(c.getReal());
+        assertEquals(c.getImaginary(), 0., 1E-15);
+        smooth.append(", ");
+      }
+      smooth.append(']');
+      out = new PrintWriter(pref + "-smoothedPSD.txt");
+      out.write( smooth.toString() );
+      out.close();
+      
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+      fail();
+    }
+    
+  }
+  
   @Test
   public void cosineTaperTest() {
     double[] x = { 5, 5, 5, 5, 5 };
@@ -169,7 +436,7 @@ public class FFTResultTest {
     
   }
   
-  //@Test
+  @Test
   public void multitaperSmootherData() {
     String name = "data/random_cal_lowfrq/BHZ.512.seed";
     try {
@@ -746,7 +1013,7 @@ public class FFTResultTest {
     }
   }
   
-  //@Test
+  @Test
   public void testDemeaning() {
     // temporarily commented out while I deal with this thing refactoring
     String dataFolderName = "data/random_cal/"; 

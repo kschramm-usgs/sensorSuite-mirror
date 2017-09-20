@@ -47,6 +47,7 @@ import asl.sensor.utils.TimeSeriesUtils;
 public class DataBlock {
   
   private static final int MAX_POINTS = 100000;
+  public static final int TIME_FACTOR = TimeSeriesUtils.TIME_FACTOR;
   
   private long interval, targetInterval;
   private String name;
@@ -87,7 +88,6 @@ public class DataBlock {
     targetInterval = in.getInterval();
     
     startTime = in.getInitialStartTime();
-    System.out.println(startTime);
     trimmedStart = Math.max(startTime, start);
     
     endTime = in.getInitialEndTime();
@@ -140,11 +140,17 @@ public class DataBlock {
     List<Long> times = new ArrayList<Long>( dataIn.keySet() );
     Collections.sort(times);
     startTime = times.get(0);
+    System.out.println("StartTime: "+startTime); 
     trimmedStart = startTime;
+    System.out.println("StartTimeTrimmed: "+trimmedStart); 
     long lastListStart = times.get( times.size() - 1 );
     int pointsToEnd = dataIn.get(lastListStart).length;
+    System.out.println("points to end: "+pointsToEnd); 
+
     endTime = lastListStart + (pointsToEnd * intervalIn);
+    System.out.println("endTime: "+endTime); 
     trimmedEnd = endTime;
+    System.out.println("endTimeTrimmed: "+trimmedEnd); 
     
     name = nameIn;
     dataMap = dataIn;
@@ -398,7 +404,7 @@ public class DataBlock {
    */
   public Calendar getStartCalendar() {
     Calendar cCal = Calendar.getInstance( TimeZone.getTimeZone("UTC") );
-    cCal.setTimeInMillis(startTime);
+    cCal.setTimeInMillis(startTime / TIME_FACTOR);
     return cCal;
   }
   
@@ -408,7 +414,7 @@ public class DataBlock {
    */
   public Calendar getTrimmedStartCalendar() {
     Calendar cCal = Calendar.getInstance( TimeZone.getTimeZone("UTC") );
-    cCal.setTimeInMillis(trimmedStart);
+    cCal.setTimeInMillis(trimmedStart / TIME_FACTOR);
     return cCal;
   }
   
@@ -650,7 +656,7 @@ public class DataBlock {
     long thisTime = trimmedStart;
     for (int i = 0; i < data.length; i+=skipFactor) {
       double point = data[i];
-      double xTime = (double) thisTime;
+      double xTime = (double) (thisTime / TIME_FACTOR);
       out.add(xTime, point);
       thisTime += skipFactor*targetInterval;
     }
@@ -664,7 +670,8 @@ public class DataBlock {
    * @param end End time to trim window to in milliseconds from epoch
    */
   public void trim(Calendar start, Calendar end) {
-    trim( start.getTimeInMillis(), end.getTimeInMillis() );
+    trim( start.getTimeInMillis() * TIME_FACTOR, 
+        end.getTimeInMillis() * TIME_FACTOR );
   }
   
   /**

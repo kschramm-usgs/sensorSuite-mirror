@@ -86,6 +86,8 @@ task jarCmd (type: Jar) {
 
 
 test {
+    dependsOn cleanTest
+    testLogging.events 'standard_error'
     maxHeapSize = "4096m"
     maxParallelForks = 4;
     testLogging {

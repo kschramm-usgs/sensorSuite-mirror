@@ -2,11 +2,17 @@ package asl.sensor.experiment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
+import java.util.Set;
 
 import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.fitting.leastsquares.EvaluationRmsChecker;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresOptimizer;
 import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
@@ -19,7 +25,6 @@ import org.apache.commons.math3.linear.DiagonalMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.optim.ConvergenceChecker;
 import org.apache.commons.math3.util.Pair;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -54,9 +59,8 @@ public class RandomizedExperiment
 extends Experiment implements ParameterValidator {
 
   private static final double DELTA = 1E-11;
-  public static final double PEAK_MULTIPLIER = 0.8;
-      // NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
-      // take this times the nyquist
+  public static final double PEAK_MULTIPLIER = // 0.8;
+      NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
   
   // To whomever has to maintain this code after I'm gone:
   // I'm sorry, I'm so so sorry
@@ -88,7 +92,6 @@ extends Experiment implements ParameterValidator {
   
   private int normalIdx; // location of value to set to 0 in curves for scaling
   private int numZeros; // how many entries in parameter vector define zeros
-  private int sensorOutIdx; // location to load response from?
   private int numIterations; // how much the solver ran
   
   public RandomizedExperiment() {
@@ -205,11 +208,23 @@ extends Experiment implements ParameterValidator {
 
     int endIdx = startIdx + len;
     // System.out.println("INDICES: " + startIdx + "," + endIdx);
+    // XXX will want to write these values out.
+    //
     Complex[] numeratorPSDVals = 
         Arrays.copyOfRange(numeratorPSD.getFFT(), startIdx, endIdx);
     Complex[] denominatorPSDVals = 
         Arrays.copyOfRange(denominatorPSD.getFFT(), startIdx, endIdx);
-    
+
+    // this is from:https://stackoverflow.com/questions/2885173/how-do-i-create-a-file-and-write-to-it-in-java
+    // this did not work.  grrrr.
+    //
+    //Writer writer = null;
+    //try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+     //    new FileOutputStream("filename.txt"), "utf-8")))
+    //  //   {
+     //               writer.write("something");
+       //  }
+   // 
     for (int i = 0; i < len; ++i) {
       
       freqs[i] = freqList.get(i);
@@ -239,6 +254,8 @@ extends Experiment implements ParameterValidator {
       estResponse[i] = numer.divide(denom);
       // convert from displacement to velocity
       Complex scaleFactor = new Complex(0., NumericUtils.TAU * freqs[i]);
+      //System.out.println("scale factor: "+scaleFactor);
+      // XXX will want to write this out as well
       estResponse[i] = estResponse[i].multiply(scaleFactor);
     }
     
@@ -342,15 +359,11 @@ extends Experiment implements ParameterValidator {
       int argIdx = i + estResponse.length;
       double denom;
       if (!lowFreq) {
-        denom = 100.;
-        // give frequencies below 1 less weight in high-freq calibrations
-        if (freqs[i] > 10.) {
-          // for high enough freqs, make weighting (100/f^3) rather than 1/f;
-          denom = Math.pow(freqs[i], 3) / 100.;
-        } else if (freqs[i] > 1.) {
-          denom = freqs[i];
+        if (freqs[i] < 1) {
+          denom = 1; // weight everything up to 1Hz equally
+        } else {
+          denom = freqs[i]; // set everything (else) to 1/f weighting
         }
-        
       } else {
         if (freqs[i] < .01) {
           denom = freqs[i];
@@ -361,10 +374,6 @@ extends Experiment implements ParameterValidator {
       }
 
       weights[argIdx] = maxArgWeight / denom;
-      // ad-hoc conditional to increase weighting on the tail of the amp curve
-      if (freqs[i] < 0.3) {
-        denom = 1E-2;
-      }
       weights[i] = maxMagWeight / denom;
 
     }
@@ -648,7 +657,15 @@ extends Experiment implements ParameterValidator {
    * @return new poles that should improve fit over inputted response, as a list
    */
   public List<Complex> getFitPoles() {
-    return getPoleSubList(fitPoles);
+    Set<Complex> unchanged = new HashSet<Complex>(fitPoles);
+    unchanged.retainAll( new HashSet<Complex>(initialPoles) );
+    List<Complex> poles = new ArrayList<Complex>();
+    for (Complex pole : fitPoles) {
+      if ( !unchanged.contains(pole) ) {
+        poles.add(pole);
+      }
+    }
+    return poles;
   }
   
   /**
@@ -664,7 +681,16 @@ extends Experiment implements ParameterValidator {
    * @return List of zeros (complex numbers) that are used in best-fit curve
    */
   public List<Complex> getFitZeros() {
-    return getZeroSubList(fitZeros);
+    Set<Complex> unchanged = new HashSet<Complex>(fitZeros);
+    unchanged.retainAll( new HashSet<Complex>(initialZeros) );
+    List<Complex> zeros = new ArrayList<Complex>();
+    for (Complex zero : fitZeros) {
+      if( !unchanged.contains(zero) ) {
+        zeros.add(zero);
+      }
+    }
+    NumericUtils.complexMagnitudeSorter(zeros); 
+    return zeros;
   }
   
   /**
@@ -672,7 +698,15 @@ extends Experiment implements ParameterValidator {
    * @return poles taken from initial response file
    */
   public List<Complex> getInitialPoles() {
-    return getPoleSubList(initialPoles);
+    Set<Complex> unchanged = new HashSet<Complex>(fitPoles);
+    unchanged.retainAll( new HashSet<Complex>(initialPoles) );
+    List<Complex> poles = new ArrayList<Complex>();
+    for (Complex pole : initialPoles) {
+      if ( !unchanged.contains(pole) ) {
+        poles.add(pole);
+      }
+    }
+    return poles;
   }
   
   /**
@@ -680,7 +714,16 @@ extends Experiment implements ParameterValidator {
    * @return zeros taken from initial response file
    */
   public List<Complex> getInitialZeros() {
-    return getZeroSubList(initialZeros);
+    Set<Complex> unchanged = new HashSet<Complex>(fitZeros);
+    unchanged.retainAll( new HashSet<Complex>(initialZeros) );
+    List<Complex> zeros = new ArrayList<Complex>();
+    for (Complex zero : initialZeros) {
+      if( !unchanged.contains(zero) ) {
+        zeros.add(zero);
+      }
+    }
+    NumericUtils.complexMagnitudeSorter(zeros); 
+    return zeros;
   }
   
   /**
@@ -699,32 +742,6 @@ extends Experiment implements ParameterValidator {
   public int getIterations() {
     return numIterations;
   }
-
-  /**
-   * Trim down the poles to those within the range of those being fit
-   * @param polesToTrim Either fit or input poles, sorted by frequency
-   * @return Sublist of data to be fed to output reports
-   */
-  private List<Complex> getPoleSubList(List<Complex> polesToTrim) {
-    List<Complex> subList = new ArrayList<Complex>();  
-    
-    double peak = PEAK_MULTIPLIER * nyquist;
-    
-    for (int i = 0; i < polesToTrim.size(); ++i) {
-      double freq = initialPoles.get(i).abs() / NumericUtils.TAU;
-      
-      if ( ( lowFreq && freq > 1. ) || ( !lowFreq && freq > peak ) ) {
-        break;
-      }
-      if (!lowFreq && freq < 1.) {
-        continue; // ignore b
-      }
-      
-      subList.add( polesToTrim.get(i) );
-    }
-    
-    return subList;
-  }
   
   /**
    * Used to determine whether to run the solver or not; disabling the solver
@@ -742,27 +759,6 @@ extends Experiment implements ParameterValidator {
    */
   public double[] getWeights() {
     return new double[]{maxMagWeight, maxArgWeight};
-  }
-  
-  private List<Complex> getZeroSubList(List<Complex> zerosToTrim) {
-    List<Complex> subList = new ArrayList<Complex>();
-    
-    double peak = PEAK_MULTIPLIER * nyquist;
-    
-    for (int i = 0; i < zerosToTrim.size(); ++i) {
-      double freq = initialZeros.get(i).abs() / NumericUtils.TAU;
-      
-      if ( ( lowFreq && freq > 1. ) || ( !lowFreq && freq > peak ) ) {
-        break;
-      }
-      if (!lowFreq && freq < 1. || freq == 0.) {
-        continue;
-      }
-      
-      subList.add( zerosToTrim.get(i) );
-    }
-    
-    return subList;
   }
   
   @Override
@@ -849,7 +845,7 @@ extends Experiment implements ParameterValidator {
   public int[] listActiveResponseIndices() {
     // NOTE: not used by corresponding panel, overrides with active indices
     // of components in the combo-box
-    return new int[]{sensorOutIdx};
+    return new int[]{1};
   }
   
   /**

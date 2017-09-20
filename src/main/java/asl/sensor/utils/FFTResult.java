@@ -5,6 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -333,7 +336,7 @@ public class FFTResult {
     double[][] taperMat = new double[numTapers][winLen];
     
     double denom = winLen - 1;
-    double scale = Math.sqrt(2 / denom);
+    double scale = Math.sqrt( 2 / denom );
     
     // TODO: may need to check correct loop index order for efficiency
     for (int j = 0; j < numTapers; ++j) {
@@ -414,12 +417,20 @@ public class FFTResult {
     
     Complex[] fftOut = new Complex[singleSide];
     double[] frequencies = new double[singleSide];
-    
+
+
+
     for (int i = 0; i < singleSide; ++i) {
       fftOut[i] = frqDomn[i];
       frequencies[i] = i * deltaFrq;
+      //GetOut.printf("%f, %f",frequencies[i],fftOut[i]);
+      //GetOut.close();
+     // }
+      //} catch(IOException ex ) {
+       // System.out.println(ex.toString());
+        //System.out.println("Something went wrong here.");
     }
-    
+     
     // System.out.println(frequencies[singleSide - 1]);
     
     return new FFTResult(fftOut, frequencies);
@@ -565,7 +576,7 @@ public class FFTResult {
   public static FFTResult 
   spectralCalc(double[] list1, double[] list2, long interval) {
 
-    System.out.println("in spectralCalc helper function");
+    System.out.println("this is where the signal preproc and fft happen" );
     
     boolean sameData = list1.equals(list2);
     
@@ -612,7 +623,7 @@ public class FFTResult {
       }
       
       // give us a new list we can modify to get the data of
-      System.out.println("rangeStart,rangeEnd: "+rangeStart+", "+rangeEnd);
+      //System.out.println("rangeStart,rangeEnd: "+rangeStart+", "+rangeEnd);
       double[] data1Range = 
           Arrays.copyOfRange(list1, rangeStart, rangeEnd);
       double[] data2Range = null;
@@ -630,7 +641,7 @@ public class FFTResult {
       TimeSeriesUtils.detrend(data1Range);
       TimeSeriesUtils.demeanInPlace(data1Range);
       wss = cosineTaper(data1Range, TAPER_WIDTH);
-      System.out.println("taper width"+TAPER_WIDTH);
+      //System.out.println("taper width"+TAPER_WIDTH);
       // presumably we only need the last value of wss
       
       if (!sameData) {
@@ -688,13 +699,13 @@ public class FFTResult {
     // normalization time!
     
     double psdNormalization = 2.0 * period / padding;
+    //double psdNormalization = period / padding;
     double windowCorrection = wss / (double) range;
-    // it only uses the last value of wss, but that was how the original
-    // code was
+    // value of wss associated with taper parameters, not related to data
     
     psdNormalization /= windowCorrection;
     psdNormalization /= segsProcessed; // NOTE: divisor here should be 13
-    System.out.println(segsProcessed);
+    //System.out.println(segsProcessed);
     
     double[] frequencies = new double[singleSide];
     
