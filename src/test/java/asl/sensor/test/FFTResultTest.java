@@ -85,7 +85,8 @@ public class FFTResultTest {
     PrintWriter out;
     
     // get data first of all
-    String inName = "data/noise_1/00_BH0.512.seed";
+    //String inName = "data/noise_1/00_BH0.512.seed";
+    String inName = "data/simpleWaveforms/XX_KAS.00_BHZ.seed";
     DataBlock db;
     try {
       db = TimeSeriesUtils.getFirstTimeSeries(inName);
@@ -95,10 +96,11 @@ public class FFTResultTest {
       startCal.set(Calendar.SECOND, 59);
       startCal.set(Calendar.MILLISECOND, 994);
       Calendar endCal = (Calendar) startCal.clone();
-      endCal.set(Calendar.HOUR_OF_DAY, 7);
-      endCal.set(Calendar.MINUTE, 0);
-      endCal.set(Calendar.SECOND, 0);
-      endCal.set(Calendar.MILLISECOND, 25);
+     // changed from 07:00:00.35
+      endCal.set(Calendar.HOUR_OF_DAY, 6);
+      endCal.set(Calendar.MINUTE, 59);
+      endCal.set(Calendar.SECOND, 59);
+      endCal.set(Calendar.MILLISECOND, 2);
       db.trim(startCal, endCal);
       
       double[] list1 = db.getData();
@@ -177,14 +179,14 @@ public class FFTResultTest {
             new FastFourierTransformer(DftNormalization.STANDARD);
 
         Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
-        fftOutput.append('[');
+        //fftOutput.append('[');
         for (int i = 0; i < frqDomn1.length; ++i) {
           fftOutput.append(cf.format(frqDomn1[i]));
           if (i + 1 < frqDomn1.length) {
             fftOutput.append(", ");
           }
         }
-        fftOutput.append(']');
+        //fftOutput.append(']');
         // use arraycopy now (as it's fast) to get the first half of the fft
         System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
         Complex[] psdBin = new Complex[singleSide];
