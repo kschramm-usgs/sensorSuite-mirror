@@ -684,6 +684,9 @@ public class FFTResult {
           val2 = fftResult2[i];
         }
         
+        val1 = val1.multiply(2);
+        val2 = val2.multiply(2);
+        
         powSpectDens[i] = 
             powSpectDens[i].add( 
                 val1.multiply( 
@@ -697,7 +700,8 @@ public class FFTResult {
     }
     
     // normalization time!
-    
+    // System.out.println("PERIOD: " + period);
+    // period = 1.0; // quick testing
     double psdNormalization = 2.0 * period / padding;
     //double psdNormalization = period / padding;
     double windowCorrection = wss / (double) range;
