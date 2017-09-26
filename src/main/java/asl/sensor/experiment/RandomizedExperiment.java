@@ -552,7 +552,6 @@ extends Experiment implements ParameterValidator {
       xysc.addSeries(fitResidPhase);
     }
     xySeriesData.add(xysc);
-    
   }
   
   @Override
@@ -788,6 +787,17 @@ extends Experiment implements ParameterValidator {
     }
     
     double[] mag = evaluateResponse(currentVars);
+    
+    if (PRINT_EVERYTHING) {
+      String in = Arrays.toString(currentVars);
+      String out = Arrays.toString(mag);
+      inputsPerCalculation.add(in);
+      outputsPerCalculation.add(out);
+      if (OUTPUT_TO_TERMINAL) {
+        System.out.println(in);
+        System.out.println(out);
+      }
+    }
     
     double[][] jacobian = new double[mag.length][numVars];
     // now take the forward difference of each value 
