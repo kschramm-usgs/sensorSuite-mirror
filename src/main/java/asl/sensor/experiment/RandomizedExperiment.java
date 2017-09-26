@@ -5,11 +5,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.io.PrintWriter;
-import java.io.File;
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
-import java.io.FileOutputStream;
 import java.util.Set;
 
 import org.apache.commons.math3.complex.Complex;
@@ -62,6 +57,11 @@ extends Experiment implements ParameterValidator {
   public static final double PEAK_MULTIPLIER = // 0.8;
       NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
   
+  // TODO: turn this damn thing off
+  public static final boolean PRINT_EVERYTHING = true;
+  // conditional used so that if PRINT_EVERYTHING is false, this won't work
+  public static final boolean OUTPUT_TO_TERMINAL = PRINT_EVERYTHING && true;
+  
   // To whomever has to maintain this code after I'm gone:
   // I'm sorry, I'm so so sorry
   // I suppose it's a little neater now that some functions are part of the
@@ -73,6 +73,9 @@ extends Experiment implements ParameterValidator {
   private List<Complex> fitPoles;
   private List<Complex> initialZeros;
   private List<Complex> fitZeros;
+  
+  private List<String> inputsPerCalculation;
+  private List<String> outputsPerCalculation;
   
   // when true, doesn't run solver, in event parameters have an issue
   // (does the solver seem to have frozen? try rebuilding with this as true,
@@ -110,6 +113,9 @@ extends Experiment implements ParameterValidator {
   @Override
   protected void backend(DataStore ds) {
     
+    inputsPerCalculation = new ArrayList<String>();
+    outputsPerCalculation = new ArrayList<String>();
+    
     normalIdx = 1;
     numIterations = 0;
     
@@ -141,21 +147,14 @@ extends Experiment implements ParameterValidator {
     // PSD(out) / PSD(in) is the response curve (i.e., deconvolution)
     // also, use those frequencies to get the applied response to input
     FFTResult numeratorPSD, denominatorPSD;
-    if (false) { // clear out temporarily to see if Welch works ok (dead code)
-      numeratorPSD = FFTResult.spectralCalcMultitaper(sensorOut, calib);
-      denominatorPSD = FFTResult.spectralCalcMultitaper(calib, calib);
-    } else {
-      numeratorPSD = FFTResult.spectralCalc(sensorOut, calib);
-      //System.out.println("sensor out");
-      //System.out.println(sensorOut);
-      denominatorPSD = FFTResult.spectralCalc(calib, calib);
-    }
+    numeratorPSD = FFTResult.spectralCalc(sensorOut, calib);
+    denominatorPSD = FFTResult.spectralCalc(calib, calib);
     
     freqs = numeratorPSD.getFreqs(); // should be same for both results
     
     // store nyquist rate of data because freqs will be trimmed down later
-
     nyquist = sensorOut.getSampleRate() / 2.;
+    
     // slight increase to prevent issues with pole frequency rounding 
     // commented out in hopes that any issues related to it have been excised
     // nyquist += .5; 
@@ -208,23 +207,11 @@ extends Experiment implements ParameterValidator {
 
     int endIdx = startIdx + len;
     // System.out.println("INDICES: " + startIdx + "," + endIdx);
-    // XXX will want to write these values out.
-    //
     Complex[] numeratorPSDVals = 
         Arrays.copyOfRange(numeratorPSD.getFFT(), startIdx, endIdx);
     Complex[] denominatorPSDVals = 
         Arrays.copyOfRange(denominatorPSD.getFFT(), startIdx, endIdx);
-
-    // this is from:https://stackoverflow.com/questions/2885173/how-do-i-create-a-file-and-write-to-it-in-java
-    // this did not work.  grrrr.
-    //
-    //Writer writer = null;
-    //try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-     //    new FileOutputStream("filename.txt"), "utf-8")))
-    //  //   {
-     //               writer.write("something");
-       //  }
-   // 
+    
     for (int i = 0; i < len; ++i) {
       
       freqs[i] = freqList.get(i);
@@ -254,8 +241,6 @@ extends Experiment implements ParameterValidator {
       estResponse[i] = numer.divide(denom);
       // convert from displacement to velocity
       Complex scaleFactor = new Complex(0., NumericUtils.TAU * freqs[i]);
-      //System.out.println("scale factor: "+scaleFactor);
-      // XXX will want to write this out as well
       estResponse[i] = estResponse[i].multiply(scaleFactor);
     }
     
@@ -316,7 +301,6 @@ extends Experiment implements ParameterValidator {
       } else {
         xAxis = 1. / freqs[i];
       }
-      //System.out.println( xAxis + "," + observedResult[i] );
       calcMag.add(xAxis, observedResult[i]);
       calcArg.add(xAxis, observedResult[argIdx]);
     }
@@ -409,15 +393,14 @@ extends Experiment implements ParameterValidator {
         fireStateChange("Fitting, iteration count " + numIterations);
         Pair<RealVector, RealMatrix> pair = 
             jacobian(point);
-        //System.out.println("pair value: "+ pair);        
         return pair;
       }
       
     };
     
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
-        withCostRelativeTolerance(1.0E-10).
-        withParameterRelativeTolerance(1.0E-06);
+        withCostRelativeTolerance(1.0E-15).
+        withParameterRelativeTolerance(1.0E-10);
     
     name = fitResponse.getName();
     XYSeries initMag = new XYSeries("Initial param (" + name + ") magnitude");
@@ -481,8 +464,6 @@ extends Experiment implements ParameterValidator {
         fitParams, lowFreq, numZeros);
     fitPoles = fitResponse.getPoles();
     fitZeros = fitResponse.getZeros();
-    //System.out.println("poles:"+fitPoles);
-    //System.out.println("zeros:"+fitZeros);
     
     fireStateChange("Compiling data...");
     
@@ -552,6 +533,8 @@ extends Experiment implements ParameterValidator {
       xysc.addSeries(fitResidPhase);
     }
     xySeriesData.add(xysc);
+
+    
   }
   
   @Override
@@ -692,6 +675,14 @@ extends Experiment implements ParameterValidator {
     return zeros;
   }
   
+  public List<String> getInputsToPrint() {
+    return inputsPerCalculation;
+  }
+  
+  public List<String> getOutputsToPrint() {
+    return outputsPerCalculation;
+  }
+  
   /**
    * Get poles used in input response, for reference against best-fit poles 
    * @return poles taken from initial response file
@@ -786,6 +777,8 @@ extends Experiment implements ParameterValidator {
       currentVars[i] = variables.getEntry(i);
     }
     
+
+    
     double[] mag = evaluateResponse(currentVars);
     
     if (PRINT_EVERYTHING) {
@@ -798,6 +791,9 @@ extends Experiment implements ParameterValidator {
         System.out.println(out);
       }
     }
+    
+    
+
     
     double[][] jacobian = new double[mag.length][numVars];
     // now take the forward difference of each value 
