@@ -416,8 +416,8 @@ extends Experiment implements ParameterValidator {
     };
     
     LeastSquaresOptimizer optimizer = new LevenbergMarquardtOptimizer().
-        withCostRelativeTolerance(1.0E-15).
-        withParameterRelativeTolerance(1.0E-10);
+        withCostRelativeTolerance(1.0E-10).
+        withParameterRelativeTolerance(1.0E-06);
     
     name = fitResponse.getName();
     XYSeries initMag = new XYSeries("Initial param (" + name + ") magnitude");
