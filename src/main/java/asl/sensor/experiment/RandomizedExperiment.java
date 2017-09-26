@@ -146,8 +146,8 @@ extends Experiment implements ParameterValidator {
       denominatorPSD = FFTResult.spectralCalcMultitaper(calib, calib);
     } else {
       numeratorPSD = FFTResult.spectralCalc(sensorOut, calib);
-      System.out.println("sensor out");
-      System.out.println(sensorOut);
+      //System.out.println("sensor out");
+      //System.out.println(sensorOut);
       denominatorPSD = FFTResult.spectralCalc(calib, calib);
     }
     

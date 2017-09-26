@@ -216,7 +216,7 @@ public class FFTResult {
   
   public static FFTResult crossPower(double[] data1, double[] data2,
       InstrumentResponse ir1, InstrumentResponse ir2, long interval) {
-    System.out.println("in FFTResult crossPower");
+    //System.out.println("in FFTResult crossPower");
     FFTResult selfPSD = spectralCalc(data1, data2, interval);
     Complex[] results = selfPSD.getFFT();
     double[] freqs = selfPSD.getFreqs();
@@ -332,7 +332,7 @@ public class FFTResult {
    * the second dimension being the taper count
    */
   public static double[][] getMultitaperSeries(int winLen, int numTapers) {
-    System.out.println("in getMultitaperSeries");
+    //System.out.println("in getMultitaperSeries");
     double[][] taperMat = new double[numTapers][winLen];
     
     double denom = winLen - 1;
@@ -358,18 +358,18 @@ public class FFTResult {
    * symmetric component (second half of the function)
    */
   public static Complex[] simpleFFT(double[] dataIn) {
-    System.out.println("in simpleFFT");
+    //System.out.println("in simpleFFT");
     
     int padding = 2;
     while ( padding < dataIn.length ) {
       padding *= 2;
     }
 
-    System.out.println("padding: "+padding);
+    //System.out.println("padding: "+padding);
     
     double[] toFFT = new double[padding];
     
-    System.out.println("length dataIn: "+dataIn.length);
+    //System.out.println("length dataIn: "+dataIn.length);
     //pad the segment with zeros
     for (int i = 0; i < dataIn.length; ++i) {
       toFFT[i] = dataIn[i];
@@ -392,7 +392,7 @@ public class FFTResult {
    * frequencies 
    */
   public static FFTResult singleSidedFFT(DataBlock db, boolean mustFlip) {
-    System.out.println("in singleSidedFFT");
+    //System.out.println("in singleSidedFFT");
     
     double[] data = db.getData().clone();
     
@@ -412,7 +412,7 @@ public class FFTResult {
     int singleSide = padding/2 + 1;
     
     double nyquist = db.getSampleRate() / 2;
-    System.out.println("line 412 nyquist: "+nyquist);
+    //System.out.println("line 412 nyquist: "+nyquist);
     double deltaFrq = nyquist / (singleSide - 1);
     
     Complex[] fftOut = new Complex[singleSide];
@@ -447,7 +447,7 @@ public class FFTResult {
    */
   public static FFTResult 
   singleSidedFilteredFFT(DataBlock db, boolean mustFlip) {
-    System.out.println("in singleSidedFilteredFFT");
+    //System.out.println("in singleSidedFilteredFFT");
     
     double[] data = db.getData().clone();
     
@@ -473,7 +473,7 @@ public class FFTResult {
     int singleSide = padding/2 + 1;
     
     double nyquist = db.getSampleRate() / 2;
-    System.out.println("line 465 nyquist: "+nyquist);
+    //System.out.println("line 465 nyquist: "+nyquist);
     double deltaFrq = nyquist / (singleSide - 1);
     
     Complex[] fftOut = new Complex[singleSide];
@@ -497,7 +497,7 @@ public class FFTResult {
    * @return A list of doubles representing the original timeseries of the FFT
    */
   public static double[] singleSidedInverseFFT(Complex[] freqDomn, int trim) {
-    System.out.println("in singleSidedInverseFFT");
+    //System.out.println("in singleSidedInverseFFT");
     FastFourierTransformer fft = 
         new FastFourierTransformer(DftNormalization.STANDARD);
      
@@ -539,7 +539,7 @@ public class FFTResult {
    * frequencies of the PSD.
    */
   public static FFTResult spectralCalc(DataBlock data1, DataBlock data2) {
-    System.out.println("in spectralCalc");
+    //System.out.println("in spectralCalc");
 
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
@@ -576,7 +576,7 @@ public class FFTResult {
   public static FFTResult 
   spectralCalc(double[] list1, double[] list2, long interval) {
 
-    System.out.println("this is where the signal preproc and fft happen" );
+    //System.out.println("this is where the signal preproc and fft happen" );
     
     boolean sameData = list1.equals(list2);
     
@@ -652,7 +652,7 @@ public class FFTResult {
       }
       
       // TODO: this can clearly be refactored
-      System.out.println("padding the segment");
+      //System.out.println("padding the segment");
       for (int i = 0; i < data1Range.length; ++i) {
         // no point in using arraycopy -- must make sure each Number's a double
         toFFT1[i] = data1Range[i];
@@ -664,7 +664,7 @@ public class FFTResult {
       FastFourierTransformer fft = 
           new FastFourierTransformer(DftNormalization.STANDARD);
 
-      System.out.println("FFT");
+      //System.out.println("FFT");
       Complex[] frqDomn1 = fft.transform(toFFT1, TransformType.FORWARD);
       // use arraycopy now (as it's fast) to get the first half of the fft
       System.arraycopy(frqDomn1, 0, fftResult1, 0, fftResult1.length);
@@ -675,7 +675,7 @@ public class FFTResult {
         System.arraycopy(frqDomn2, 0, fftResult2, 0, fftResult2.length);
       }
       
-      System.out.println("performing PSD");
+      //System.out.println("performing PSD");
       for (int i = 0; i < singleSide; ++i) {
         
         Complex val1 = fftResult1[i];
@@ -762,15 +762,15 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalcMultitaper(DataBlock data1, DataBlock data2) {
-    System.out.println("in spectralCalcMultitaper");
+    //System.out.println("in spectralCalcMultitaper");
     // this is ugly logic here, but this saves us issues with looping
     // and calculating the same data twice
     boolean sameData = data1.getName().equals( data2.getName() );
-    System.out.println("some data set");
+    //System.out.println("some data set");
     
     double[] list1 = data1.getData();
     double[] list2 = list1;
-    System.out.println("list 1 and 2 set");
+    //System.out.println("list 1 and 2 set");
     if (!sameData) {
       list2 = data2.getData();
     }
@@ -791,16 +791,16 @@ public class FFTResult {
    */
   public static FFTResult 
   spectralCalcMultitaper(double[] list1, double[] list2, long ivl) {
-    System.out.println("in spectralCalcMultitaper part dos");
+    ////System.out.println("in spectralCalcMultitaper part dos");
     
     boolean sameData = list1.equals(list2);
     
     int padding = 2;
-    System.out.println("padding");
+    //System.out.println("padding");
     while ( padding < list1.length ) {
       padding *= 2;
     }
-    System.out.println("padding value: "+padding);
+    //System.out.println("padding value: "+padding);
     
     final int TAPER_COUNT = 12;
     double period = 1.0 / TimeSeriesUtils.ONE_HZ_INTERVAL;
