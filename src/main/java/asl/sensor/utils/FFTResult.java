@@ -159,7 +159,7 @@ public class FFTResult {
    */
   public static double cosineTaper(double[] dataSet, double taperW) {
     
-    System.out.println("in cosineTaper");
+    //System.out.println("in cosineTaper");
     double ramp = taperW * dataSet.length;
     double taper;
     double wss = 0.0; // represents power loss
