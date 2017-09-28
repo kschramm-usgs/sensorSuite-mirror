@@ -56,9 +56,10 @@ extends Experiment implements ParameterValidator {
   private static final double DELTA = 1E-11;
   public static final double PEAK_MULTIPLIER = // 0.8;
       NumericUtils.PEAK_MULTIPLIER; // max pole-fit frequency
+      
   
   // TODO: turn this damn thing off
-  public static final boolean PRINT_EVERYTHING = true;
+  public static final boolean PRINT_EVERYTHING = false;
   // conditional used so that if PRINT_EVERYTHING is false, this won't work
   public static final boolean OUTPUT_TO_TERMINAL = PRINT_EVERYTHING && true;
   
@@ -800,7 +801,7 @@ extends Experiment implements ParameterValidator {
     for (int i = 0; i < numVars; ++i) {
       
       if (i % 2 == 1 && currentVars[i] == 0.) {
-        // this is a zero pole. don't bother changing it
+       // this is a zero pole. don't bother changing it
         for (int j = 0; j < mag.length; ++j) {
           jacobian[j][i] = 0.;
         }
