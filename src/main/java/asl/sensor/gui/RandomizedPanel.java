@@ -440,7 +440,8 @@ public class RandomizedPanel extends ExperimentPanel {
     residAmpAxis.setLabelFont(bold);
     
     lowFreqBox = new JCheckBox("Low frequency calibration");
-    lowFreqBox.setSelected(true);
+// changing this to false
+    lowFreqBox.setSelected(false);
     
     showParams = new JCheckBox("Show params");
     showParams.setEnabled(false);
